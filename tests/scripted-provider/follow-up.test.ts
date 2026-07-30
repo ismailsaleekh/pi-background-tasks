@@ -245,7 +245,7 @@ async function disposeHarness(h: Awaited<ReturnType<typeof harness>>) {
 
 void describe('scripted-provider completion follow-up behavior', { concurrency: false }, () => {
   void it(
-    'BUG-181 bg_run yields without polling and its completion event triggers one real follow-up turn',
+    'explicit triggerOnCompletion:true yields without polling and triggers one follow-up turn',
     { timeout: 15_000 },
     async () => {
       const h = await harness('bg-run-follow-up');
@@ -325,7 +325,7 @@ void describe('scripted-provider completion follow-up behavior', { concurrency: 
   );
 
   void it(
-    'notifyOnCompletion:true with triggerOnCompletion:false notifies without a provider wakeup',
+    'default bg_run completion is passive and does not wake the provider',
     { timeout: 15_000 },
     async () => {
       const h = await harness('wake-false');
@@ -359,7 +359,7 @@ void describe('scripted-provider completion follow-up behavior', { concurrency: 
   );
 
   void it(
-    'failed background tasks include error fields and still wake a follow-up turn',
+    'failed tasks include error fields and wake only when explicitly requested',
     { timeout: 15_000 },
     async () => {
       const h = await harness('failed-follow-up');

@@ -1,5 +1,6 @@
-import { statSync, type WriteStream } from 'node:fs';
+import { existsSync, statSync, type WriteStream } from 'node:fs';
 import { open } from 'node:fs/promises';
+import { delimiter, join } from 'node:path';
 import { DEFAULT_MAX_BYTES } from '@earendil-works/pi-coding-agent';
 import type { BackgroundTaskChildProcess } from './registry.js';
 
@@ -142,8 +143,8 @@ export function deriveCompletionDeliveryGuidance(
       automaticWakeEnabled: false,
       text: [
         'Terminal notification: enabled.',
-        'Automatic follow-up turn: disabled. The terminal notification will be delivered, but it will not start an agent turn.',
-        'Next action: automatic wake-up was explicitly disabled; use bg_status/bg_logs only when deliberate monitoring is required, without tight polling.',
+        'Automatic follow-up turn: disabled. The terminal notification will be delivered passively and will not start an agent turn.',
+        'Next action: do not poll merely to wait; use bg_status/bg_logs only when deliberate monitoring is required.',
       ].join('\n'),
     };
   }
@@ -524,16 +525,32 @@ export function shellQuote(value: string): string {
   return `'${value.replace(/'/g, `'"'"'`)}'`;
 }
 
+function executableOnPath(name: string, env: NodeJS.ProcessEnv): string | undefined {
+  const pathValue = env['PATH'] ?? env['Path'];
+  if (!pathValue) return undefined;
+  for (const dir of pathValue.split(delimiter)) {
+    if (!dir) continue;
+    const candidate = join(dir, name);
+    if (existsSync(candidate)) return candidate;
+  }
+  return undefined;
+}
+
 export function shellInvocation(
   command: string,
   platform: NodeJS.Platform = process.platform,
   env: NodeJS.ProcessEnv = process.env,
-): { shell: string; args: string[] } {
+): { shell: string; args: string[]; windowsVerbatimArguments?: boolean } {
   if (platform === 'win32') {
+    const posixShell = env['PI_BG_SHELL'] ?? env['SHELL'] ?? executableOnPath('bash.exe', env);
+    if (posixShell) {
+      return { shell: posixShell, args: ['-lc', command], windowsVerbatimArguments: false };
+    }
     const comSpec = env['ComSpec'];
     return {
       shell: comSpec && comSpec.length > 0 ? comSpec : 'cmd.exe',
       args: ['/d', '/s', '/c', command],
+      windowsVerbatimArguments: true,
     };
   }
   const shell = env['SHELL'];

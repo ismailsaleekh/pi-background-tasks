@@ -1,4 +1,4 @@
-import { spawn as nodeSpawn, type SpawnOptions } from 'node:child_process';
+import { spawn as nodeSpawn, spawnSync as nodeSpawnSync, type SpawnOptions } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { createWriteStream, existsSync } from 'node:fs';
 import { mkdir, realpath, writeFile } from 'node:fs/promises';
@@ -93,6 +93,7 @@ export type BackgroundTaskSpawn = (
 ) => BackgroundTaskChildProcess;
 
 type KillProcessFn = (pid: number, signal?: NodeJS.Signals | number) => boolean;
+type KillTreeFn = (pid: number) => boolean;
 
 export interface CompletionNotificationMessage {
   customType: 'background-task-notification';
@@ -117,6 +118,7 @@ export interface BackgroundTaskRegistryOptions {
   publishTerminal?: (task: BgTaskSnapshot) => void;
   spawn?: BackgroundTaskSpawn;
   killProcess?: KillProcessFn;
+  killTree?: KillTreeFn;
   platform?: NodeJS.Platform;
   env?: NodeJS.ProcessEnv;
   makeTaskId?: () => string;
@@ -407,7 +409,12 @@ function emitToolTelemetry() {
 }
 
 const parsed = parseInvocation(process.argv.slice(2));
-const child = spawn("pi", parsed.args, { stdio: ["ignore", "pipe", "pipe"], env: process.env });
+const child = spawn("pi", parsed.args, {
+  stdio: ["ignore", "pipe", "pipe"],
+  env: process.env,
+  shell: process.platform === "win32",
+  windowsHide: true,
+});
 let buffer = "";
 
 if (!parsed.parseJson) {
@@ -605,6 +612,7 @@ export class BackgroundTaskRegistry {
   private shuttingDown = false;
   private readonly spawn: BackgroundTaskSpawn;
   private readonly killProcess: KillProcessFn;
+  private readonly killTree: KillTreeFn;
   private readonly platform: NodeJS.Platform;
   private readonly env: NodeJS.ProcessEnv;
   private readonly makeTaskIdFn: () => string;
@@ -622,6 +630,20 @@ export class BackgroundTaskRegistry {
     this.spawn =
       options.spawn ?? ((command, args, spawnOptions) => nodeSpawn(command, args, spawnOptions));
     this.killProcess = options.killProcess ?? process.kill.bind(process);
+    this.killTree =
+      options.killTree ??
+      ((pid) => {
+        const result = nodeSpawnSync('taskkill.exe', ['/pid', String(pid), '/t', '/f'], {
+          encoding: 'utf8',
+          windowsHide: true,
+        });
+        if (result.error) throw result.error;
+        if (result.status !== 0) {
+          const detail = (result.stderr || result.stdout || '').trim();
+          throw new Error(`taskkill exited with code ${String(result.status)}${detail ? `: ${detail}` : ''}`);
+        }
+        return true;
+      });
     this.platform = options.platform ?? process.platform;
     this.env = options.env ?? process.env;
     this.makeTaskIdFn = options.makeTaskId ?? defaultTaskId;
@@ -756,6 +778,9 @@ export class BackgroundTaskRegistry {
         stdio: ['ignore', 'pipe', 'pipe'],
         env: this.env,
         windowsHide: true,
+        // cmd.exe needs verbatim command forwarding, while Git Bash must use
+        // Node's normal argv quoting. shellInvocation selects the safe mode.
+        windowsVerbatimArguments: invocation.windowsVerbatimArguments,
       });
 
       task.child = child;
@@ -1416,7 +1441,16 @@ export class BackgroundTaskRegistry {
     const errors: string[] = [];
     let killed = false;
 
-    if (this.platform !== 'win32') {
+    if (this.platform === 'win32') {
+      try {
+        this.killTree(task.pid);
+        killed = true;
+      } catch (error) {
+        errors.push(
+          `Windows process-tree kill failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    } else {
       try {
         this.killProcess(-task.pid, signal);
         killed = true;

@@ -142,7 +142,7 @@ void describe('fusion model config', () => {
       assert.equal(revision.exists, true);
       assert.match(await readFile(path, 'utf8'), /fusion-models\.v1/);
       const mode = (await stat(path)).mode & 0o777;
-      assert.equal(mode, 0o600);
+      if (process.platform !== 'win32') assert.equal(mode, 0o600);
       await writeFile(path, JSON.stringify(next), 'utf8');
       const conflict = saveFusionModelConfig(path, next, revision);
       await assert.rejects(conflict, (error: unknown) => {

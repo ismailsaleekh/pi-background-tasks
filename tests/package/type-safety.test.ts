@@ -2,8 +2,9 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const packageRoot = new URL('../../', import.meta.url).pathname;
+const packageRoot = fileURLToPath(new URL('../../', import.meta.url));
 const allTypeScriptRoots = ['extensions', 'src', 'tests', 'scripts'];
 const productionTypeScriptRoots = ['extensions', 'src', 'scripts'];
 

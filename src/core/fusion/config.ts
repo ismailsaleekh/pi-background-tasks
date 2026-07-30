@@ -261,7 +261,9 @@ export function resolveFusionModels(input: ResolveFusionModelsInput): ResolvedFu
 }
 
 async function fsyncFile(path: string): Promise<void> {
-  const handle = await open(path, 'r');
+  // Windows FlushFileBuffers requires a writable handle; a read-only handle
+  // fails consistently with EPERM even for files created by this process.
+  const handle = await open(path, 'r+');
   try {
     await handle.sync();
   } finally {

@@ -87,9 +87,9 @@ void describe('fusion artifacts', () => {
         models: models(),
         now: () => new Date('2026-01-01T00:00:00.000Z'),
       });
-      assert.match(store.artifactDir, /^\.pi\/fusion\/session-id-/);
+      assert.match(store.artifactDir.replaceAll('\\', '/'), /^\.pi\/fusion\/session-id-/);
       const dirMode = (await stat(store.artifactDirAbs)).mode & 0o777;
-      assert.equal(dirMode, 0o700);
+      if (process.platform !== 'win32') assert.equal(dirMode, 0o700);
       await store.writeCanonicalInput('{"request":"x"}');
       await store.transition('candidates_running');
       await store.recordChildAttempt({
@@ -99,7 +99,8 @@ void describe('fusion artifacts', () => {
       });
       const responsePath = join(store.artifactDirAbs, 'candidate-1.attempt-1.response.md');
       assert.equal(await readFile(responsePath, 'utf8'), 'answer');
-      assert.equal((await stat(responsePath)).mode & 0o777, 0o600);
+      if (process.platform !== 'win32')
+        assert.equal((await stat(responsePath)).mode & 0o777, 0o600);
       const manifest = parseManifest(
         await readFile(join(store.artifactDirAbs, 'manifest.json'), 'utf8'),
       );

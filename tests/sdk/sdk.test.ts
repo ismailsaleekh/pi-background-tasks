@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { delimiter, dirname, join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createServer } from 'node:http';
 import {
@@ -556,13 +556,14 @@ void describe('sdk', () => {
     }
   });
 
-  void it('BUG-181 exposes an event-driven prompt contract and truthful launch receipts', async () => {
+  void it('exposes a passive-by-default completion contract and truthful launch receipts', async () => {
     const { session } = await harness();
     try {
       const ctx = session.extensionRunner.createContext();
       const systemPrompt = ctx.getSystemPrompt();
       assert.match(systemPrompt, /Do not call sleep, bg_status, or bg_logs merely to wait/);
-      assert.match(systemPrompt, /automatically starts a follow-up agent turn/);
+      assert.match(systemPrompt, /passive <background-task-notification>/);
+      assert.match(systemPrompt, /without automatically starting a follow-up agent turn/);
       assert.match(systemPrompt, /A running result is not an instruction to poll again/);
       assert.match(systemPrompt, /Do not repeatedly call bg_logs to wait for completion/);
       assert.match(systemPrompt, /Treat <background-task-notification> as durable terminal truth/);
@@ -575,6 +576,7 @@ void describe('sdk', () => {
       const bgStatus = session.getToolDefinition('bg_status');
       const bgLogs = session.getToolDefinition('bg_logs');
       assert.ok(bgRun && bgStatus && bgLogs, 'background tools should be registered');
+      assert.match(bgRun.description, /passive <background-task-notification>/);
       assert.match(bgRun.description, /do not sleep or poll merely to wait/);
       assert.match(bgStatus.description, /not a waiting primitive/);
       assert.match(bgLogs.description, /not a waiting primitive/);
@@ -584,15 +586,16 @@ void describe('sdk', () => {
       )}`;
       const cases = [
         {
-          name: 'Default Delivery',
+          name: 'Default Passive Delivery',
           notifyOnCompletion: undefined,
           triggerOnCompletion: undefined,
           expectedNotify: true,
-          expectedTrigger: true,
+          expectedTrigger: false,
           expected: [
             'Terminal notification: enabled.',
-            'Automatic follow-up turn: enabled.',
-            'Next action: do not poll or sleep',
+            'Automatic follow-up turn: disabled.',
+            'will be delivered passively',
+            'Next action: do not poll merely to wait',
           ],
         },
         {
@@ -1126,7 +1129,7 @@ console.error('sdk stderr');
     try {
       const bin = join(cwd, 'bin');
       await mkdir(bin, { recursive: true });
-      const fakePi = join(bin, 'pi');
+      const fakePi = join(bin, process.platform === 'win32' ? 'fake-pi.cjs' : 'pi');
       await writeFile(
         fakePi,
         `#!/usr/bin/env node
@@ -1164,8 +1167,16 @@ console.log(JSON.stringify({ type: "message_end", message: secondMessage }));
 `,
         'utf8',
       );
-      await chmod(fakePi, 0o755);
-      process.env['PATH'] = `${bin}:${oldPath ?? ''}`;
+      if (process.platform === 'win32') {
+        await writeFile(
+          join(bin, 'pi.cmd'),
+          `@echo off\r\n"${process.execPath}" "${fakePi}" %*\r\n`,
+          'utf8',
+        );
+      } else {
+        await chmod(fakePi, 0o755);
+      }
+      process.env['PATH'] = `${bin}${delimiter}${oldPath ?? ''}`;
 
       const r = await exec(session, 'bg_run', {
         isAgent: true,
