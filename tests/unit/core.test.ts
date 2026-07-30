@@ -106,8 +106,8 @@ void describe('core', () => {
       automaticWakeEnabled: false,
       text: [
         'Terminal notification: enabled.',
-        'Automatic follow-up turn: disabled. The terminal notification will be delivered, but it will not start an agent turn.',
-        'Next action: automatic wake-up was explicitly disabled; use bg_status/bg_logs only when deliberate monitoring is required, without tight polling.',
+        'Automatic follow-up turn: disabled. The terminal notification will be delivered passively and will not start an agent turn.',
+        'Next action: do not poll merely to wait; use bg_status/bg_logs only when deliberate monitoring is required.',
       ].join('\n'),
     });
     const notifyDisabledWithRequestedWake = deriveCompletionDeliveryGuidance(false, true);
@@ -132,6 +132,16 @@ void describe('core', () => {
     assert.equal(sanitizePathSegment('a/b c'), 'a-b-c');
     assert.equal(sanitizePathSegment('///'), 'session');
     assert.ok(shellInvocation('echo ok').args.includes('echo ok'));
+    assert.deepEqual(shellInvocation('echo ok', 'win32', { PI_BG_SHELL: 'bash.exe' }), {
+      shell: 'bash.exe',
+      args: ['-lc', 'echo ok'],
+      windowsVerbatimArguments: false,
+    });
+    assert.deepEqual(shellInvocation('echo ok', 'win32', { ComSpec: 'cmd.exe', PATH: '' }), {
+      shell: 'cmd.exe',
+      args: ['/d', '/s', '/c', 'echo ok'],
+      windowsVerbatimArguments: true,
+    });
     assert.equal(normalizeMaxBytes(-1, 123), 1);
     assert.equal(normalizeMaxBytes(Number.NaN, 123), 123);
     assert.equal(normalizeMaxBytes(1.9, 123), 1);

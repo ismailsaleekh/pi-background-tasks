@@ -93,7 +93,7 @@ Lane A residual hardening is now covered by automated tests. No remaining harden
 | Process lifecycle/races | Unit tests cover duplicate error/close finalization, output-cap races, duplicate-notification prevention, waiter resolution via stop paths, metadata failure logging, and notification failure reset. |
 | Process-tree kill safety | Unit tests cover POSIX process-group kill, child fallback, both-fail loud errors, SIGTERM idempotency, SIGKILL escalation, and Windows child-kill/shell invocation. |
 | Pruning | Unit tests cover oldest-finished pruning while preserving running tasks. |
-| Completion follow-up turns | `test:agent-loop` registers a deterministic scripted provider against the shipped extension path and verifies event-driven `bg_run` yielding with no sleep/status/log polling, exactly one default wakeup, notification-only `triggerOnCompletion:false`, `/bg` display-only behavior, `notifyOnCompletion:false`, and failed notification error fields. |
+| Completion follow-up turns | `test:agent-loop` registers a deterministic scripted provider against the shipped extension path and verifies event-driven `bg_run` yielding with no sleep/status/log polling, passive completion with no default wakeup, exactly one opt-in wakeup for `triggerOnCompletion:true`, `/bg` display-only behavior, `notifyOnCompletion:false`, and failed notification error fields. |
 | PTY secondary keys | `test:pty` covers arrows, page keys, `a`/`K`, `R`, `c`, `/bg-tasks`, failed/unread badges, multiple-task ordering, and rerun paths for running/completed/failed/killed tasks. |
 | Footer/status combinations | SDK tests cover failed/stopped/done/running combinations, explicit clear, and focused label. |
 

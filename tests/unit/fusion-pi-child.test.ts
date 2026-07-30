@@ -216,7 +216,7 @@ void describe('fusion Pi child runner', () => {
     assert.ok(argv.includes('--system-prompt'));
     const extensionIndex = argv.indexOf('--extension');
     assert.ok(extensionIndex >= 0, 'private compact metadata extension flag');
-    assert.match(argv[extensionIndex + 1] ?? '', /extensions\/fusion-child\.ts$/);
+    assert.match((argv[extensionIndex + 1] ?? '').replaceAll('\\', '/'), /extensions\/fusion-child\.ts$/);
     const env = fusionPiChildEnv({
       PI_SESSION_ID: 'old',
       PI_MODEL: 'old-model',

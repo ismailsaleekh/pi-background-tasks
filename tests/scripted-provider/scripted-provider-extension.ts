@@ -136,10 +136,12 @@ function inspectEventDrivenContract(context: Context): EventDrivenContractCheck 
   return {
     systemPrompt:
       systemPrompt.includes('Do not call sleep, bg_status, or bg_logs merely to wait') &&
-      systemPrompt.includes('automatically starts a follow-up agent turn') &&
+      systemPrompt.includes('passive <background-task-notification>') &&
+      systemPrompt.includes('without automatically starting a follow-up agent turn') &&
       systemPrompt.includes('A running result is not an instruction to poll again') &&
       !systemPrompt.includes('After bg_run, use bg_status and bg_logs to inspect progress'),
     toolDescriptions:
+      toolDescription('bg_run').includes('passive <background-task-notification>') &&
       toolDescription('bg_run').includes('do not sleep or poll merely to wait') &&
       toolDescription('bg_status').includes('not a waiting primitive') &&
       toolDescription('bg_logs').includes('not a waiting primitive'),
@@ -197,6 +199,7 @@ function responseFor(
               ),
               isAgent: false,
               notifyOnCompletion: true,
+              triggerOnCompletion: true,
             },
             'call-bg-run-wakeup',
           ),
@@ -252,7 +255,6 @@ function responseFor(
               command: shellNode("setTimeout(() => { console.log('notify only done'); }, 80);"),
               isAgent: false,
               notifyOnCompletion: true,
-              triggerOnCompletion: false,
             },
             'call-bg-run-no-wake',
           ),
@@ -276,6 +278,7 @@ function responseFor(
               ),
               isAgent: false,
               notifyOnCompletion: true,
+              triggerOnCompletion: true,
             },
             'call-bg-run-failed',
           ),

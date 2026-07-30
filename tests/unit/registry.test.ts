@@ -84,6 +84,7 @@ interface HarnessOptions {
   killGraceMs?: number;
   stopWaitMs?: number;
   killProcess?: (pid: number, signal?: NodeJS.Signals | number) => boolean;
+  killTree?: (pid: number) => boolean;
   sendCompletionNotification?: (
     message: CompletionNotificationMessage,
     options: CompletionNotificationOptions,
@@ -141,6 +142,7 @@ async function createHarness(options: HarnessOptions = {}) {
   if (options.stopWaitMs !== undefined) registryOptions.stopWaitMs = options.stopWaitMs;
   if (options.now !== undefined) registryOptions.now = options.now;
   if (options.killProcess !== undefined) registryOptions.killProcess = options.killProcess;
+  if (options.killTree !== undefined) registryOptions.killTree = options.killTree;
   const registry = new BackgroundTaskRegistry(registryOptions);
   const ctx: BackgroundTaskContext = {
     cwd,
@@ -298,6 +300,29 @@ async function startFakeTask(
 }
 
 void describe('BackgroundTaskRegistry', () => {
+  void it('writes atomic metadata with a Windows-compatible fsync handle', async () => {
+    const h = await createHarness({ platform: 'win32' });
+    try {
+      const task = await h.registry.startTask(h.ctx, 'echo metadata-ok', {
+        name: 'Windows Metadata',
+        isAgent: false,
+        notifyOnCompletion: false,
+      });
+      assert.equal(
+        parseJsonObject(await readFile(task.metadataAbsPath, 'utf8'), 'running metadata')['status'],
+        'running',
+      );
+      lastSpawn(h).child.close(0, null);
+      await waitFor(() => task.status === 'completed', 'Windows metadata completion');
+      assert.equal(
+        parseJsonObject(await readFile(task.metadataAbsPath, 'utf8'), 'terminal metadata')['status'],
+        'completed',
+      );
+    } finally {
+      await cleanup(h.root);
+    }
+  });
+
   void it('preserves full shell command bytes except surrounding whitespace', async () => {
     const h = await createHarness({ platform: 'linux' });
     try {
@@ -443,31 +468,38 @@ void describe('BackgroundTaskRegistry', () => {
     }
   });
 
-  void it('skips process-group kill on Windows and invokes child.kill directly', async () => {
+  void it('uses taskkill-style process-tree cleanup on Windows', async () => {
     let processKillCalled = false;
+    let childRef: FakeChild | undefined;
+    const treeKillCalls: number[] = [];
     const h = await createHarness({
       platform: 'win32',
+      env: { ComSpec: 'cmd.exe', PATH: '' },
       killProcess: () => {
         processKillCalled = true;
         return true;
       },
-      childFactory: (pid) =>
-        new FakeChild(pid, function (this: FakeChild, signal) {
-          queueMicrotask(() => {
-            this.close(null, signal ?? null);
-          });
-          return true;
-        }),
+      killTree: (pid) => {
+        treeKillCalls.push(pid);
+        queueMicrotask(() => childRef?.close(null, 'SIGTERM'));
+        return true;
+      },
+      childFactory: (pid) => {
+        childRef = new FakeChild(pid);
+        return childRef;
+      },
     });
     try {
       const { task, child } = await startFakeTask(h, 'Windows Kill');
       await h.registry.stopTask(task, 'user');
       assert.equal(processKillCalled, false);
-      assert.deepEqual(child.killCalls, ['SIGTERM']);
+      assert.deepEqual(treeKillCalls, [child.pid]);
+      assert.deepEqual(child.killCalls, []);
       const windowsSpawn = h.children[0];
       assert.ok(windowsSpawn, 'Windows shell spawn should be recorded');
-      assert.equal(windowsSpawn.shell.toLowerCase(), 'cmd.exe');
+      assert.equal(windowsSpawn.shell.toLowerCase().endsWith('cmd.exe'), true);
       assert.deepEqual(windowsSpawn.args.slice(0, 3), ['/d', '/s', '/c']);
+      assert.equal(windowsSpawn.options.windowsVerbatimArguments, true);
     } finally {
       await cleanup(h.root);
     }
