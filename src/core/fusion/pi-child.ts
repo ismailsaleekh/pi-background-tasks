@@ -76,8 +76,8 @@ import { resolveAnthropicAttributionExtensionPath } from '../anthropic-attributi
 
 // The response cap now applies to one final full answer, not cumulative Pi JSON events.
 export const FUSION_CHILD_STDOUT_LIMIT_BYTES = 32 * 1024 * 1024;
-export const FUSION_CHILD_STDERR_LIMIT_BYTES = 4 * 1024 * 1024;
-export const FUSION_CHILD_TIMEOUT_MS = 30 * 60 * 1000;
+export const FUSION_CHILD_STDERR_LIMIT_BYTES = 16 * 1024 * 1024;
+export const FUSION_CHILD_TIMEOUT_MS = 50 * 60 * 1000;
 /**
  * Stale-action watchdog threshold.
  *
@@ -86,10 +86,12 @@ export const FUSION_CHILD_TIMEOUT_MS = 30 * 60 * 1000;
  * the final assistant message, so a single slow model turn is genuinely silent on both
  * streams. The threshold must therefore exceed the longest plausible single turn, not the
  * longest plausible tool call: a value tuned to tool latency would kill healthy children
- * mid-reasoning. 1200s stays inside the 30-minute absolute cap while leaving a wide
- * margin over observed turn latency.
+ * mid-reasoning. Thirty-five minutes leaves a wide margin over observed turn latency
+ * while remaining materially below the 50-minute absolute cap, so the stale-action
+ * watchdog retains an independent purpose instead of becoming an unreachable duplicate
+ * timeout.
  */
-export const FUSION_CHILD_IDLE_TIMEOUT_MS = 20 * 60 * 1000;
+export const FUSION_CHILD_IDLE_TIMEOUT_MS = 35 * 60 * 1000;
 export const FUSION_CHILD_KILL_GRACE_MS = 3000;
 export const FUSION_CHILD_SIGKILL_WAIT_MS = 5000;
 const FUSION_PI_CHILD_O_NOFOLLOW =
@@ -1310,6 +1312,11 @@ async function assertFusionToolCallLogSeal(
     const logSha256 = requireSha256(parsed, 'log_sha256', 'fusion tool-call audit seal');
     if (recordCount !== trace.summary.count) {
       throw new Error('fusion tool-call audit completion seal record count mismatch');
+    }
+    if (recordCount > FUSION_CHILD_MAX_TOOL_CALLS) {
+      throw new Error(
+        `fusion tool-call audit exceeds tool-call limit ${String(FUSION_CHILD_MAX_TOOL_CALLS)}`,
+      );
     }
     if (totalResultBytes !== trace.summary.total_result_bytes) {
       throw new Error('fusion tool-call audit completion seal result-byte total mismatch');

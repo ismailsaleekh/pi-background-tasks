@@ -27,7 +27,7 @@
 | Fact | Value |
 | --- | --- |
 | Package | `pi-background-tasks` |
-| Version | `2.4.0` |
+| Version | `2.4.1` |
 | Node engine | `>=22.19.0` |
 | Pi entrypoints | `./extensions/anthropic-attribution.ts`, `./extensions/background-tasks.ts` |
 | Package image | [logo.png](https://raw.githubusercontent.com/ismailsaleekh/pi-background-tasks/main/logo.png) |

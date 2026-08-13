@@ -6,13 +6,16 @@ implemented and retained below as a closed record.
 
 ## Issue 3: Per-child caps
 
-- **Current behavior (verified):** Per-child caps are 128 provider requests,
-  192 tool calls, and 30 minutes.
+- **Current behavior (verified):** Per-child caps are 550 provider requests,
+  600 tool calls, 32 MiB aggregate tool-result bytes, and 50 minutes absolute /
+  35 minutes idle.
 - **Risk:** Caps can be exhausted mid-task, truncating useful work with no
   graceful wind-down.
 - **Future direction:** Per-workflow bounded work budgets, plus a reserved
   no-tool finalization turn so a child can summarize before hard cutoff.
-- **Invariant:** Never merely increase the timeout as a fix.
+- **Invariant:** Capacity expansions must move the related request/tool/byte/watchdog
+  envelope coherently and retain loud terminal evidence; never use a timeout-only
+  increase to hide an unbounded-loop defect.
 
 ## Issue 4: Provider failure surfacing
 

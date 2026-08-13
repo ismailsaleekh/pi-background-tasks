@@ -1101,6 +1101,23 @@ void describe('package', () => {
     assert.match(types, /child_runtime_payload_invalid/);
   });
 
+  void it('keeps expanded Fusion execution limits enforced at child and parent boundaries', async () => {
+    const child = await text('src/fusion-child-extension.ts');
+    const protocol = await text('src/core/fusion/child-protocol.ts');
+    const parent = await text('src/core/fusion/pi-child.ts');
+    const fetcher = await text('src/core/fusion/web-fetch.ts');
+
+    assert.match(protocol, /FUSION_CHILD_MAX_PROVIDER_REQUESTS = 550/);
+    assert.match(protocol, /FUSION_CHILD_MAX_TOOL_CALLS = 600/);
+    assert.match(protocol, /FUSION_CHILD_MAX_TOTAL_TOOL_RESULT_BYTES = 32 \* 1024 \* 1024/);
+    assert.match(child, /input\.toolCallCount <= FUSION_CHILD_MAX_TOOL_CALLS/);
+    assert.match(child, /totalToolResultBytes > FUSION_CHILD_MAX_TOTAL_TOOL_RESULT_BYTES/);
+    assert.match(parent, /recordCount > FUSION_CHILD_MAX_TOOL_CALLS/);
+    assert.match(parent, /totalResultBytes > FUSION_CHILD_MAX_TOTAL_TOOL_RESULT_BYTES/);
+    assert.match(fetcher, /Promise\.race\(\[extraction, timeout\]\)/);
+    assert.match(fetcher, /assertFetchDeadline\(options, deadlineMs, url, 'content extraction'\)/);
+  });
+
   void it('keeps the Fusion context/budget path free of silent truncation and fallback shapes', async () => {
     const context = await text('src/core/fusion/context.ts');
     const budget = await text('src/core/fusion/budget.ts');

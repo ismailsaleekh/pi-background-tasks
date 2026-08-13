@@ -1,6 +1,6 @@
 {
   "name": "pi-background-tasks",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "description": "Pi extension for durable background shell tasks, read-only delegated agents, local attested Pi runs, and fixed-purpose Fusion workflows through child Pi processes.",
   "type": "module",
   "license": "ISC",

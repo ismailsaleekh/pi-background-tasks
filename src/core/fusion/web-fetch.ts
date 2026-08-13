@@ -8,8 +8,8 @@ import { TextDecoder } from 'node:util';
 
 import type TurndownService from 'turndown';
 
-export const FUSION_WEB_FETCH_TIMEOUT_MS = 60_000;
-export const FUSION_WEB_FETCH_MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
+export const FUSION_WEB_FETCH_TIMEOUT_MS = 90_000;
+export const FUSION_WEB_FETCH_MAX_RESPONSE_BYTES = 4 * 1024 * 1024;
 export const FUSION_WEB_FETCH_MAX_OUTPUT_BYTES = 32 * 1024;
 export const FUSION_WEB_FETCH_MAX_REDIRECTS = 5;
 
@@ -57,6 +57,12 @@ export type FusionTransportRequest = (
   options: http.RequestOptions | https.RequestOptions,
 ) => http.ClientRequest;
 
+export type FusionContentExtractor = (
+  body: Buffer,
+  contentType: string,
+  requestedFormat: 'text' | 'markdown',
+) => Promise<{ content: string; format: 'text' | 'markdown' }>;
+
 export interface FusionWebFetchOptions {
   lookup?: FusionDnsLookup;
   request?: FusionTransportRequest;
@@ -68,6 +74,8 @@ export interface FusionWebFetchOptions {
   maxOutputBytes?: number;
   maxRedirects?: number;
   allowBlockedAddressesForTests?: boolean;
+  /** Test seam for proving extraction remains inside the full-operation deadline. */
+  extractContent?: FusionContentExtractor;
 }
 
 interface NormalizedRequestUrl {
@@ -106,6 +114,7 @@ interface EffectiveOptions {
   maxOutputBytes: number;
   maxRedirects: number;
   allowBlockedAddressesForTests: boolean;
+  extractContent: FusionContentExtractor;
 }
 
 interface ExtractionResult {
@@ -218,8 +227,21 @@ export async function fusionWebFetch(
       continue;
     }
 
-    const extracted = await extractContent(result.body, result.contentType, requestedFormat);
+    const extracted = await extractWithinDeadline(
+      result.body,
+      result.contentType,
+      requestedFormat,
+      effective,
+      deadlineMs,
+      currentUrl,
+    );
     const capped = capUtf8Bytes(extracted.content, effective.maxOutputBytes);
+    const contentSha256 = createHash('sha256').update(result.body).digest('hex');
+    assertFetchDeadline(effective, deadlineMs, currentUrl, 'content extraction');
+    const durationMs = Math.max(0, effective.now() - start);
+    if (durationMs > effective.timeoutMs) {
+      throw fetchTimeout(currentUrl, 'content extraction');
+    }
     return {
       url: requestedUrl.toString(),
       final_url: currentUrl.toString(),
@@ -229,8 +251,8 @@ export async function fusionWebFetch(
       truncated: capped.truncated,
       content: capped.content,
       response_bytes: result.body.byteLength,
-      content_sha256: createHash('sha256').update(result.body).digest('hex'),
-      duration_ms: Math.max(0, effective.now() - start),
+      content_sha256: contentSha256,
+      duration_ms: durationMs,
     };
   }
 }
@@ -247,7 +269,52 @@ function mergeOptions(options: FusionWebFetchOptions): EffectiveOptions {
     maxOutputBytes: options.maxOutputBytes ?? FUSION_WEB_FETCH_MAX_OUTPUT_BYTES,
     maxRedirects: options.maxRedirects ?? FUSION_WEB_FETCH_MAX_REDIRECTS,
     allowBlockedAddressesForTests: options.allowBlockedAddressesForTests ?? false,
+    extractContent: options.extractContent ?? extractContent,
   };
+}
+
+function fetchTimeout(url: URL, phase: string): FusionWebFetchError {
+  return new FusionWebFetchError(
+    'request_timeout',
+    `fusion_web_fetch request timeout elapsed during ${phase}`,
+    { url: url.toString() },
+  );
+}
+
+function assertFetchDeadline(
+  options: EffectiveOptions,
+  deadlineMs: number,
+  url: URL,
+  phase: string,
+): number {
+  const remainingMs = deadlineMs - options.now();
+  if (remainingMs <= 0) throw fetchTimeout(url, phase);
+  return remainingMs;
+}
+
+async function extractWithinDeadline(
+  body: Buffer,
+  contentType: string,
+  requestedFormat: 'text' | 'markdown',
+  options: EffectiveOptions,
+  deadlineMs: number,
+  url: URL,
+): Promise<ExtractionResult> {
+  const remainingMs = assertFetchDeadline(options, deadlineMs, url, 'content extraction');
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    const timeout = new Promise<never>((_resolve, reject) => {
+      timer = setTimeout(() => reject(fetchTimeout(url, 'content extraction')), remainingMs);
+    });
+    const extraction = Promise.resolve().then(() =>
+      options.extractContent(body, contentType, requestedFormat),
+    );
+    const result = await Promise.race([extraction, timeout]);
+    assertFetchDeadline(options, deadlineMs, url, 'content extraction');
+    return result;
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
 }
 
 function normalizeRequestUrl(rawUrl: string): NormalizedRequestUrl {

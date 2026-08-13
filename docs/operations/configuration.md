@@ -111,18 +111,18 @@ These are source constants, not documented operator env knobs:
 
 | Limit | Value |
 |---|---:|
-| Child absolute timeout | 30 minutes |
-| Child stale-output watchdog | 20 minutes |
+| Child absolute timeout | 50 minutes |
+| Child stale-output watchdog | 35 minutes |
 | Child stdout cap | 32 MiB |
-| Child stderr cap | 4 MiB |
-| Provider requests per child | 128 |
-| Tool calls per child | 192 |
-| Aggregate candidate tool-result bytes | 8 MiB |
+| Child stderr cap | 16 MiB |
+| Provider requests per child | 550 |
+| Tool calls per child | 600 |
+| Aggregate candidate tool-result bytes | 32 MiB |
 | Candidate output contract | 48 KiB JSON-rendered bytes |
 | Evaluator output contract | 64 KiB JSON-rendered bytes |
 | Merger output contract | 64 KiB JSON-rendered bytes |
-| `fusion_web_fetch` timeout | 60 seconds |
-| `fusion_web_fetch` response body cap | 2 MiB |
+| `fusion_web_fetch` timeout | 90 seconds |
+| `fusion_web_fetch` response body cap | 4 MiB |
 | `fusion_web_fetch` returned content cap | 32 KiB |
 | `fusion_web_fetch` redirect cap | 5 hops |
 

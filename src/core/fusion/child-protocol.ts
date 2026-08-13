@@ -23,8 +23,8 @@ export const FUSION_TOOL_CALL_SEAL_SUFFIX = '.seal.json';
 export const FUSION_RUNTIME_GUARD_SCHEMA_VERSION =
   'pi-background-tasks.fusion-runtime-guard.v2' as const;
 export const FUSION_RUNTIME_GUARD_PREFIX = '\u001ePI_FUSION_RUNTIME_GUARD ';
-export const FUSION_CHILD_MAX_PROVIDER_REQUESTS = 128;
-export const FUSION_CHILD_MAX_TOOL_CALLS = 192;
+export const FUSION_CHILD_MAX_PROVIDER_REQUESTS = 550;
+export const FUSION_CHILD_MAX_TOOL_CALLS = 600;
 
 /**
  * Aggregate ceiling on tool-result bytes a single candidate child may accumulate.
@@ -32,7 +32,7 @@ export const FUSION_CHILD_MAX_TOOL_CALLS = 192;
  * The byte ceiling complements the tool/request count limits and pre-spawn stage
  * budgets. It remains an independent bound on total tool material across the child run.
  */
-export const FUSION_CHILD_MAX_TOTAL_TOOL_RESULT_BYTES = 8 * 1024 * 1024;
+export const FUSION_CHILD_MAX_TOTAL_TOOL_RESULT_BYTES = 32 * 1024 * 1024;
 
 export type FusionRuntimeGuardCode =
   | 'provider_request_limit'

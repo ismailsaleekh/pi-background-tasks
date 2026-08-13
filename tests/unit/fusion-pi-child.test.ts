@@ -9,6 +9,8 @@ import { join } from 'node:path';
 import type { SpawnOptions } from 'node:child_process';
 import {
   FUSION_CHILD_IDLE_TIMEOUT_MS,
+  FUSION_CHILD_STDERR_LIMIT_BYTES,
+  FUSION_CHILD_STDOUT_LIMIT_BYTES,
   FUSION_CHILD_TIMEOUT_MS,
   FusionChildRunError,
   FusionPiCompactResultParser,
@@ -291,9 +293,15 @@ async function delay(ms: number): Promise<void> {
 }
 
 void describe('fusion Pi child runner', () => {
-  void it('pins the absolute and stale-output watchdog timeouts', () => {
-    assert.equal(FUSION_CHILD_TIMEOUT_MS, 30 * 60 * 1000);
-    assert.equal(FUSION_CHILD_IDLE_TIMEOUT_MS, 20 * 60 * 1000);
+  void it('pins the expanded child execution envelope', () => {
+    assert.equal(FUSION_CHILD_TIMEOUT_MS, 50 * 60 * 1000);
+    assert.equal(FUSION_CHILD_IDLE_TIMEOUT_MS, 35 * 60 * 1000);
+    assert.equal(FUSION_CHILD_MAX_PROVIDER_REQUESTS, 550);
+    assert.equal(FUSION_CHILD_MAX_TOOL_CALLS, 600);
+    assert.equal(FUSION_CHILD_MAX_TOTAL_TOOL_RESULT_BYTES, 32 * 1024 * 1024);
+    assert.equal(FUSION_CHILD_STDOUT_LIMIT_BYTES, 32 * 1024 * 1024);
+    assert.equal(FUSION_CHILD_STDERR_LIMIT_BYTES, 16 * 1024 * 1024);
+    assert.ok(FUSION_CHILD_IDLE_TIMEOUT_MS < FUSION_CHILD_TIMEOUT_MS);
   });
 
   void it('BUG-185 never rejects a provider request by subtracting possible output from context', () => {
@@ -355,7 +363,7 @@ void describe('fusion Pi child runner', () => {
     assert.ok(blocked);
     assert.equal(blocked.code, 'provider_request_limit');
     assert.ok(blocked.payload_bytes > 600_000);
-    assert.match(blocked.message, /provider request 129/);
+    assert.match(blocked.message, /provider request 551/);
     assert.doesNotMatch(blocked.message, /x x x/);
 
     const frame = Buffer.from(`${FUSION_RUNTIME_GUARD_PREFIX}${JSON.stringify(blocked)}\n`, 'utf8');
@@ -435,11 +443,11 @@ void describe('fusion Pi child runner', () => {
       toolCallCount: FUSION_CHILD_MAX_TOOL_CALLS + 1,
     });
     assert.equal(toolLimited?.code, 'tool_call_limit');
-    assert.equal(toolLimited?.tool_call_count, 193);
-    assert.match(toolLimited?.message ?? '', /exceeding the 192-call execution limit/);
+    assert.equal(toolLimited?.tool_call_count, 601);
+    assert.match(toolLimited?.message ?? '', /exceeding the 600-call execution limit/);
   });
 
-  void it('aborts and seals failed when the actual child hook sees tool call 193', async () => {
+  void it('aborts and seals failed when the actual child hook sees tool call 601', async () => {
     const root = await mkdtemp(join(tmpdir(), 'pi-fusion-tool-limit-'));
     const oldPath = process.env[FUSION_TOOL_CALL_LOG_PATH_ENV];
     const oldExitCode = process.exitCode;
@@ -504,20 +512,20 @@ void describe('fusion Pi child runner', () => {
         assert.equal(result, undefined);
       }
       const refusal: unknown = await Promise.resolve(
-        toolCall({ toolCallId: 'call-193', toolName: 'read', input: {} }, context),
+        toolCall({ toolCallId: 'call-601', toolName: 'read', input: {} }, context),
       );
       assert.deepEqual(refusal, {
         block: true,
-        reason: 'fusion child reached tool call 193, exceeding the 192-call execution limit',
+        reason: 'fusion child reached tool call 601, exceeding the 600-call execution limit',
       });
       assert.equal(aborts, 1);
       assert.equal(process.exitCode, 1);
       const guard = parseFusionRuntimeGuard(Buffer.concat(stderrChunks));
       assert.equal(guard?.code, 'tool_call_limit');
-      assert.equal(guard?.tool_call_count, 193);
+      assert.equal(guard?.tool_call_count, 601);
       assert.throws(
         () => agentSettled({}, { isIdle: () => true }),
-        /finalized as failed.*192 unmatched tool start/,
+        /finalized as failed.*600 unmatched tool start/,
       );
       const seal = JSON.parse(
         await readFile(`${logPath}${FUSION_TOOL_CALL_SEAL_SUFFIX}`, 'utf8'),
@@ -526,6 +534,74 @@ void describe('fusion Pi child runner', () => {
       assert.equal(seal['record_count'], 0);
     } finally {
       process.stderr.write = originalWrite;
+      process.exitCode = oldExitCode;
+      if (oldPath === undefined) delete process.env[FUSION_TOOL_CALL_LOG_PATH_ENV];
+      else process.env[FUSION_TOOL_CALL_LOG_PATH_ENV] = oldPath;
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  void it('fails the child audit when aggregate tool results cross 32 MiB', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'pi-fusion-tool-bytes-limit-'));
+    const oldPath = process.env[FUSION_TOOL_CALL_LOG_PATH_ENV];
+    const oldExitCode = process.exitCode;
+    try {
+      const logPath = join(root, 'tool-calls.jsonl');
+      process.env[FUSION_TOOL_CALL_LOG_PATH_ENV] = logPath;
+      type FusionChildPi = Parameters<typeof fusionChildExtension>[0];
+      type RecordedHandler = (
+        event: Record<string, unknown>,
+        context?: Record<string, unknown>,
+      ) => unknown;
+      const handlers = new Map<string, RecordedHandler[]>();
+      const recorder = {
+        on(event: string, handler: RecordedHandler) {
+          const existing = handlers.get(event) ?? [];
+          existing.push(handler);
+          handlers.set(event, existing);
+        },
+      };
+      fusionChildExtension(recorder as typeof recorder & FusionChildPi);
+      const toolCall = handlers.get('tool_call')?.[0];
+      const toolResult = handlers.get('tool_result')?.[0];
+      const agentSettled = handlers.get('agent_settled')?.[0];
+      assert.ok(toolCall);
+      assert.ok(toolResult);
+      assert.ok(agentSettled);
+      const context = {
+        abort() {},
+        model: { provider: 'openai-codex', id: 'gpt-5.6-terra' },
+      };
+      assert.equal(
+        await Promise.resolve(
+          toolCall({ toolCallId: 'aggregate-over', toolName: 'read', input: {} }, context),
+        ),
+        undefined,
+      );
+      assert.throws(
+        () =>
+          toolResult({
+            toolCallId: 'aggregate-over',
+            toolName: 'read',
+            input: {},
+            content: [{ type: 'text', text: 'x'.repeat(FUSION_CHILD_MAX_TOTAL_TOOL_RESULT_BYTES) }],
+            details: {},
+            isError: false,
+          }),
+        /exceeded the aggregate tool-output budget/,
+      );
+      assert.equal(process.exitCode, 1);
+      assert.throws(
+        () => agentSettled({}, { isIdle: () => true }),
+        /finalized as failed/,
+      );
+      const seal = JSON.parse(
+        await readFile(`${logPath}${FUSION_TOOL_CALL_SEAL_SUFFIX}`, 'utf8'),
+      ) as Record<string, unknown>;
+      assert.equal(seal['status'], 'failed');
+      assert.equal(seal['record_count'], 1);
+      assert.ok(Number(seal['total_result_bytes']) > FUSION_CHILD_MAX_TOTAL_TOOL_RESULT_BYTES);
+    } finally {
       process.exitCode = oldExitCode;
       if (oldPath === undefined) delete process.env[FUSION_TOOL_CALL_LOG_PATH_ENV];
       else process.env[FUSION_TOOL_CALL_LOG_PATH_ENV] = oldPath;
@@ -1826,6 +1902,41 @@ void describe('fusion Pi child runner', () => {
     }
   });
 
+  void it('independently enforces the tool-call count from the sealed log', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'pi-fusion-tool-log-count-limit-'));
+    try {
+      const child = new FakeChild(785);
+      const harness = makeSpawn(child);
+      const logPath = join(root, 'candidate-1.attempt-1.tool-calls.jsonl');
+      const run = runPiChild({
+        stage: 'candidate',
+        slot: 1,
+        attempt: 1,
+        cwd: root,
+        model: resolvedModel(),
+        capability: 'inspect',
+        toolCallLogPath: logPath,
+        systemPrompt: 'system prompt',
+        userPrompt: 'prompt',
+        spawn: harness.spawn,
+        platform: 'linux',
+      });
+      await tick();
+      const lines = Array.from(
+        { length: FUSION_CHILD_MAX_TOOL_CALLS + 1 },
+        (_unused, ordinal) => toolLogLine(ordinal, { result_bytes: 1 }),
+      ).join('');
+      await writeFile(logPath, lines, 'utf8');
+      await writeToolCallSeal(logPath);
+      child.stdout.emitData(Buffer.from('final héllo\n', 'utf8'));
+      child.stderr.emitData(compactMetadata());
+      child.close(0, null);
+      await assert.rejects(run, /exceeds tool-call limit 600/);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   void it('independently enforces the aggregate tool-result limit from the sealed log', async () => {
     const root = await mkdtemp(join(tmpdir(), 'pi-fusion-tool-log-limit-'));
     try {
@@ -3020,7 +3131,7 @@ void describe('fusion Pi child runner', () => {
     await assert.rejects(run, (error: unknown) => {
       assert.ok(error instanceof FusionChildRunError);
       assert.equal(error.code, 'child_runtime_limit_exceeded');
-      assert.match(error.message, /provider request 129/);
+      assert.match(error.message, /provider request 551/);
       assert.equal(error.usage.totalTokens, 21);
       return true;
     });

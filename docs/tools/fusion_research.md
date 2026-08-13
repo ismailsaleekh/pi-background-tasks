@@ -147,8 +147,8 @@ The private `fusion_web_fetch` schema is closed: `{url, extract?: 'text'|'markdo
 - vets every DNS answer against the transport classifier, pins the request to a vetted address, and verifies the response socket address;
 - follows at most five redirects, revalidating each hop;
 - accepts only HTML/XHTML, plain text, and Markdown content;
-- caps response bytes at 2 MiB and extracted output at 32 KiB;
-- uses a 60 second deadline;
+- caps response bytes at 4 MiB and extracted output at 32 KiB;
+- uses one 90 second deadline across DNS, redirects, response transfer, and extraction;
 - strips script/style/noscript blocks and extracts text or Markdown with table preservation.
 
 Failures use typed error codes such as `invalid_url`, `unsupported_scheme`, `blocked_address`, `dns_failure`, `redirect_limit`, `redirect_blocked`, `response_too_large`, `unsupported_content_type`, `request_timeout`, `network_error`, `extraction_failed`, and `http_error`.

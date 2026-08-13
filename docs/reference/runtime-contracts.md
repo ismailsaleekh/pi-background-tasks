@@ -16,27 +16,27 @@ This generated registry lists production environment-variable references, runtim
 
 | Name | Access | Provenance |
 | --- | --- | --- |
-| `ANTHROPIC_API_KEY` | remove | `src/core/attested-pi-run.ts:135`<br>`src/core/fusion/pi-child.ts:98` |
-| `ANTHROPIC_AUTH_TOKEN` | remove | `src/core/fusion/pi-child.ts:98` |
-| `ANTHROPIC_BASE_URL` | remove | `src/core/attested-pi-run.ts:135`<br>`src/core/fusion/pi-child.ts:98` |
-| `AZURE_OPENAI_AD_TOKEN` | remove | `src/core/fusion/pi-child.ts:98` |
-| `AZURE_OPENAI_API_KEY` | remove | `src/core/fusion/pi-child.ts:98` |
-| `AZURE_OPENAI_API_VERSION` | remove | `src/core/fusion/pi-child.ts:98` |
-| `AZURE_OPENAI_BASE_URL` | remove | `src/core/fusion/pi-child.ts:98` |
-| `AZURE_OPENAI_DEPLOYMENT_NAME_MAP` | remove | `src/core/fusion/pi-child.ts:98` |
-| `AZURE_OPENAI_ENDPOINT` | remove | `src/core/fusion/pi-child.ts:98` |
-| `AZURE_OPENAI_RESOURCE_NAME` | remove | `src/core/fusion/pi-child.ts:98` |
+| `ANTHROPIC_API_KEY` | remove | `src/core/attested-pi-run.ts:135`<br>`src/core/fusion/pi-child.ts:100` |
+| `ANTHROPIC_AUTH_TOKEN` | remove | `src/core/fusion/pi-child.ts:100` |
+| `ANTHROPIC_BASE_URL` | remove | `src/core/attested-pi-run.ts:135`<br>`src/core/fusion/pi-child.ts:100` |
+| `AZURE_OPENAI_AD_TOKEN` | remove | `src/core/fusion/pi-child.ts:100` |
+| `AZURE_OPENAI_API_KEY` | remove | `src/core/fusion/pi-child.ts:100` |
+| `AZURE_OPENAI_API_VERSION` | remove | `src/core/fusion/pi-child.ts:100` |
+| `AZURE_OPENAI_BASE_URL` | remove | `src/core/fusion/pi-child.ts:100` |
+| `AZURE_OPENAI_DEPLOYMENT_NAME_MAP` | remove | `src/core/fusion/pi-child.ts:100` |
+| `AZURE_OPENAI_ENDPOINT` | remove | `src/core/fusion/pi-child.ts:100` |
+| `AZURE_OPENAI_RESOURCE_NAME` | remove | `src/core/fusion/pi-child.ts:100` |
 | `ComSpec` | read | `src/core/common.ts:726`<br>`src/core/common.ts:737` |
-| `OPENAI_API_KEY` | remove | `src/core/attested-pi-run.ts:135`<br>`src/core/fusion/pi-child.ts:98` |
-| `OPENAI_BASE_URL` | remove | `src/core/attested-pi-run.ts:135`<br>`src/core/fusion/pi-child.ts:98` |
-| `OPENROUTER_API_KEY` | remove | `src/core/attested-pi-run.ts:135`<br>`src/core/fusion/pi-child.ts:98` |
-| `OPENROUTER_BASE_URL` | remove | `src/core/attested-pi-run.ts:135`<br>`src/core/fusion/pi-child.ts:98` |
+| `OPENAI_API_KEY` | remove | `src/core/attested-pi-run.ts:135`<br>`src/core/fusion/pi-child.ts:100` |
+| `OPENAI_BASE_URL` | remove | `src/core/attested-pi-run.ts:135`<br>`src/core/fusion/pi-child.ts:100` |
+| `OPENROUTER_API_KEY` | remove | `src/core/attested-pi-run.ts:135`<br>`src/core/fusion/pi-child.ts:100` |
+| `OPENROUTER_BASE_URL` | remove | `src/core/attested-pi-run.ts:135`<br>`src/core/fusion/pi-child.ts:100` |
 | `path` | read | `src/core/common.ts:681` |
 | `Path` | read | `src/core/common.ts:681` |
 | `PATH` | read | `src/core/common.ts:681` |
-| `PI_API_BASE_URL` | remove | `src/core/attested-pi-run.ts:135`<br>`src/core/fusion/pi-child.ts:98` |
-| `PI_API_KEY` | remove | `src/core/attested-pi-run.ts:135`<br>`src/core/fusion/pi-child.ts:98` |
-| `PI_AUTH_FILE` | remove | `src/core/attested-pi-run.ts:135`<br>`src/core/fusion/pi-child.ts:98` |
+| `PI_API_BASE_URL` | remove | `src/core/attested-pi-run.ts:135`<br>`src/core/fusion/pi-child.ts:100` |
+| `PI_API_KEY` | remove | `src/core/attested-pi-run.ts:135`<br>`src/core/fusion/pi-child.ts:100` |
+| `PI_AUTH_FILE` | remove | `src/core/attested-pi-run.ts:135`<br>`src/core/fusion/pi-child.ts:100` |
 | `PI_BG_DELEGATE_ARTIFACT_DIR` | read, write | `src/core/delegate/launch.ts:353`<br>`src/delegate-child-extension.ts:384` |
 | `PI_BG_DELEGATE_LAUNCH_NONCE` | read, write | `src/core/delegate/launch.ts:357`<br>`src/delegate-child-extension.ts:388` |
 | `PI_BG_DELEGATE_SEED_PATH` | read, write | `src/core/delegate/launch.ts:354`<br>`src/delegate-child-extension.ts:385` |
@@ -48,19 +48,19 @@ This generated registry lists production environment-variable references, runtim
 | `PI_BG_REGISTRY_URL` | read | `src/extension.ts:464` |
 | `PI_BG_SHELL` | read | `src/core/common.ts:722` |
 | `PI_BG_SHELL_PATH` | read | `src/core/common.ts:723` |
-| `PI_CACHE_RETENTION` | read, write | `src/core/anthropic-attribution.ts:587`<br>`src/core/fusion/claude-cache.ts:57`<br>`src/core/fusion/pi-child.ts:271`<br>`src/core/fusion/pi-child.ts:272` |
-| `PI_FUSION_CANDIDATE_OUTPUT_RECOVERY_PATH` | read, remove, write | `src/core/fusion/pi-child.ts:1872`<br>`src/core/fusion/pi-child.ts:98`<br>`src/fusion-child-extension.ts:599` |
-| `PI_FUSION_RESEARCH_ENABLED` | read, remove, write | `src/core/fusion/pi-child.ts:1895`<br>`src/core/fusion/pi-child.ts:98`<br>`src/fusion-child-extension.ts:608` |
-| `PI_FUSION_SOURCE_POLICY_PATH` | read, remove, write | `src/core/fusion/pi-child.ts:1896`<br>`src/core/fusion/pi-child.ts:98`<br>`src/fusion-child-extension.ts:555` |
-| `PI_FUSION_SOURCE_POLICY_SHA256` | read, remove, write | `src/core/fusion/pi-child.ts:1897`<br>`src/core/fusion/pi-child.ts:98`<br>`src/fusion-child-extension.ts:556` |
-| `PI_FUSION_TOOL_CALL_LOG_PATH` | read, remove, write | `src/core/fusion/pi-child.ts:1884`<br>`src/core/fusion/pi-child.ts:98`<br>`src/fusion-child-extension.ts:598` |
-| `PI_MODEL` | remove | `src/core/delegate/launch.ts:330`<br>`src/core/fusion/pi-child.ts:98` |
+| `PI_CACHE_RETENTION` | read, write | `src/core/anthropic-attribution.ts:587`<br>`src/core/fusion/claude-cache.ts:57`<br>`src/core/fusion/pi-child.ts:273`<br>`src/core/fusion/pi-child.ts:274` |
+| `PI_FUSION_CANDIDATE_OUTPUT_RECOVERY_PATH` | read, remove, write | `src/core/fusion/pi-child.ts:100`<br>`src/core/fusion/pi-child.ts:1879`<br>`src/fusion-child-extension.ts:599` |
+| `PI_FUSION_RESEARCH_ENABLED` | read, remove, write | `src/core/fusion/pi-child.ts:100`<br>`src/core/fusion/pi-child.ts:1902`<br>`src/fusion-child-extension.ts:608` |
+| `PI_FUSION_SOURCE_POLICY_PATH` | read, remove, write | `src/core/fusion/pi-child.ts:100`<br>`src/core/fusion/pi-child.ts:1903`<br>`src/fusion-child-extension.ts:555` |
+| `PI_FUSION_SOURCE_POLICY_SHA256` | read, remove, write | `src/core/fusion/pi-child.ts:100`<br>`src/core/fusion/pi-child.ts:1904`<br>`src/fusion-child-extension.ts:556` |
+| `PI_FUSION_TOOL_CALL_LOG_PATH` | read, remove, write | `src/core/fusion/pi-child.ts:100`<br>`src/core/fusion/pi-child.ts:1891`<br>`src/fusion-child-extension.ts:598` |
+| `PI_MODEL` | remove | `src/core/delegate/launch.ts:330`<br>`src/core/fusion/pi-child.ts:100` |
 | `PI_OFFLINE` | read | `src/extension.ts:456` |
-| `PI_PROVIDER` | remove | `src/core/delegate/launch.ts:330`<br>`src/core/fusion/pi-child.ts:98` |
-| `PI_REASONING_LEVEL` | remove | `src/core/delegate/launch.ts:330`<br>`src/core/fusion/pi-child.ts:98` |
-| `PI_SESSION_FILE` | remove | `src/core/delegate/launch.ts:330`<br>`src/core/fusion/pi-child.ts:98` |
-| `PI_SESSION_ID` | remove | `src/core/delegate/launch.ts:330`<br>`src/core/fusion/pi-child.ts:98` |
-| `PI_SKIP_VERSION_CHECK` | write | `src/core/delegate/launch.ts:352`<br>`src/core/fusion/pi-child.ts:270` |
+| `PI_PROVIDER` | remove | `src/core/delegate/launch.ts:330`<br>`src/core/fusion/pi-child.ts:100` |
+| `PI_REASONING_LEVEL` | remove | `src/core/delegate/launch.ts:330`<br>`src/core/fusion/pi-child.ts:100` |
+| `PI_SESSION_FILE` | remove | `src/core/delegate/launch.ts:330`<br>`src/core/fusion/pi-child.ts:100` |
+| `PI_SESSION_ID` | remove | `src/core/delegate/launch.ts:330`<br>`src/core/fusion/pi-child.ts:100` |
+| `PI_SKIP_VERSION_CHECK` | write | `src/core/delegate/launch.ts:352`<br>`src/core/fusion/pi-child.ts:272` |
 | `PIPELINE_ANTHROPIC_ATTRIBUTION_AUDIT_PATH` | read | `src/core/anthropic-attribution.ts:1013` |
 | `SHELL` | read | `src/core/common.ts:718` |
 | `SystemRoot` | read | `src/core/windows-taskkill.ts:96` |

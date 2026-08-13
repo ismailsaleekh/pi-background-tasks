@@ -96,7 +96,7 @@
       "state": "stale-authored-prose"
     },
     {
-      "authored_body_sha256": "sha256:b6238bacecf46139dab1d6a8622783db76d913f0ce727205151b65b7cb210481",
+      "authored_body_sha256": "sha256:cd882ae075d47e97e2fb45709d7ac044811eedb68e2377b1742ac44147297aa4",
       "covers_sources": [
         "extensions/fusion-child.ts",
         "src/core/fusion/artifacts.ts",
@@ -832,7 +832,7 @@
     "image": "https://raw.githubusercontent.com/ismailsaleekh/pi-background-tasks/main/logo.png",
     "name": "pi-background-tasks",
     "type": "module",
-    "version": "2.4.0"
+    "version": "2.4.1"
   },
   "public_surface_ids": [
     "command:bg",

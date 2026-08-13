@@ -6,6 +6,9 @@ import { describe, it } from 'node:test';
 
 import {
   FUSION_WEB_FETCH_MAX_REDIRECTS,
+  FUSION_WEB_FETCH_MAX_RESPONSE_BYTES,
+  FUSION_WEB_FETCH_MAX_OUTPUT_BYTES,
+  FUSION_WEB_FETCH_TIMEOUT_MS,
   FusionWebFetchError,
   type FusionWebFetchErrorCode,
   type FusionWebFetchOptions,
@@ -72,6 +75,13 @@ async function expectError(
 }
 
 void describe('fusion_web_fetch core', () => {
+  void it('pins the expanded research fetch envelope', () => {
+    assert.equal(FUSION_WEB_FETCH_TIMEOUT_MS, 90_000);
+    assert.equal(FUSION_WEB_FETCH_MAX_RESPONSE_BYTES, 4 * 1024 * 1024);
+    assert.equal(FUSION_WEB_FETCH_MAX_OUTPUT_BYTES, 32 * 1024);
+    assert.equal(FUSION_WEB_FETCH_MAX_REDIRECTS, 5);
+  });
+
   void it('rejects unsupported schemes before network access', async () => {
     let lookupCalls = 0;
     await expectError(
@@ -381,6 +391,34 @@ void describe('fusion_web_fetch core', () => {
         assert.equal(result.truncated, true);
         assert.equal(result.content, '😀');
         assert.equal(Buffer.byteLength(result.content), 4);
+      },
+    );
+  });
+
+  void it('includes content extraction inside the fetch deadline', async () => {
+    await withServer(
+      {
+        '/slow-extraction': (_request, response) => {
+          response.writeHead(200, { 'content-type': 'text/html' });
+          response.end('<h1>ready</h1>');
+        },
+      },
+      async (baseUrl) => {
+        const start = Date.now();
+        await expectError(
+          fusionWebFetch(
+            { url: `${baseUrl}/slow-extraction` },
+            localOptions({
+              timeoutMs: 20,
+              extractContent: async () => {
+                await new Promise((resolve) => setTimeout(resolve, 100));
+                return { content: 'late extraction', format: 'markdown' };
+              },
+            }),
+          ),
+          'request_timeout',
+        );
+        assert.ok(Date.now() - start < 90, 'extraction must be raced against remaining deadline');
       },
     );
   });
