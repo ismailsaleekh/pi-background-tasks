@@ -832,7 +832,7 @@
     "image": "https://raw.githubusercontent.com/ismailsaleekh/pi-background-tasks/main/logo.png",
     "name": "pi-background-tasks",
     "type": "module",
-    "version": "2.4.1"
+    "version": "2.4.2"
   },
   "public_surface_ids": [
     "command:bg",

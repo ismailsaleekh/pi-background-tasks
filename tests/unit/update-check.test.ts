@@ -87,7 +87,7 @@ void describe('update-check', () => {
     assert.deepEqual(errors, ['network down']);
   });
 
-  void it('aborts and returns undefined when the request exceeds the timeout without reporting it as an error', async () => {
+  void it('silently skips only the AbortError owned by the internal timeout', async () => {
     const errors: string[] = [];
     // Reject with the same AbortError DOMException the runtime fetch throws on
     // abort, so the test exercises the exact production timeout path.
@@ -108,9 +108,23 @@ void describe('update-check', () => {
     });
     assert.equal(latest, undefined);
     assert.ok(Date.now() - start < 2000, 'timeout must fire well before the default window');
-    // The timeout abort is expected, designed behavior: it must be silent, not
-    // surfaced through onError as an error.
+    // The timer owns this abort, so expected registry slowness stays silent.
     assert.deepEqual(errors, []);
+  });
+
+  void it('reports an AbortError not initiated by the internal timeout', async () => {
+    const errors: string[] = [];
+    const latest = await fetchLatestVersion({
+      packageName: 'pi-background-tasks',
+      timeoutMs: 1000,
+      fetchImpl: () =>
+        Promise.reject(new DOMException('transport aborted independently', 'AbortError')),
+      onError: (error) => {
+        errors.push(error.message);
+      },
+    });
+    assert.equal(latest, undefined);
+    assert.deepEqual(errors, ['transport aborted independently']);
   });
 
   void it('reads name/version from a local package.json and degrades on failure', async () => {
