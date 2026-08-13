@@ -66,6 +66,23 @@ export function parsePackageInfo(payload: unknown): PackageInfo {
 
 const realFetch: FetchLike = (url, init) => fetch(url, init);
 
+/**
+ * True when the error is the AbortController abort triggered by our own internal
+ * timeout timer (`DEFAULT_UPDATE_TIMEOUT_MS`). A slow or unreachable registry is
+ * an expected, designed outcome of this function, not a failure worth surfacing.
+ *
+ * Checks `name === 'AbortError'` by duck typing rather than `instanceof`, because
+ * the runtime fetch rejects with a `DOMException` whose prototype relationship to
+ * `Error` differs across Node versions.
+ */
+function isExpectedTimeoutAbort(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    (error as { name?: unknown }).name === 'AbortError'
+  );
+}
+
 /** Time-boxed, never-throwing lookup of the latest published version of a package. */
 export async function fetchLatestVersion(
   options: FetchLatestVersionOptions,
@@ -84,7 +101,11 @@ export async function fetchLatestVersion(
     const payload = await response.json();
     return parseLatestVersionPayload(payload);
   } catch (error) {
-    if (options.onError) options.onError(error instanceof Error ? error : new Error(String(error)));
+    // A timeout abort is designed behavior (see DEFAULT_UPDATE_TIMEOUT_MS): treat it
+    // as a silent skip rather than an error so callers don't report expected slowness.
+    if (options.onError && !isExpectedTimeoutAbort(error)) {
+      options.onError(error instanceof Error ? error : new Error(String(error)));
+    }
     return undefined;
   } finally {
     clearTimeout(timer);

@@ -87,12 +87,14 @@ void describe('update-check', () => {
     assert.deepEqual(errors, ['network down']);
   });
 
-  void it('aborts and returns undefined when the request exceeds the timeout', async () => {
+  void it('aborts and returns undefined when the request exceeds the timeout without reporting it as an error', async () => {
     const errors: string[] = [];
+    // Reject with the same AbortError DOMException the runtime fetch throws on
+    // abort, so the test exercises the exact production timeout path.
     const fetchImpl: FetchLike = (_url, init) =>
       new Promise<FetchResponseLike>((_resolve, reject) => {
         init.signal.addEventListener('abort', () => {
-          reject(new Error('request aborted by signal'));
+          reject(new DOMException('This operation was aborted', 'AbortError'));
         });
       });
     const start = Date.now();
@@ -106,10 +108,9 @@ void describe('update-check', () => {
     });
     assert.equal(latest, undefined);
     assert.ok(Date.now() - start < 2000, 'timeout must fire well before the default window');
-    assert.ok(
-      errors.some((message) => /abort/i.test(message)),
-      errors.join(','),
-    );
+    // The timeout abort is expected, designed behavior: it must be silent, not
+    // surfaced through onError as an error.
+    assert.deepEqual(errors, []);
   });
 
   void it('reads name/version from a local package.json and degrades on failure', async () => {
