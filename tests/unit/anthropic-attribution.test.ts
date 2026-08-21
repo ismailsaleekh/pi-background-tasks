@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import spawnAnthropicAttribution, {
   ANTHROPIC_ATTRIBUTION_CLAIM_CHANNEL,
+  buildAnthropicRequestParams,
   rewriteAnthropicRequestPayload,
   type PiExtensionHost,
   type PiContextLike,
@@ -174,6 +175,71 @@ void describe('global Anthropic attribution extension', () => {
       () => buildAttestedPiArgv({ ...base, provider: 'anthropic' }),
       /require the package attribution extension/,
     );
+  });
+
+  void it('normalizes inherited cross-provider tool call ids to the Anthropic id pattern', () => {
+    // OpenAI Responses providers (openai-codex, github-copilot) emit `call_xxx|fc_yyy`.
+    // Anthropic rejects the `|`, so replaying a cross-provider history 400s forever.
+    const inheritedId = `call_MSQFOxA4zvg6xxQpPJhHG7lJ|fc_${'0'.repeat(96)}`;
+    const params = buildAnthropicRequestParams(
+      { provider: 'anthropic', id: 'claude-sonnet-4-5', maxTokens: 64_000, reasoning: true },
+      {
+        messages: [
+          { role: 'user', content: 'run it' },
+          {
+            role: 'assistant',
+            content: [{ type: 'toolCall', id: inheritedId, name: 'bash', arguments: { cmd: 'ls' } }],
+          },
+          { role: 'toolResult', toolCallId: inheritedId, content: [{ type: 'text', text: 'ok' }] },
+        ],
+      },
+    );
+
+    const anthropicToolCallId = /^[a-zA-Z0-9_-]+$/;
+    const messages = params['messages'];
+    assert.ok(Array.isArray(messages));
+
+    const toolUseIds: string[] = [];
+    const toolResultIds: string[] = [];
+    for (const message of messages) {
+      assert.ok(isJsonObject(message));
+      const content = message['content'];
+      if (!Array.isArray(content)) continue;
+      for (const block of content) {
+        assert.ok(isJsonObject(block));
+        if (block['type'] === 'tool_use') toolUseIds.push(String(block['id']));
+        if (block['type'] === 'tool_result') toolResultIds.push(String(block['tool_use_id']));
+      }
+    }
+
+    assert.deepEqual(toolUseIds.length, 1);
+    assert.deepEqual(toolResultIds.length, 1);
+    for (const id of [...toolUseIds, ...toolResultIds]) {
+      assert.match(id, anthropicToolCallId);
+      assert.ok(id.length <= 64, `id must respect the 64 character limit, got ${id.length}`);
+    }
+    // A result is only usable if it still points at its originating call.
+    assert.equal(toolResultIds[0], toolUseIds[0]);
+  });
+
+  void it('keeps tool call ids that already satisfy the Anthropic pattern unchanged', () => {
+    const nativeId = 'toolu_01A09q90qw90lq917835lq9';
+    const params = buildAnthropicRequestParams(
+      { provider: 'anthropic', id: 'claude-sonnet-4-5', maxTokens: 64_000, reasoning: true },
+      {
+        messages: [
+          { role: 'user', content: 'run it' },
+          {
+            role: 'assistant',
+            content: [{ type: 'toolCall', id: nativeId, name: 'bash', arguments: {} }],
+          },
+          { role: 'toolResult', toolCallId: nativeId, content: [{ type: 'text', text: 'ok' }] },
+        ],
+      },
+    );
+
+    const serialized = JSON.stringify(params);
+    assert.ok(serialized.includes(nativeId), 'native Anthropic ids must survive verbatim');
   });
 
   void it('allows exactly one independently loaded copy to own global registration', () => {

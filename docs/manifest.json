@@ -902,7 +902,7 @@
         "id": "command:claude-cache",
         "kind": "command",
         "name": "claude-cache",
-        "source": "src/core/anthropic-attribution.ts:1928"
+        "source": "src/core/anthropic-attribution.ts:1942"
       },
       {
         "description": "Start fixed-purpose Fusion reason in the background and return immediately.",

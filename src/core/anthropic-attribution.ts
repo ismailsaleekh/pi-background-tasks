@@ -1173,6 +1173,20 @@ function markLastConversationCacheSurface(
   return output;
 }
 
+// Anthropic requires `tool_use.id` and `tool_result.tool_use_id` to match
+// `^[a-zA-Z0-9_-]+$` (max 64 chars). Histories inherited from other providers do not
+// always satisfy that: the OpenAI Responses API (openai-codex, github-copilot) emits
+// pipe-separated `call_xxx|fc_yyy` identifiers. Replaying such a history to Anthropic
+// fails the whole request with `400 invalid_request_error`, and because the offending
+// id stays in the conversation, every later turn keeps failing.
+//
+// Normalize the same way pi's built-in Anthropic transport does, so a cross-provider
+// history stays replayable. Applied to tool calls and tool results alike; the mapping
+// is deterministic, so a result still pairs with its originating call.
+function normalizeAnthropicToolCallId(id: string): string {
+  return id.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 64);
+}
+
 function convertMessages(
   messages: readonly PiMessage[],
   cacheControl?: AnthropicCacheControl,
@@ -1228,7 +1242,7 @@ function convertMessages(
         ) {
           content.push({
             type: 'tool_use',
-            id: block['id'],
+            id: normalizeAnthropicToolCallId(block['id']),
             name: block['name'],
             input: block['arguments'] ?? {},
           });
@@ -1239,7 +1253,7 @@ function convertMessages(
       const toolResults: JsonObject[] = [
         {
           type: 'tool_result',
-          tool_use_id: message.toolCallId,
+          tool_use_id: normalizeAnthropicToolCallId(message.toolCallId),
           content: convertContentBlocks(message.content),
           is_error: message.isError === true,
         },
@@ -1249,7 +1263,7 @@ function convertMessages(
         const next = messages[lookahead] as Extract<PiMessage, { role: 'toolResult' }>;
         toolResults.push({
           type: 'tool_result',
-          tool_use_id: next.toolCallId,
+          tool_use_id: normalizeAnthropicToolCallId(next.toolCallId),
           content: convertContentBlocks(next.content),
           is_error: next.isError === true,
         });
