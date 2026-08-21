@@ -242,6 +242,66 @@ void describe('global Anthropic attribution extension', () => {
     assert.ok(serialized.includes(nativeId), 'native Anthropic ids must survive verbatim');
   });
 
+  void it('drops thinking signatures inherited from another provider', () => {
+    // The OpenAI Responses API stores its own reasoning payload in this field.
+    // Anthropic verifies signatures it minted and 400s on anything else.
+    const foreignSignature = '{"id":"rs_09b95e17b7805346016a879b86a10087d0a9ffe5de6fbbb86a"}';
+    const params = buildAnthropicRequestParams(
+      { provider: 'anthropic', api: 'anthropic-messages', id: 'claude-sonnet-4-5', maxTokens: 64_000, reasoning: true },
+      {
+        messages: [
+          { role: 'user', content: 'think about it' },
+          {
+            role: 'assistant',
+            provider: 'openai-codex',
+            api: 'openai-codex-responses',
+            model: 'gpt-5.6-sol',
+            content: [
+              { type: 'thinking', thinking: 'weighing options', thinkingSignature: foreignSignature },
+            ],
+          },
+        ],
+      },
+    );
+
+    const serialized = JSON.stringify(params);
+    assert.ok(!serialized.includes('rs_09b95e17'), 'foreign signature must never be replayed');
+    assert.ok(!serialized.includes('"signature"'), 'no signature may be claimed for foreign reasoning');
+    // The reasoning text is still worth keeping, just not as a signed thinking block.
+    assert.ok(serialized.includes('weighing options'), 'reasoning text should degrade to plain text');
+  });
+
+  void it('replays thinking signatures minted by the same Anthropic model', () => {
+    const nativeSignature = 'ErUBCkYIBRgCIkDr3gL9dJj2';
+    const params = buildAnthropicRequestParams(
+      { provider: 'anthropic', api: 'anthropic-messages', id: 'claude-sonnet-4-5', maxTokens: 64_000, reasoning: true },
+      {
+        messages: [
+          { role: 'user', content: 'think about it' },
+          {
+            role: 'assistant',
+            provider: 'anthropic',
+            api: 'anthropic-messages',
+            model: 'claude-sonnet-4-5',
+            content: [
+              { type: 'thinking', thinking: 'weighing options', thinkingSignature: nativeSignature },
+            ],
+          },
+        ],
+      },
+    );
+
+    const messages = params['messages'];
+    assert.ok(Array.isArray(messages));
+    const assistant = messages.find((entry) => isJsonObject(entry) && entry['role'] === 'assistant');
+    assert.ok(isJsonObject(assistant));
+    const content = assistant['content'];
+    assert.ok(Array.isArray(content));
+    const thinking = content.find((block) => isJsonObject(block) && block['type'] === 'thinking');
+    assert.ok(isJsonObject(thinking), 'same-model thinking must stay a signed thinking block');
+    assert.equal(thinking['signature'], nativeSignature);
+  });
+
   void it('allows exactly one independently loaded copy to own global registration', () => {
     const bus = new SynchronousTestBus();
     const first = recordingHost(bus);

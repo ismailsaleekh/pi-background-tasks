@@ -358,7 +358,15 @@ type PiContentBlock =
 
 type PiMessage =
   | { readonly role: 'user'; readonly content: string | readonly PiContentBlock[] }
-  | { readonly role: 'assistant'; readonly content: readonly JsonObject[] }
+  | {
+      readonly role: 'assistant';
+      readonly content: readonly JsonObject[];
+      // Pi records which model produced an assistant turn. Required to decide whether an
+      // opaque `thinking` signature can be replayed or must be dropped as foreign.
+      readonly provider?: string;
+      readonly api?: string;
+      readonly model?: string;
+    }
   | {
       readonly role: 'toolResult';
       readonly toolCallId: string;
@@ -1187,7 +1195,29 @@ function normalizeAnthropicToolCallId(id: string): string {
   return id.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 64);
 }
 
+// A `thinking` signature is an opaque provider-issued attestation over the reasoning
+// payload. Anthropic verifies it and rejects anything it did not mint:
+//
+//   messages.1.content.0: Invalid `signature` in `thinking` block
+//
+// Reasoning inherited from another provider carries a foreign payload (the OpenAI
+// Responses API stores `{"id":"rs_..."}` in this field), so it can never validate.
+// Treat a signature as replayable only when the message was produced by the very same
+// provider/api/model we are now calling, mirroring pi's built-in Anthropic transport.
+function isReplayableThinkingSource(
+  model: PiModelLike,
+  message: Extract<PiMessage, { role: 'assistant' }>,
+): boolean {
+  const policy = resolveClaudeCodeModelPolicy(model);
+  return (
+    message.provider === model.provider &&
+    message.api === model.api &&
+    (message.model === model.id || message.model === policy.modelId)
+  );
+}
+
 function convertMessages(
+  model: PiModelLike,
   messages: readonly PiMessage[],
   cacheControl?: AnthropicCacheControl,
 ): JsonObject[] {
@@ -1223,18 +1253,25 @@ function convertMessages(
           block['text'].trim().length > 0
         ) {
           content.push({ type: 'text', text: sanitizeSurrogates(block['text']) });
-        } else if (
-          block['type'] === 'thinking' &&
-          typeof block['thinking'] === 'string' &&
-          block['thinking'].trim().length > 0
-        ) {
+        } else if (block['type'] === 'thinking' && typeof block['thinking'] === 'string') {
           const signature =
             typeof block['thinkingSignature'] === 'string' ? block['thinkingSignature'] : '';
-          content.push(
-            signature.length > 0
-              ? { type: 'thinking', thinking: sanitizeSurrogates(block['thinking']), signature }
-              : { type: 'text', text: sanitizeSurrogates(block['thinking']) },
-          );
+          const replayable = signature.length > 0 && isReplayableThinkingSource(model, message);
+          // Redacted thinking is opaque ciphertext with no readable text to fall back on,
+          // so it is either replayed verbatim to its issuer or dropped entirely.
+          if (block['redacted'] === true) {
+            if (replayable) content.push({ type: 'redacted_thinking', data: signature });
+          } else if (replayable) {
+            content.push({
+              type: 'thinking',
+              thinking: sanitizeSurrogates(block['thinking']),
+              signature,
+            });
+          } else if (block['thinking'].trim().length > 0) {
+            // Foreign or unsigned reasoning: keep the human-readable content as plain text
+            // so the turn is not silently lost, but never claim an unverifiable signature.
+            content.push({ type: 'text', text: sanitizeSurrogates(block['thinking']) });
+          }
         } else if (
           block['type'] === 'toolCall' &&
           typeof block['id'] === 'string' &&
@@ -1341,7 +1378,7 @@ export function buildAnthropicRequestParams(
   const cacheControl = resolveAnthropicCacheControl(model, options);
   const params: JsonObject = {
     model: policy.modelId,
-    messages: convertMessages(context.messages, cacheControl),
+    messages: convertMessages(model, context.messages, cacheControl),
     max_tokens: maxTokens,
     stream: true,
   };
