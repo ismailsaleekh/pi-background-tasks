@@ -1,7 +1,7 @@
 import { readFileSync, realpathSync, statSync } from 'node:fs';
 import type { Stats } from 'node:fs';
 import { createRequire } from 'node:module';
-import { dirname, extname, isAbsolute, join, relative, sep } from 'node:path';
+import { delimiter, dirname, extname, isAbsolute, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export interface PiLaunchSpec {
@@ -13,6 +13,8 @@ export interface PiLaunchSpec {
 export interface PiLaunchDependencies {
   readonly platform?: NodeJS.Platform;
   readonly execPath?: string;
+  readonly hostScript?: string;
+  readonly path?: string;
   readonly resolvePackageJson?: (specifier: string) => string;
   readonly readFile?: (path: string) => string | Buffer;
   readonly realpath?: (path: string) => string;
@@ -134,9 +136,50 @@ function pathInside(parent: string, child: string): boolean {
   return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel) && !rel.split(sep).includes('..'));
 }
 
+// A standalone `pi` on PATH stays the preferred launcher.
+export function hasPiExecutable(deps: { platform?: NodeJS.Platform; path?: string } = {}): boolean {
+  const platform = deps.platform ?? process.platform;
+  const rawPath = deps.path ?? process.env['PATH'] ?? '';
+  const suffixes = platform === 'win32' ? ['.exe', '.cmd', '.bat'] : [''];
+  for (const dir of rawPath.split(delimiter)) {
+    if (!dir) continue;
+    for (const suffix of suffixes) {
+      try {
+        if (statSync(join(dir, `pi${suffix}`)).isFile()) return true;
+      } catch {
+        // absent here; keep scanning
+      }
+    }
+  }
+  return false;
+}
+
+// The process that loaded this extension is itself a Pi CLI, so it can launch the
+// child when no standalone `pi` is installed: npx runs, project-local installs,
+// and rebranded hosts all land here.
+function resolveHostSelfLaunch(deps: PiLaunchDependencies): PiLaunchSpec {
+  const execPath = deps.execPath ?? process.execPath;
+  const hostScript = deps.hostScript ?? process.argv[1];
+  const realpath = deps.realpath ?? realpathSync;
+  const stat = deps.stat ?? statSync;
+  if (!hostScript) failResolution('no `pi` on PATH and the host CLI script path is unavailable');
+  // Resolve first: the launcher is usually a bin symlink whose own name carries no extension.
+  const targetReal = readPath('host CLI realpath', hostScript, () => realpath(hostScript));
+  const extension = extname(targetReal).toLowerCase();
+  if (extension !== '.js' && extension !== '.cjs' && extension !== '.mjs')
+    failResolution(`no \`pi\` on PATH and the host CLI is not a node entry point: ${targetReal}`);
+  const targetStat = readPath('host CLI stat', targetReal, () => stat(targetReal));
+  if (!targetStat.isFile()) failResolution('host CLI script is not a regular file');
+  return { executable: execPath, argvPrefix: [targetReal], kind: 'package-node-cli' };
+}
+
 export function resolvePiLaunch(deps: PiLaunchDependencies = {}): PiLaunchSpec {
   const platform = deps.platform ?? process.platform;
-  if (platform !== 'win32') return { executable: 'pi', argvPrefix: [], kind: 'path' };
+  if (platform !== 'win32') {
+    if (hasPiExecutable({ platform, ...(deps.path === undefined ? {} : { path: deps.path }) }))
+      return { executable: 'pi', argvPrefix: [], kind: 'path' };
+    return resolveHostSelfLaunch(deps);
+  }
 
   const resolvePackageJson = deps.resolvePackageJson ?? defaultResolvePackageJson;
   const readFile = deps.readFile ?? readFileSync;
