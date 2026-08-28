@@ -53,17 +53,59 @@ async function removeFixture(root: string): Promise<void> {
 }
 
 void describe('Pi launch resolution', () => {
-  void it('returns the bare path form on POSIX without package lookup', () => {
-    let resolved = false;
-    const spec = resolvePiLaunch({
-      platform: 'darwin',
-      resolvePackageJson: () => {
-        resolved = true;
-        throw new Error('should not run');
-      },
-    });
-    assert.deepEqual(spec, { executable: 'pi', argvPrefix: [], kind: 'path' });
-    assert.equal(resolved, false);
+  void it('returns the bare path form on POSIX when pi is on PATH, without package lookup', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'pi-launch-path-'));
+    try {
+      await writeNestedFile(join(root, 'pi'), '#!/bin/sh\n');
+      let resolved = false;
+      const spec = resolvePiLaunch({
+        platform: 'darwin',
+        path: root,
+        resolvePackageJson: () => {
+          resolved = true;
+          throw new Error('should not run');
+        },
+      });
+      assert.deepEqual(spec, { executable: 'pi', argvPrefix: [], kind: 'path' });
+      assert.equal(resolved, false);
+    } finally {
+      await removeFixture(root);
+    }
+  });
+
+  void it('falls back to the running host CLI on POSIX when pi is absent', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'pi-launch-host-'));
+    try {
+      const hostScript = join(root, 'dist', 'cli.js');
+      await writeNestedFile(hostScript, '#!/usr/bin/env node\n');
+      const spec = resolvePiLaunch({
+        platform: 'darwin',
+        path: join(root, 'empty-bin'),
+        execPath: '/usr/bin/node',
+        hostScript,
+      });
+      assert.deepEqual(spec, {
+        executable: '/usr/bin/node',
+        argvPrefix: [realpathSync(hostScript)],
+        kind: 'package-node-cli',
+      });
+    } finally {
+      await removeFixture(root);
+    }
+  });
+
+  void it('fails closed on POSIX when neither pi nor a node host CLI is available', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'pi-launch-none-'));
+    try {
+      const hostScript = join(root, 'bin', 'launcher.sh');
+      await writeNestedFile(hostScript, '#!/bin/sh\n');
+      assert.throws(
+        () => resolvePiLaunch({ platform: 'darwin', path: join(root, 'empty-bin'), hostScript }),
+        /pi_executable_resolution_failed/,
+      );
+    } finally {
+      await removeFixture(root);
+    }
   });
 
   void it('resolves a Windows string bin JavaScript CLI through Node', async () => {

@@ -33,7 +33,7 @@ This generated registry lists production environment-variable references, runtim
 | `OPENROUTER_BASE_URL` | remove | `src/core/attested-pi-run.ts:135`<br>`src/core/fusion/pi-child.ts:100` |
 | `path` | read | `src/core/common.ts:681` |
 | `Path` | read | `src/core/common.ts:681` |
-| `PATH` | read | `src/core/common.ts:681` |
+| `PATH` | read | `src/core/common.ts:681`<br>`src/core/pi-launch.ts:142` |
 | `PI_API_BASE_URL` | remove | `src/core/attested-pi-run.ts:135`<br>`src/core/fusion/pi-child.ts:100` |
 | `PI_API_KEY` | remove | `src/core/attested-pi-run.ts:135`<br>`src/core/fusion/pi-child.ts:100` |
 | `PI_AUTH_FILE` | remove | `src/core/attested-pi-run.ts:135`<br>`src/core/fusion/pi-child.ts:100` |
