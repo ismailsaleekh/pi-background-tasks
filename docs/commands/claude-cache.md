@@ -12,7 +12,7 @@ covers_sources: []
 <!-- pi-docs:begin name="command-contract-claude-cache" generator="scripts/docs/generate.mjs" -->
 | Command | Description | Provenance |
 | --- | --- | --- |
-| `/claude-cache` | Show or set Claude cache retention for this session (short, long, default) | `src/core/anthropic-attribution.ts:1928` |
+| `/claude-cache` | Show or set Claude cache retention for this session (short, long, default) | `src/core/anthropic-attribution.ts:2861` |
 <!-- pi-docs:end name="command-contract-claude-cache" -->
 
 Show or change the Anthropic cache-retention preference for the current session.
@@ -32,11 +32,11 @@ Show or change the Anthropic cache-retention preference for the current session.
 - No argument and `status` show the effective preference.
 - `short` requests normal ephemeral retention.
 - `long` requests one-hour retention where the selected model supports it.
-- `default` removes the session override and returns to process/package policy.
+- `default` removes the session override and returns to the package's one-hour subscription policy unless `PI_CACHE_RETENTION` says otherwise.
 
 The decision is persisted as a branch-local custom session entry and restored after reload, resume, and tree navigation. It does not enter model context.
 
-An explicit call-level cache posture remains authoritative. In particular, Pi compaction calls that request no cache markers are not re-marked by the session default.
+Pi's generic five-minute provider default does not override this package's one-hour subscription policy. Use `/claude-cache short` or `PI_CACHE_RETENTION=short` for an intentional short lane. An explicit call-level `none` remains authoritative, so Pi compaction requests are not re-marked by the session default.
 
 ## Errors and boundaries
 

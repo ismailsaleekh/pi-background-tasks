@@ -5,9 +5,9 @@ import { join } from 'node:path';
 
 export const CLAUDE_CODE_SESSION_HEADER = 'X-Claude-Code-Session-Id';
 
-const CLAUDE_CODE_VERSION = '2.1.173';
+const CLAUDE_CODE_VERSION = '2.1.251';
 const CLAUDE_CODE_ENTRYPOINT = 'sdk-cli';
-const CLAUDE_CODE_USER_AGENT = 'claude-cli/2.1.173 (external, sdk-cli)';
+const CLAUDE_CODE_USER_AGENT = 'claude-cli/2.1.251 (external, sdk-cli)';
 export const ANTHROPIC_1M_CONTEXT_BETA = 'context-1m-2025-08-07' as const;
 export const CLAUDE_CODE_200K_SUBSCRIPTION_CONTEXT_WINDOW = 200_000 as const;
 
@@ -20,7 +20,9 @@ type ClaudeCode200KSubscriptionBetaValue =
   | 'prompt-caching-scope-2026-01-05'
   | 'advisor-tool-2026-03-01'
   | 'structured-outputs-2025-12-15'
-  | 'mid-conversation-system-2026-04-07';
+  | 'mid-conversation-system-2026-04-07'
+  | 'thinking-binding-controls-2026-08-01'
+  | 'cache-diagnosis-2026-04-07';
 
 const CLAUDE_CODE_LEGACY_BETA_VALUES = [
   'claude-code-20250219',
@@ -41,6 +43,11 @@ const CLAUDE_CODE_ADAPTIVE_200K_BETA_VALUES = [
   'prompt-caching-scope-2026-01-05',
   'mid-conversation-system-2026-04-07',
 ] as const satisfies readonly ClaudeCode200KSubscriptionBetaValue[];
+const CLAUDE_CODE_FABLE_5_1_200K_BETA_VALUES = [
+  ...CLAUDE_CODE_ADAPTIVE_200K_BETA_VALUES,
+  'thinking-binding-controls-2026-08-01',
+  'cache-diagnosis-2026-04-07',
+] as const satisfies readonly ClaudeCode200KSubscriptionBetaValue[];
 
 function build200KSubscriptionBetaHeader(
   values: readonly ClaudeCode200KSubscriptionBetaValue[],
@@ -57,6 +64,9 @@ export const CLAUDE_CODE_BETA = build200KSubscriptionBetaHeader(CLAUDE_CODE_LEGA
 const CLAUDE_CODE_ADAPTIVE_200K_BETA = build200KSubscriptionBetaHeader(
   CLAUDE_CODE_ADAPTIVE_200K_BETA_VALUES,
 );
+const CLAUDE_CODE_FABLE_5_1_200K_BETA = build200KSubscriptionBetaHeader(
+  CLAUDE_CODE_FABLE_5_1_200K_BETA_VALUES,
+);
 const CLAUDE_AGENT_SDK_SYSTEM_TEXT =
   "You are a Claude agent, built on Anthropic's Claude Agent SDK.";
 const FINGERPRINT_SALT = '59cf53e54c78';
@@ -68,6 +78,17 @@ export const ANTHROPIC_ATTRIBUTION_CLAIM_CHANNEL = 'pi-anthropic-attribution:cla
 const ANTHROPIC_ATTRIBUTION_CLAIM_SCHEMA = 'pi-anthropic-attribution.claim.v1';
 const NATIVE_ATTESTATION_PLACEHOLDER = '00000';
 const ANTHROPIC_CACHE_CONTROL_BREAKPOINT_LIMIT = 4;
+const ANTHROPIC_LINEAGE_DIAGNOSTIC_TYPE = 'anthropic-cache-lineage';
+const ANTHROPIC_LINEAGE_SCHEMA = 'pi-anthropic-attribution.lineage.v1';
+// Bump whenever any system/tool/message wire projection changes. Old receipts then
+// become legacy and cannot authorize signature replay under a rewritten prefix.
+const ANTHROPIC_PROJECTION_VERSION = 3;
+const ANTHROPIC_OFFICIAL_ORIGIN = 'https://api.anthropic.com';
+const ANTHROPIC_BETA_MESSAGES_URL = `${ANTHROPIC_OFFICIAL_ORIGIN}/v1/messages?beta=true`;
+const ANTHROPIC_CACHE_DIAGNOSTICS_BETA = 'cache-diagnosis-2026-04-07';
+const ANTHROPIC_THINKING_BINDING_BETA = 'thinking-binding-controls-2026-08-01';
+const COMPACTION_SUMMARY_PREFIX =
+  'The conversation history before this point was compacted into the following summary:';
 
 // Sanitization behavior derived from the MIT-licensed ravshansbox/pi-anthropic-sps
 // extension at commit 17409b5615f0ec0625776bc5434f92f2c55e3fd0. Keep exact-match
@@ -143,12 +164,18 @@ export interface ClaudeCodeModelPolicy {
   readonly beta: string;
   readonly thinkingPolicy: ClaudeCodeThinkingPolicy;
   readonly contextWindow: typeof CLAUDE_CODE_200K_SUBSCRIPTION_CONTEXT_WINDOW;
+  readonly enforcesThinkingPrefixBinding: boolean;
+  readonly supportsCacheDiagnostics: boolean;
 }
 
 function claudeCode200KSubscriptionPolicy(
   modelId: string,
   beta: string,
   thinkingPolicy: ClaudeCodeThinkingPolicy,
+  features: {
+    readonly enforcesThinkingPrefixBinding?: boolean;
+    readonly supportsCacheDiagnostics?: boolean;
+  } = {},
 ): ClaudeCodeModelPolicy {
   if (beta.split(',').includes(ANTHROPIC_1M_CONTEXT_BETA)) {
     throw new Error(
@@ -160,6 +187,8 @@ function claudeCode200KSubscriptionPolicy(
     beta,
     thinkingPolicy,
     contextWindow: CLAUDE_CODE_200K_SUBSCRIPTION_CONTEXT_WINDOW,
+    enforcesThinkingPrefixBinding: features.enforcesThinkingPrefixBinding === true,
+    supportsCacheDiagnostics: features.supportsCacheDiagnostics === true,
   };
 }
 
@@ -208,6 +237,12 @@ const CLAUDE_CODE_MODEL_POLICIES: Record<string, ClaudeCodeModelPolicy> = Object
     'claude-fable-5',
     CLAUDE_CODE_ADAPTIVE_200K_BETA,
     'adaptive-effort',
+  ),
+  'claude-fable-5-1': claudeCode200KSubscriptionPolicy(
+    'claude-fable-5-1',
+    CLAUDE_CODE_FABLE_5_1_200K_BETA,
+    'adaptive-effort',
+    { enforcesThinkingPrefixBinding: true, supportsCacheDiagnostics: true },
   ),
   'claude-haiku-4-5': claudeCode200KSubscriptionPolicy(
     'claude-haiku-4-5',
@@ -356,12 +391,28 @@ type PiContentBlock =
   | { readonly type: 'text'; readonly text: string }
   | { readonly type: 'image'; readonly mimeType: string; readonly data: string };
 
+interface PiAssistantDiagnosticLike {
+  readonly type: string;
+  readonly timestamp: number;
+  readonly details?: JsonObject;
+}
+
 type PiMessage =
   | { readonly role: 'user'; readonly content: string | readonly PiContentBlock[] }
-  | { readonly role: 'assistant'; readonly content: readonly JsonObject[] }
+  | {
+      readonly role: 'assistant';
+      readonly content: readonly JsonObject[];
+      readonly provider?: string;
+      readonly api?: string;
+      readonly model?: string;
+      readonly responseId?: string;
+      readonly stopReason?: string;
+      readonly diagnostics?: readonly PiAssistantDiagnosticLike[];
+    }
   | {
       readonly role: 'toolResult';
       readonly toolCallId: string;
+      readonly toolName?: string;
       readonly content: readonly PiContentBlock[];
       readonly isError?: boolean;
     };
@@ -420,6 +471,7 @@ export interface AssistantMessageLike {
   stopReason: 'stop' | 'length' | 'toolUse' | 'aborted' | 'error';
   timestamp: number;
   responseId?: string;
+  diagnostics?: PiAssistantDiagnosticLike[];
   errorMessage?: string;
 }
 
@@ -569,12 +621,8 @@ function parseCacheRetention(value: string, source: string): CacheRetention {
   );
 }
 
-/**
- * Resolve retention without allowing the extension default to override an
- * explicit call-level posture (notably Pi's cacheRetention=none compaction calls).
- * Precedence: request option -> persisted session override -> process/provider env
- * -> the repo policy default of one hour.
- */
+/** Resolve an explicit request posture. Registered Pi sessions apply the stronger
+ * one-hour policy through resolveRegisteredCacheRetention below. */
 export function resolveCacheRetentionPreference(
   options?: {
     readonly cacheRetention?: CacheRetention;
@@ -586,6 +634,20 @@ export function resolveCacheRetentionPreference(
   if (sessionOverride !== undefined) return sessionOverride;
   const configured = providerEnvValue(CACHE_RETENTION_ENV, options?.env);
   if (configured !== undefined) return parseCacheRetention(configured, CACHE_RETENTION_ENV);
+  return 'long';
+}
+
+function resolveRegisteredCacheRetention(
+  options: PiSimpleStreamOptions | undefined,
+  sessionOverride: Exclude<CacheRetention, 'none'> | undefined,
+): CacheRetention {
+  if (options?.cacheRetention === 'none') return 'none';
+  if (sessionOverride !== undefined) return sessionOverride;
+  const configured = providerEnvValue(CACHE_RETENTION_ENV, options?.env);
+  if (configured !== undefined) return parseCacheRetention(configured, CACHE_RETENTION_ENV);
+  if (options?.cacheRetention === 'long') return 'long';
+  // Pi's generic provider default is five minutes. Subscription coding sessions
+  // routinely have turns longer than that, so the attributed route pins one hour.
   return 'long';
 }
 
@@ -875,7 +937,7 @@ export function registerAnthropicAttributionProvider(
     streamSimple: (model, context, options) =>
       streamAnthropicViaBetaMessages(model, context, {
         ...(options ?? {}),
-        cacheRetention: resolveCacheRetentionPreference(options, getSessionOverride()),
+        cacheRetention: resolveRegisteredCacheRetention(options, getSessionOverride()),
       }),
   });
 }
@@ -1102,23 +1164,37 @@ export function rewriteAnthropicRequestPayload(args: {
 }
 
 function sanitizeSurrogates(text: string): string {
-  return text.replace(/[\uD800-\uDFFF]/g, '\uFFFD');
+  let sanitized = '';
+  for (let index = 0; index < text.length; index += 1) {
+    const code = text.charCodeAt(index);
+    if (code >= 0xd800 && code <= 0xdbff) {
+      const next = index + 1 < text.length ? text.charCodeAt(index + 1) : -1;
+      if (next >= 0xdc00 && next <= 0xdfff) {
+        sanitized += text[index] ?? '';
+        sanitized += text[index + 1] ?? '';
+        index += 1;
+      } else {
+        sanitized += '\uFFFD';
+      }
+    } else if (code >= 0xdc00 && code <= 0xdfff) {
+      sanitized += '\uFFFD';
+    } else {
+      sanitized += text[index] ?? '';
+    }
+  }
+  return sanitized;
 }
 
-function convertContentBlocks(content: readonly PiContentBlock[]): string | JsonObject[] {
-  const hasImages = content.some((block) => block.type === 'image');
-  if (!hasImages)
-    return sanitizeSurrogates(
-      content.map((block) => (block.type === 'text' ? block.text : '')).join('\n'),
-    );
-  const blocks = content.map((block) => {
+function convertContentBlocks(content: readonly PiContentBlock[]): JsonObject[] {
+  const blocks: JsonObject[] = content.map((block) => {
     if (block.type === 'text') return { type: 'text', text: sanitizeSurrogates(block.text) };
     return {
       type: 'image',
       source: { type: 'base64', media_type: block.mimeType, data: block.data },
     };
   });
-  if (!blocks.some((block) => block.type === 'text'))
+  if (blocks.length === 0) blocks.push({ type: 'text', text: '' });
+  if (!blocks.some((block) => block['type'] === 'text'))
     blocks.unshift({ type: 'text', text: '(see attached image)' });
   return blocks;
 }
@@ -1146,9 +1222,9 @@ function markMessageContentCacheSurface(
   if (role !== 'user' && role !== 'assistant') return false;
   const content = message['content'];
   if (typeof content === 'string') {
-    if (content.trim().length === 0) return false;
-    message['content'] = [{ type: 'text', text: content, cache_control: { ...cacheControl } }];
-    return true;
+    throw new Error(
+      'Anthropic attribution cache projection encountered non-canonical string message content',
+    );
   }
   if (!Array.isArray(content)) return false;
   for (let index = content.length - 1; index >= 0; index -= 1) {
@@ -1173,92 +1249,389 @@ function markLastConversationCacheSurface(
   return output;
 }
 
-function convertMessages(
+function canonicalizeJson(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonicalizeJson);
+  if (!isPlainObject(value)) return value;
+  const output: JsonObject = {};
+  for (const key of Object.keys(value).sort()) {
+    const child = value[key];
+    if (child !== undefined) output[key] = canonicalizeJson(child);
+  }
+  return output;
+}
+
+function canonicalJson(value: unknown): string {
+  return JSON.stringify(canonicalizeJson(value));
+}
+
+function sha256Canonical(value: unknown): string {
+  return createHash('sha256').update(canonicalJson(value), 'utf8').digest('hex');
+}
+
+function isSha256(value: unknown): value is string {
+  return typeof value === 'string' && /^[a-f0-9]{64}$/u.test(value);
+}
+
+function blockWithoutCacheControl(block: unknown): unknown {
+  if (!isPlainObject(block)) return block;
+  const output = { ...block };
+  delete output['cache_control'];
+  return output;
+}
+
+function promptMessagesWithoutCacheControls(messages: readonly JsonObject[]): JsonObject[] {
+  return messages.map((message) => {
+    const content = message['content'];
+    return {
+      ...message,
+      ...(Array.isArray(content) ? { content: content.map(blockWithoutCacheControl) } : {}),
+    };
+  });
+}
+
+function promptMessagesHash(messages: readonly JsonObject[]): string {
+  return sha256Canonical(promptMessagesWithoutCacheControls(messages));
+}
+
+function assistantContentHash(content: readonly JsonObject[]): string {
+  return sha256Canonical(content);
+}
+
+interface AnthropicLineageDetails {
+  readonly schema_version: typeof ANTHROPIC_LINEAGE_SCHEMA;
+  readonly projection_version: typeof ANTHROPIC_PROJECTION_VERSION;
+  readonly source_provider: 'anthropic';
+  readonly source_api: 'anthropic-messages';
+  readonly source_model: string;
+  readonly response_id: string;
+  readonly assistant_content_sha256: string;
+  readonly conversation_static_sha256: string;
+  readonly request_message_count: number;
+  readonly request_messages_sha256: string;
+  readonly cache_profile_sha256: string;
+  readonly cache_retention: CacheRetention;
+  readonly compaction_boundary_sha256: string | null;
+  readonly signature_epoch_sha256: string;
+  readonly signature_epoch_inherits_prior: boolean;
+  readonly previous_message_id: string | null;
+}
+
+function parseAnthropicLineageDetails(
+  message: Extract<PiMessage, { role: 'assistant' }>,
+): AnthropicLineageDetails | undefined {
+  const diagnostic = [...(message.diagnostics ?? [])]
+    .reverse()
+    .find((candidate) => candidate.type === ANTHROPIC_LINEAGE_DIAGNOSTIC_TYPE);
+  const details = diagnostic?.details;
+  if (!isPlainObject(details)) return undefined;
+  if (
+    details['schema_version'] !== ANTHROPIC_LINEAGE_SCHEMA ||
+    details['projection_version'] !== ANTHROPIC_PROJECTION_VERSION ||
+    details['source_provider'] !== 'anthropic' ||
+    details['source_api'] !== 'anthropic-messages' ||
+    typeof details['source_model'] !== 'string' ||
+    typeof details['response_id'] !== 'string' ||
+    !isSha256(details['assistant_content_sha256']) ||
+    !isSha256(details['conversation_static_sha256']) ||
+    !Number.isSafeInteger(details['request_message_count']) ||
+    (details['request_message_count'] as number) < 0 ||
+    !isSha256(details['request_messages_sha256']) ||
+    !isSha256(details['cache_profile_sha256']) ||
+    (details['cache_retention'] !== 'none' &&
+      details['cache_retention'] !== 'short' &&
+      details['cache_retention'] !== 'long') ||
+    (details['compaction_boundary_sha256'] !== null &&
+      !isSha256(details['compaction_boundary_sha256'])) ||
+    !isSha256(details['signature_epoch_sha256']) ||
+    typeof details['signature_epoch_inherits_prior'] !== 'boolean' ||
+    (details['previous_message_id'] !== null && typeof details['previous_message_id'] !== 'string')
+  ) {
+    return undefined;
+  }
+  return details as unknown as AnthropicLineageDetails;
+}
+
+function canTargetReadAnthropicThinking(sourceModel: string, targetModel: string): boolean {
+  if (sourceModel === targetModel) return true;
+  return (
+    targetModel === 'claude-fable-5-1' && CLAUDE_CODE_MODEL_POLICIES[sourceModel] !== undefined
+  );
+}
+
+interface SignatureEpochPolicy {
+  readonly sha256: string;
+  readonly inheritsPrior: boolean;
+}
+
+function initialSignatureEpochPolicy(
+  targetModelId: string,
+  cacheRetention: CacheRetention,
+  compactionBoundarySha256: string | null,
+): SignatureEpochPolicy {
+  return {
+    sha256: sha256Canonical({
+      projection_version: ANTHROPIC_PROJECTION_VERSION,
+      kind: 'initial',
+      target_model: targetModelId,
+      cache_retention: cacheRetention,
+      compaction_boundary_sha256: compactionBoundarySha256,
+    }),
+    inheritsPrior: compactionBoundarySha256 === null,
+  };
+}
+
+function resolveSignatureEpochPolicy(
+  model: PiModelLike,
   messages: readonly PiMessage[],
+  cacheRetention: CacheRetention,
+  compactionBoundarySha256: string | null,
+): SignatureEpochPolicy {
+  const targetModelId = normalizedAnthropicModelId(model);
+  const latest = latestLineageForTarget({ messages }, targetModelId);
+  if (latest === undefined) {
+    return initialSignatureEpochPolicy(targetModelId, cacheRetention, compactionBoundarySha256);
+  }
+
+  const retentionChanged = latest.cache_retention !== cacheRetention;
+  const declaredNewCompaction =
+    compactionBoundarySha256 !== null &&
+    compactionBoundarySha256 !== latest.compaction_boundary_sha256;
+  if (retentionChanged || declaredNewCompaction) {
+    return {
+      sha256: sha256Canonical({
+        projection_version: ANTHROPIC_PROJECTION_VERSION,
+        kind: 'transition',
+        previous_signature_epoch_sha256: latest.signature_epoch_sha256,
+        target_model: targetModelId,
+        cache_retention: cacheRetention,
+        compaction_boundary_sha256: compactionBoundarySha256,
+        reason: retentionChanged ? 'cache-retention' : 'compaction',
+      }),
+      inheritsPrior: false,
+    };
+  }
+  return {
+    sha256: latest.signature_epoch_sha256,
+    inheritsPrior: latest.signature_epoch_inherits_prior,
+  };
+}
+
+function isTrustedReplayableAnthropicAssistant(
+  message: Extract<PiMessage, { role: 'assistant' }>,
+  targetModel: PiModelLike,
+  targetCacheRetention: CacheRetention,
+  conversationStaticSha256: string,
+  wireMessagesBeforeAssistant: readonly JsonObject[],
+): boolean {
+  if (
+    message.provider !== 'anthropic' ||
+    message.api !== 'anthropic-messages' ||
+    typeof message.model !== 'string' ||
+    message.stopReason === 'error' ||
+    message.stopReason === 'aborted' ||
+    !canTargetReadAnthropicThinking(message.model, normalizedAnthropicModelId(targetModel))
+  ) {
+    return false;
+  }
+  const lineage = parseAnthropicLineageDetails(message);
+  if (
+    lineage === undefined ||
+    lineage.source_model !== message.model ||
+    lineage.response_id !== message.responseId ||
+    lineage.assistant_content_sha256 !== assistantContentHash(message.content) ||
+    lineage.cache_retention !== targetCacheRetention ||
+    lineage.conversation_static_sha256 !== conversationStaticSha256 ||
+    lineage.request_message_count !== wireMessagesBeforeAssistant.length ||
+    lineage.request_messages_sha256 !== promptMessagesHash(wireMessagesBeforeAssistant)
+  ) {
+    return false;
+  }
+  return true;
+}
+
+function normalizeAnthropicToolCallId(id: string): string {
+  if (/^[a-zA-Z0-9_-]{1,64}$/u.test(id)) return id;
+  const safe = id.replace(/[^a-zA-Z0-9_-]/gu, '_');
+  const digest = createHash('sha256').update(id, 'utf8').digest('hex').slice(0, 12);
+  const prefix = safe.slice(0, 64 - digest.length - 1) || 'tool';
+  return `${prefix}_${digest}`.slice(0, 64);
+}
+
+function projectedUserContent(content: string | readonly PiContentBlock[]): JsonObject[] {
+  if (typeof content === 'string') {
+    return content.trim().length > 0 ? [{ type: 'text', text: sanitizeSurrogates(content) }] : [];
+  }
+  const blocks: JsonObject[] = [];
+  for (const block of content) {
+    if (block.type === 'text') {
+      if (block.text.trim().length > 0)
+        blocks.push({ type: 'text', text: sanitizeSurrogates(block.text) });
+      continue;
+    }
+    if (block.type === 'image') {
+      blocks.push({
+        type: 'image',
+        source: { type: 'base64', media_type: block.mimeType, data: block.data },
+      });
+      continue;
+    }
+    throw new Error('Anthropic attribution encountered an unsupported user content block');
+  }
+  return blocks;
+}
+
+function compactionBoundarySha256FromPiMessages(messages: readonly PiMessage[]): string | null {
+  const first = messages[0];
+  if (first?.role !== 'user') return null;
+  const content = projectedUserContent(first.content);
+  return declaredCompactionBoundarySha256([{ role: 'user', content }]);
+}
+
+function convertMessages(
+  model: PiModelLike,
+  messages: readonly PiMessage[],
+  conversationStaticSha256: string,
+  cacheRetention: CacheRetention,
+  signatureEpoch: SignatureEpochPolicy,
   cacheControl?: AnthropicCacheControl,
 ): JsonObject[] {
   const params: JsonObject[] = [];
+  const toolCallIdMap = new Map<string, string>();
+  const normalizedToolCallOwners = new Map<string, string>();
+  let pendingToolCalls: Array<{ readonly id: string; readonly name: string }> = [];
+  let completedPendingToolCallIds = new Set<string>();
+
+  const normalizeToolCallId = (id: string): string => {
+    const existing = toolCallIdMap.get(id);
+    if (existing !== undefined) return existing;
+    const normalized = normalizeAnthropicToolCallId(id);
+    const owner = normalizedToolCallOwners.get(normalized);
+    if (owner !== undefined && owner !== id) {
+      throw new Error('Anthropic attribution tool-call ID normalization collision');
+    }
+    normalizedToolCallOwners.set(normalized, id);
+    toolCallIdMap.set(id, normalized);
+    return normalized;
+  };
+
+  const flushMissingToolResults = (): void => {
+    const missing = pendingToolCalls.filter((call) => !completedPendingToolCallIds.has(call.id));
+    if (missing.length > 0) {
+      params.push({
+        role: 'user',
+        content: missing.map((call) => ({
+          type: 'tool_result',
+          tool_use_id: call.id,
+          content: 'No result provided',
+          is_error: true,
+        })),
+      });
+    }
+    pendingToolCalls = [];
+    completedPendingToolCallIds = new Set<string>();
+  };
+
   for (let index = 0; index < messages.length; index += 1) {
     const message = messages[index];
-    if (message === undefined) {
-      throw new TypeError(`Anthropic message ${index} is missing`);
-    }
+    if (message === undefined) throw new TypeError(`Anthropic message ${index} is missing`);
+
     if (message.role === 'user') {
-      if (typeof message.content === 'string') {
-        if (message.content.trim().length > 0)
-          params.push({ role: 'user', content: sanitizeSurrogates(message.content) });
-      } else {
-        const content = message.content
-          .map((block) =>
-            block.type === 'text'
-              ? { type: 'text', text: sanitizeSurrogates(block.text) }
-              : {
-                  type: 'image',
-                  source: { type: 'base64', media_type: block.mimeType, data: block.data },
-                },
-          )
-          .filter((block) => block.type !== 'text' || String(block.text).trim().length > 0);
-        if (content.length > 0) params.push({ role: 'user', content });
-      }
-    } else if (message.role === 'assistant') {
+      flushMissingToolResults();
+      const content = projectedUserContent(message.content);
+      if (content.length > 0) params.push({ role: 'user', content });
+      continue;
+    }
+
+    if (message.role === 'assistant') {
+      flushMissingToolResults();
+      if (message.stopReason === 'error' || message.stopReason === 'aborted') continue;
+      const lineage = parseAnthropicLineageDetails(message);
+      const epochAllowsReplay =
+        signatureEpoch.inheritsPrior || lineage?.signature_epoch_sha256 === signatureEpoch.sha256;
+      const preserveThinking =
+        epochAllowsReplay &&
+        isTrustedReplayableAnthropicAssistant(
+          message,
+          model,
+          cacheRetention,
+          conversationStaticSha256,
+          params,
+        );
       const content: JsonObject[] = [];
       for (const block of message.content) {
-        if (
-          block['type'] === 'text' &&
-          typeof block['text'] === 'string' &&
-          block['text'].trim().length > 0
-        ) {
-          content.push({ type: 'text', text: sanitizeSurrogates(block['text']) });
-        } else if (
-          block['type'] === 'thinking' &&
-          typeof block['thinking'] === 'string' &&
-          block['thinking'].trim().length > 0
-        ) {
+        if (block['type'] === 'text') {
+          if (typeof block['text'] !== 'string')
+            throw new Error('Anthropic attribution encountered malformed assistant text');
+          if (block['text'].trim().length > 0)
+            content.push({ type: 'text', text: sanitizeSurrogates(block['text']) });
+          continue;
+        }
+        if (block['type'] === 'thinking') {
+          if (typeof block['thinking'] !== 'string')
+            throw new Error('Anthropic attribution encountered malformed assistant thinking');
           const signature =
             typeof block['thinkingSignature'] === 'string' ? block['thinkingSignature'] : '';
-          content.push(
-            signature.length > 0
-              ? { type: 'thinking', thinking: sanitizeSurrogates(block['thinking']), signature }
-              : { type: 'text', text: sanitizeSurrogates(block['thinking']) },
-          );
-        } else if (
-          block['type'] === 'toolCall' &&
-          typeof block['id'] === 'string' &&
-          typeof block['name'] === 'string'
-        ) {
+          if (preserveThinking && signature.trim().length > 0) {
+            content.push(
+              block['redacted'] === true
+                ? { type: 'redacted_thinking', data: signature }
+                : {
+                    type: 'thinking',
+                    // A signature authenticates the exact provider-returned reasoning bytes.
+                    // Provenance and lineage checks above make this raw replay safe; changing
+                    // even valid non-BMP Unicode here would invalidate the opaque signature.
+                    thinking: block['thinking'],
+                    signature,
+                  },
+            );
+          } else if (block['redacted'] !== true && block['thinking'].trim().length > 0) {
+            content.push({ type: 'text', text: sanitizeSurrogates(block['thinking']) });
+          }
+          continue;
+        }
+        if (block['type'] === 'toolCall') {
+          if (typeof block['id'] !== 'string' || typeof block['name'] !== 'string')
+            throw new Error('Anthropic attribution encountered malformed assistant tool call');
+          const id = normalizeToolCallId(block['id']);
           content.push({
             type: 'tool_use',
-            id: block['id'],
+            id,
             name: block['name'],
-            input: block['arguments'] ?? {},
+            input: canonicalizeJson(block['arguments'] ?? {}),
           });
+          continue;
         }
+        throw new Error(
+          `Anthropic attribution encountered unsupported assistant block type ${JSON.stringify(block['type'])}`,
+        );
       }
-      if (content.length > 0) params.push({ role: 'assistant', content });
-    } else if (message.role === 'toolResult') {
-      const toolResults: JsonObject[] = [
-        {
-          type: 'tool_result',
-          tool_use_id: message.toolCallId,
-          content: convertContentBlocks(message.content),
-          is_error: message.isError === true,
-        },
-      ];
-      let lookahead = index + 1;
-      while (lookahead < messages.length && messages[lookahead]?.role === 'toolResult') {
-        const next = messages[lookahead] as Extract<PiMessage, { role: 'toolResult' }>;
-        toolResults.push({
-          type: 'tool_result',
-          tool_use_id: next.toolCallId,
-          content: convertContentBlocks(next.content),
-          is_error: next.isError === true,
-        });
-        lookahead += 1;
+      if (content.length > 0) {
+        params.push({ role: 'assistant', content });
+        pendingToolCalls = content
+          .filter((block) => block['type'] === 'tool_use')
+          .map((block) => ({ id: String(block['id']), name: String(block['name']) }));
       }
-      index = lookahead - 1;
-      params.push({ role: 'user', content: toolResults });
+      continue;
     }
+
+    const toolResults: JsonObject[] = [];
+    let lookahead = index;
+    while (lookahead < messages.length && messages[lookahead]?.role === 'toolResult') {
+      const result = messages[lookahead] as Extract<PiMessage, { role: 'toolResult' }>;
+      const toolUseId = normalizeToolCallId(result.toolCallId);
+      completedPendingToolCallIds.add(toolUseId);
+      toolResults.push({
+        type: 'tool_result',
+        tool_use_id: toolUseId,
+        content: convertContentBlocks(result.content),
+        is_error: result.isError === true,
+      });
+      lookahead += 1;
+    }
+    index = lookahead - 1;
+    if (toolResults.length > 0) params.push({ role: 'user', content: toolResults });
   }
+  flushMissingToolResults();
   return markLastConversationCacheSurface(params, cacheControl);
 }
 
@@ -1274,8 +1647,10 @@ function convertTools(
       description: tool.description ?? '',
       input_schema: {
         type: 'object',
-        properties: isPlainObject(parameters['properties']) ? parameters['properties'] : {},
-        required: Array.isArray(parameters['required']) ? parameters['required'] : [],
+        properties: canonicalizeJson(
+          isPlainObject(parameters['properties']) ? parameters['properties'] : {},
+        ),
+        required: Array.isArray(parameters['required']) ? [...parameters['required']] : [],
       },
     };
     return cacheControl !== undefined && index === tools.length - 1
@@ -1317,6 +1692,25 @@ function adaptiveEffortFor(
   }
 }
 
+function conversationStaticHash(system: readonly unknown[], tools: readonly JsonObject[]): string {
+  const normalizedSystem = system
+    .filter(
+      (block) =>
+        !isPlainObject(block) ||
+        typeof block['text'] !== 'string' ||
+        !isClaudeCodeIdentityText(block['text']),
+    )
+    .map(blockWithoutCacheControl);
+  return sha256Canonical({
+    attribution_profile: {
+      claude_code_version: CLAUDE_CODE_VERSION,
+      entrypoint: CLAUDE_CODE_ENTRYPOINT,
+    },
+    system: normalizedSystem,
+    tools: tools.map(blockWithoutCacheControl),
+  });
+}
+
 export function buildAnthropicRequestParams(
   model: PiModelLike,
   context: PiStreamContext,
@@ -1325,37 +1719,63 @@ export function buildAnthropicRequestParams(
   const policy = resolveClaudeCodeModelPolicy(model);
   const maxTokens = resolveAnthropicMaxTokens(model);
   const cacheControl = resolveAnthropicCacheControl(model, options);
-  const params: JsonObject = {
-    model: policy.modelId,
-    messages: convertMessages(context.messages, cacheControl),
-    max_tokens: maxTokens,
-    stream: true,
-  };
-  if (context.systemPrompt && context.systemPrompt.trim().length > 0) {
-    params['system'] = markSystemCacheSurface(
-      [
-        {
-          type: 'text',
-          text: sanitizeSurrogates(stripAnthropicSystemPromptBadLines(context.systemPrompt)),
-        },
-      ],
-      cacheControl,
-    );
-  }
+  const cacheRetention: CacheRetention =
+    cacheControl === undefined ? 'none' : cacheControl.ttl === '1h' ? 'long' : 'short';
+  const signatureEpoch = resolveSignatureEpochPolicy(
+    model,
+    context.messages,
+    cacheRetention,
+    compactionBoundarySha256FromPiMessages(context.messages),
+  );
+  const system =
+    context.systemPrompt && context.systemPrompt.trim().length > 0
+      ? markSystemCacheSurface(
+          [
+            {
+              type: 'text',
+              text: sanitizeSurrogates(stripAnthropicSystemPromptBadLines(context.systemPrompt)),
+            },
+          ],
+          cacheControl,
+        )
+      : [];
   const tools = convertTools(
     context.tools,
     model.compat?.supportsCacheControlOnTools === false ? undefined : cacheControl,
   );
-  if (tools.length > 0) params['tools'] = tools;
-  else params['tools'] = [];
-  if (options?.toolChoice !== undefined) params['tool_choice'] = options.toolChoice;
+  const staticSha256 = conversationStaticHash(system, tools);
+  const params: JsonObject = {
+    model: policy.modelId,
+    messages: convertMessages(
+      model,
+      context.messages,
+      staticSha256,
+      cacheRetention,
+      signatureEpoch,
+      cacheControl,
+    ),
+    max_tokens: maxTokens,
+    stream: true,
+    tools,
+  };
+  if (system.length > 0) params['system'] = system;
+  if (options?.toolChoice !== undefined)
+    params['tool_choice'] = canonicalizeJson(options.toolChoice);
   const reasoning = options?.reasoning;
   if (model.reasoning && reasoning !== undefined) {
     if (reasoning === 'off') {
+      if (policy.enforcesThinkingPrefixBinding) {
+        throw new Error('Anthropic attribution cannot disable thinking for Claude Fable 5.1');
+      }
       params['thinking'] = { type: 'disabled' };
       params['temperature'] = options?.temperature ?? 1;
     } else if (policy.thinkingPolicy === 'adaptive-effort') {
-      params['thinking'] = { type: 'adaptive' };
+      params['thinking'] = {
+        type: 'adaptive',
+        ...(policy.enforcesThinkingPrefixBinding
+          ? { block_binding: { prefix_mismatch_behavior: 'error' } }
+          : {}),
+      };
       params['output_config'] = { effort: adaptiveEffortFor(reasoning) };
     } else {
       params['thinking'] = {
@@ -1363,12 +1783,291 @@ export function buildAnthropicRequestParams(
         budget_tokens: thinkingBudgetFor(reasoning, maxTokens, options?.thinkingBudgets),
       };
     }
+  } else if (policy.enforcesThinkingPrefixBinding) {
+    params['thinking'] = {
+      type: 'adaptive',
+      block_binding: { prefix_mismatch_behavior: 'error' },
+    };
   } else {
     params['thinking'] = { type: 'disabled' };
     params['temperature'] = options?.temperature ?? 1;
   }
   assertCacheControlBreakpointLimit(params);
   return params;
+}
+
+interface PreparedAnthropicLineage {
+  readonly key: string;
+  readonly details: Omit<AnthropicLineageDetails, 'response_id' | 'assistant_content_sha256'>;
+}
+
+function requestMessagesFromPayload(payload: JsonObject): JsonObject[] {
+  const messages = payload['messages'];
+  if (!Array.isArray(messages) || messages.some((message) => !isPlainObject(message))) {
+    throw new Error('Anthropic attribution final payload.messages must be an object array');
+  }
+  for (const message of messages as JsonObject[]) {
+    if (message['role'] !== 'user' && message['role'] !== 'assistant') {
+      throw new Error('Anthropic attribution final payload message has an unsupported role');
+    }
+    const content = message['content'];
+    if (!Array.isArray(content) || content.some((block) => !isPlainObject(block))) {
+      throw new Error(
+        'Anthropic attribution final payload message content must use canonical block arrays',
+      );
+    }
+  }
+  return messages as JsonObject[];
+}
+
+function systemBlocksFromPayload(payload: JsonObject): unknown[] {
+  const system = payload['system'];
+  if (system === undefined) return [];
+  if (typeof system === 'string') return [{ type: 'text', text: system }];
+  if (!Array.isArray(system))
+    throw new Error('Anthropic attribution final payload.system must be a string or block array');
+  return system;
+}
+
+function toolsFromPayload(payload: JsonObject): JsonObject[] {
+  const tools = payload['tools'];
+  if (tools === undefined) return [];
+  if (!Array.isArray(tools) || tools.some((tool) => !isPlainObject(tool))) {
+    throw new Error('Anthropic attribution final payload.tools must be an object array');
+  }
+  return tools as JsonObject[];
+}
+
+function cacheProfileHash(
+  model: PiModelLike,
+  policy: ClaudeCodeModelPolicy,
+  payload: JsonObject,
+  staticSha256: string,
+): string {
+  return sha256Canonical({
+    projection_version: ANTHROPIC_PROJECTION_VERSION,
+    model: normalizedAnthropicModelId(model),
+    beta: policy.beta,
+    conversation_static_sha256: staticSha256,
+    thinking: payload['thinking'],
+    output_config: payload['output_config'],
+    tool_choice: payload['tool_choice'],
+  });
+}
+
+function cacheRetentionFromPayload(payload: JsonObject): CacheRetention {
+  return inspectCacheControls(payload).retention ?? 'none';
+}
+
+function latestLineageForTarget(
+  context: PiStreamContext,
+  targetModelId: string,
+): AnthropicLineageDetails | undefined {
+  for (let index = context.messages.length - 1; index >= 0; index -= 1) {
+    const message = context.messages[index];
+    if (
+      message?.role !== 'assistant' ||
+      message.model !== targetModelId ||
+      message.stopReason === 'error' ||
+      message.stopReason === 'aborted'
+    ) {
+      continue;
+    }
+    const lineage = parseAnthropicLineageDetails(message);
+    return lineage?.source_model === targetModelId ? lineage : undefined;
+  }
+  return undefined;
+}
+
+function declaredCompactionBoundarySha256(messages: readonly JsonObject[]): string | null {
+  const firstMessage = messages[0];
+  if (firstMessage?.['role'] !== 'user' || !Array.isArray(firstMessage['content'])) return null;
+  const declaresCompaction = firstMessage['content'].some(
+    (block) =>
+      isPlainObject(block) &&
+      block['type'] === 'text' &&
+      typeof block['text'] === 'string' &&
+      block['text'].startsWith(COMPACTION_SUMMARY_PREFIX),
+  );
+  if (!declaresCompaction) return null;
+  return sha256Canonical(promptMessagesWithoutCacheControls([firstMessage])[0]);
+}
+
+function prepareAnthropicLineageDetails(args: {
+  readonly model: PiModelLike;
+  readonly policy: ClaudeCodeModelPolicy;
+  readonly context: PiStreamContext;
+  readonly payload: JsonObject;
+}): PreparedAnthropicLineage['details'] {
+  const targetModelId = normalizedAnthropicModelId(args.model);
+  const messages = requestMessagesFromPayload(args.payload);
+  const staticSha256 = conversationStaticHash(
+    systemBlocksFromPayload(args.payload),
+    toolsFromPayload(args.payload),
+  );
+  const profileSha256 = cacheProfileHash(args.model, args.policy, args.payload, staticSha256);
+  const cacheRetention = cacheRetentionFromPayload(args.payload);
+  const compactionBoundarySha256 = declaredCompactionBoundarySha256(messages);
+  const signatureEpoch = resolveSignatureEpochPolicy(
+    args.model,
+    args.context.messages,
+    cacheRetention,
+    compactionBoundarySha256,
+  );
+  let previous = latestLineageForTarget(args.context, targetModelId);
+  if (previous !== undefined) {
+    const prefixStillExists =
+      messages.length >= previous.request_message_count &&
+      promptMessagesHash(messages.slice(0, previous.request_message_count)) ===
+        previous.request_messages_sha256;
+    if (
+      !prefixStillExists &&
+      compactionBoundarySha256 !== null &&
+      compactionBoundarySha256 !== previous.compaction_boundary_sha256
+    ) {
+      previous = undefined;
+    } else {
+      if (!prefixStillExists) {
+        throw new Error(
+          'Anthropic cache lineage diverged before transport: message history is not append-only',
+        );
+      }
+      if (previous.cache_profile_sha256 !== profileSha256) {
+        throw new Error(
+          'Anthropic cache lineage diverged before transport: model/system/tools/thinking/beta profile changed',
+        );
+      }
+      if (previous.cache_retention !== cacheRetention) previous = undefined;
+    }
+  }
+  return {
+    schema_version: ANTHROPIC_LINEAGE_SCHEMA,
+    projection_version: ANTHROPIC_PROJECTION_VERSION,
+    source_provider: 'anthropic',
+    source_api: 'anthropic-messages',
+    source_model: targetModelId,
+    conversation_static_sha256: staticSha256,
+    request_message_count: messages.length,
+    request_messages_sha256: promptMessagesHash(messages),
+    cache_profile_sha256: profileSha256,
+    cache_retention: cacheRetention,
+    compaction_boundary_sha256: compactionBoundarySha256,
+    signature_epoch_sha256: signatureEpoch.sha256,
+    signature_epoch_inherits_prior: signatureEpoch.inheritsPrior,
+    previous_message_id: previous?.response_id ?? null,
+  };
+}
+
+class AnthropicLineageCoordinator {
+  private readonly inFlight = new Set<string>();
+
+  prepare(args: {
+    readonly sessionId: string;
+    readonly model: PiModelLike;
+    readonly policy: ClaudeCodeModelPolicy;
+    readonly context: PiStreamContext;
+    readonly payload: JsonObject;
+  }): PreparedAnthropicLineage {
+    const targetModelId = normalizedAnthropicModelId(args.model);
+    const key = `${args.sessionId}\u0000${targetModelId}`;
+    if (this.inFlight.has(key)) {
+      throw new Error(
+        `Anthropic cache lineage already has an in-flight request for ${targetModelId}; concurrent continuations must fork`,
+      );
+    }
+    const details = prepareAnthropicLineageDetails(args);
+    this.inFlight.add(key);
+    return { key, details };
+  }
+
+  release(prepared: PreparedAnthropicLineage): void {
+    this.inFlight.delete(prepared.key);
+  }
+}
+
+const anthropicLineageCoordinator = new AnthropicLineageCoordinator();
+
+export function createAnthropicLineageDiagnostic(args: {
+  readonly model: PiModelLike;
+  readonly responseId: string;
+  readonly assistantContent: readonly JsonObject[];
+  readonly requestPayload: JsonObject;
+  readonly previousMessageId?: string | null;
+}): PiAssistantDiagnosticLike {
+  const policy = resolveClaudeCodeModelPolicy(args.model);
+  const messages = requestMessagesFromPayload(args.requestPayload);
+  const staticSha256 = conversationStaticHash(
+    systemBlocksFromPayload(args.requestPayload),
+    toolsFromPayload(args.requestPayload),
+  );
+  const cacheRetention = cacheRetentionFromPayload(args.requestPayload);
+  const compactionBoundarySha256 = declaredCompactionBoundarySha256(messages);
+  const signatureEpoch = initialSignatureEpochPolicy(
+    normalizedAnthropicModelId(args.model),
+    cacheRetention,
+    compactionBoundarySha256,
+  );
+  return {
+    type: ANTHROPIC_LINEAGE_DIAGNOSTIC_TYPE,
+    timestamp: Date.now(),
+    details: {
+      schema_version: ANTHROPIC_LINEAGE_SCHEMA,
+      projection_version: ANTHROPIC_PROJECTION_VERSION,
+      source_provider: 'anthropic',
+      source_api: 'anthropic-messages',
+      source_model: normalizedAnthropicModelId(args.model),
+      response_id: args.responseId,
+      assistant_content_sha256: assistantContentHash(args.assistantContent),
+      conversation_static_sha256: staticSha256,
+      request_message_count: messages.length,
+      request_messages_sha256: promptMessagesHash(messages),
+      cache_profile_sha256: cacheProfileHash(args.model, policy, args.requestPayload, staticSha256),
+      cache_retention: cacheRetention,
+      compaction_boundary_sha256: compactionBoundarySha256,
+      signature_epoch_sha256: signatureEpoch.sha256,
+      signature_epoch_inherits_prior: signatureEpoch.inheritsPrior,
+      previous_message_id: args.previousMessageId ?? null,
+    },
+  };
+}
+
+function appendLineageDiagnostic(
+  output: AssistantMessageLike,
+  prepared: PreparedAnthropicLineage,
+): void {
+  if (typeof output.responseId !== 'string' || output.responseId.length === 0) {
+    throw new Error(
+      'Anthropic attribution successful response is missing responseId lineage proof',
+    );
+  }
+  output.diagnostics ??= [];
+  output.diagnostics.push({
+    type: ANTHROPIC_LINEAGE_DIAGNOSTIC_TYPE,
+    timestamp: Date.now(),
+    details: {
+      ...prepared.details,
+      response_id: output.responseId,
+      assistant_content_sha256: assistantContentHash(output.content),
+    },
+  });
+}
+
+function appendProviderCacheDiagnostic(
+  output: AssistantMessageLike,
+  messageStart: JsonObject,
+): void {
+  const diagnostics = messageStart['diagnostics'];
+  const inputTransformations = messageStart['input_transformations'];
+  if (diagnostics === undefined && inputTransformations === undefined) return;
+  output.diagnostics ??= [];
+  output.diagnostics.push({
+    type: 'anthropic-provider-cache',
+    timestamp: Date.now(),
+    details: {
+      cache_diagnostics: canonicalizeJson(diagnostics ?? null),
+      input_transformations: canonicalizeJson(inputTransformations ?? []),
+    },
+  });
 }
 
 function headersToRecord(headers: Headers): Record<string, string> {
@@ -1379,6 +2078,35 @@ function lowerHeaderMap(headers: Record<string, string> | undefined): Record<str
   const output: Record<string, string> = {};
   for (const [key, value] of Object.entries(headers ?? {})) output[key.toLowerCase()] = value;
   return output;
+}
+
+function resolveAnthropicBetaMessagesUrl(model: PiModelLike): string {
+  const configured =
+    typeof model.baseUrl === 'string' && model.baseUrl.trim().length > 0
+      ? model.baseUrl.trim()
+      : ANTHROPIC_OFFICIAL_ORIGIN;
+  let parsed: URL;
+  try {
+    parsed = new URL(configured);
+  } catch (error) {
+    throw new Error(
+      `Anthropic attribution requires the official Anthropic HTTPS endpoint; invalid model.baseUrl: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  if (
+    parsed.origin !== ANTHROPIC_OFFICIAL_ORIGIN ||
+    parsed.protocol !== 'https:' ||
+    parsed.username.length > 0 ||
+    parsed.password.length > 0 ||
+    (parsed.pathname !== '' && parsed.pathname !== '/') ||
+    parsed.search.length > 0 ||
+    parsed.hash.length > 0
+  ) {
+    throw new Error(
+      `Anthropic attribution requires the official Anthropic HTTPS endpoint ${ANTHROPIC_OFFICIAL_ORIGIN}; refusing model.baseUrl ${JSON.stringify(configured)}`,
+    );
+  }
+  return ANTHROPIC_BETA_MESSAGES_URL;
 }
 
 function buildFetchHeaders(
@@ -1422,6 +2150,23 @@ function parseStreamingJsonFragment(text: string): unknown {
   } catch {
     return {};
   }
+}
+
+function parseCompletedToolInput(text: string): JsonObject {
+  const parsed = parseJsonValue(text, 'Anthropic streamed tool input');
+  if (!isPlainObject(parsed)) {
+    throw new Error('Anthropic streamed tool input must complete as a JSON object');
+  }
+  return parsed;
+}
+
+function anthropicStreamErrorMessage(event: JsonObject): string {
+  const error = event['error'];
+  if (isPlainObject(error) && typeof error['message'] === 'string') {
+    const type = typeof error['type'] === 'string' ? `${error['type']}: ` : '';
+    return `Anthropic beta messages stream error: ${type}${error['message']}`;
+  }
+  return 'Anthropic beta messages stream emitted an error event';
 }
 
 function validCostRate(value: unknown, fallback: number, field: string): number {
@@ -1523,12 +2268,25 @@ async function* iterateSseEvents(
   let eventName = '';
   let dataLines: string[] = [];
   function flush(): JsonObject | undefined {
-    if (dataLines.length === 0) return undefined;
+    if (dataLines.length === 0) {
+      eventName = '';
+      return undefined;
+    }
     const data = dataLines.join('\n');
+    const declaredEventName = eventName;
     eventName = '';
     dataLines = [];
     if (data === '[DONE]') return undefined;
-    return parseJsonObject(data, 'Anthropic beta messages SSE event');
+    const event = parseJsonObject(data, 'Anthropic beta messages SSE event');
+    if (
+      declaredEventName.length > 0 &&
+      (typeof event['type'] !== 'string' || event['type'] !== declaredEventName)
+    ) {
+      throw new Error(
+        `Anthropic beta messages SSE event name ${JSON.stringify(declaredEventName)} did not match data.type`,
+      );
+    }
+    return event;
   }
   function consumeLine(line: string): JsonObject | undefined {
     if (line.length === 0) return flush();
@@ -1539,7 +2297,6 @@ async function* iterateSseEvents(
     if (value.startsWith(' ')) value = value.slice(1);
     if (field === 'event') eventName = value;
     if (field === 'data') dataLines.push(value);
-    void eventName;
     return undefined;
   }
   try {
@@ -1632,6 +2389,7 @@ export function streamAnthropicViaBetaMessages(
   }
 
   void (async () => {
+    let preparedLineage: PreparedAnthropicLineage | undefined;
     try {
       const apiKey = options?.apiKey;
       if (typeof apiKey !== 'string' || apiKey.length === 0) {
@@ -1645,8 +2403,29 @@ export function streamAnthropicViaBetaMessages(
         );
       }
 
+      const url = resolveAnthropicBetaMessagesUrl(model);
       const policy = resolveClaudeCodeModelPolicy(model);
       let params = buildAnthropicRequestParams(model, context, options);
+      const provisionalLineage = prepareAnthropicLineageDetails({
+        model,
+        policy,
+        context,
+        payload: params,
+      });
+      if (policy.supportsCacheDiagnostics) {
+        if (!policy.beta.split(',').includes(ANTHROPIC_CACHE_DIAGNOSTICS_BETA)) {
+          throw new Error('Anthropic cache diagnostics policy is missing its required beta header');
+        }
+        params['diagnostics'] = {
+          previous_message_id: provisionalLineage.previous_message_id,
+        };
+      }
+      if (
+        policy.enforcesThinkingPrefixBinding &&
+        !policy.beta.split(',').includes(ANTHROPIC_THINKING_BINDING_BETA)
+      ) {
+        throw new Error('Anthropic thinking-binding policy is missing its required beta header');
+      }
       const nextParams = await options?.onPayload?.(params, model);
       if (nextParams !== undefined) {
         if (!isPlainObject(nextParams))
@@ -1666,16 +2445,52 @@ export function streamAnthropicViaBetaMessages(
           'Anthropic attribution could not derive session_id from rewritten metadata.user_id',
         );
 
-      const baseUrl =
-        model.baseUrl && model.baseUrl.length > 0
-          ? model.baseUrl.replace(/\/$/, '')
-          : 'https://api.anthropic.com';
-      const url = `${baseUrl}/v1/messages?beta=true`;
+      preparedLineage = anthropicLineageCoordinator.prepare({
+        sessionId,
+        model,
+        policy,
+        context,
+        payload: params,
+      });
+      if (
+        preparedLineage.details.previous_message_id !== provisionalLineage.previous_message_id ||
+        preparedLineage.details.conversation_static_sha256 !==
+          provisionalLineage.conversation_static_sha256 ||
+        preparedLineage.details.request_message_count !==
+          provisionalLineage.request_message_count ||
+        preparedLineage.details.request_messages_sha256 !==
+          provisionalLineage.request_messages_sha256 ||
+        preparedLineage.details.cache_profile_sha256 !== provisionalLineage.cache_profile_sha256 ||
+        preparedLineage.details.cache_retention !== provisionalLineage.cache_retention ||
+        preparedLineage.details.compaction_boundary_sha256 !==
+          provisionalLineage.compaction_boundary_sha256 ||
+        preparedLineage.details.signature_epoch_sha256 !==
+          provisionalLineage.signature_epoch_sha256 ||
+        preparedLineage.details.signature_epoch_inherits_prior !==
+          provisionalLineage.signature_epoch_inherits_prior
+      ) {
+        throw new Error(
+          'Anthropic request/cache lineage changed during before_provider_request transforms',
+        );
+      }
+      if (policy.supportsCacheDiagnostics) {
+        const diagnostics = params['diagnostics'];
+        if (
+          !isPlainObject(diagnostics) ||
+          diagnostics['previous_message_id'] !== preparedLineage.details.previous_message_id
+        ) {
+          throw new Error(
+            'Anthropic cache diagnostics were removed or changed during before_provider_request transforms',
+          );
+        }
+      }
+
       const headers = buildFetchHeaders(options, apiKey, sessionId, policy.beta);
       const requestInit: RequestInit = {
         method: 'POST',
         headers,
         body: JSON.stringify(params),
+        redirect: 'error',
       };
       if (options?.signal) requestInit.signal = options.signal;
       const response = await fetch(url, requestInit);
@@ -1688,26 +2503,67 @@ export function streamAnthropicViaBetaMessages(
           `Anthropic beta messages request failed: HTTP ${response.status} ${response.statusText}: ${await response.text()}`,
         );
       }
+      const contentType = response.headers.get('content-type')?.toLowerCase() ?? '';
+      if (!contentType.includes('text/event-stream')) {
+        throw new Error(
+          `Anthropic beta messages response must be text/event-stream; got ${JSON.stringify(contentType || '(missing)')}`,
+        );
+      }
 
       stream.push({ type: 'start', partial: output });
       const blocks = output.content as Array<JsonObject & { index?: number; partialJson?: string }>;
+      const activeContentIndexes = new Set<number>();
+      let sawMessageStart = false;
+      let sawMessageStop = false;
+      let sawTerminalStopReason = false;
       for await (const event of iterateSseEvents(response, options?.signal)) {
-        if (event['type'] === 'message_start' && isPlainObject(event['message'])) {
+        const eventType = event['type'];
+        if (typeof eventType !== 'string') {
+          throw new Error('Anthropic beta messages SSE event is missing string data.type');
+        }
+        if (eventType === 'error') throw new Error(anthropicStreamErrorMessage(event));
+        if (eventType === 'ping') continue;
+        if (sawMessageStop) {
+          throw new Error('Anthropic beta messages stream emitted data after message_stop');
+        }
+        if (eventType !== 'message_start' && !sawMessageStart) {
+          throw new Error('Anthropic beta messages stream emitted content before message_start');
+        }
+
+        if (eventType === 'message_start') {
+          if (sawMessageStart || !isPlainObject(event['message'])) {
+            throw new Error(
+              'Anthropic beta messages stream emitted malformed/duplicate message_start',
+            );
+          }
+          if (typeof event['message']['id'] !== 'string' || event['message']['id'].length === 0) {
+            throw new Error('Anthropic beta messages message_start is missing a response id');
+          }
+          sawMessageStart = true;
           if (typeof event['message']['id'] === 'string')
             output.responseId = event['message']['id'];
+          appendProviderCacheDiagnostic(output, event['message']);
           updateAnthropicUsage(
             output,
             isPlainObject(event['message']['usage']) ? event['message']['usage'] : undefined,
             model,
           );
-        } else if (
-          event['type'] === 'content_block_start' &&
-          typeof event['index'] === 'number' &&
-          isPlainObject(event['content_block'])
-        ) {
+        } else if (eventType === 'content_block_start') {
+          const contentIndex = event['index'];
           const contentBlock = event['content_block'];
+          if (
+            !Number.isSafeInteger(contentIndex) ||
+            (contentIndex as number) < 0 ||
+            !isPlainObject(contentBlock)
+          ) {
+            throw new Error('Anthropic beta messages stream emitted malformed content_block_start');
+          }
+          if (activeContentIndexes.has(contentIndex as number)) {
+            throw new Error('Anthropic beta messages stream duplicated an active content block');
+          }
+          activeContentIndexes.add(contentIndex as number);
           if (contentBlock['type'] === 'text') {
-            output.content.push({ type: 'text', text: '', index: event['index'] });
+            output.content.push({ type: 'text', text: '', index: contentIndex });
             stream.push({
               type: 'text_start',
               contentIndex: output.content.length - 1,
@@ -1718,7 +2574,7 @@ export function streamAnthropicViaBetaMessages(
               type: 'thinking',
               thinking: '',
               thinkingSignature: '',
-              index: event['index'],
+              index: contentIndex,
             });
             stream.push({
               type: 'thinking_start',
@@ -1726,12 +2582,15 @@ export function streamAnthropicViaBetaMessages(
               partial: output,
             });
           } else if (contentBlock['type'] === 'redacted_thinking') {
+            if (typeof contentBlock['data'] !== 'string') {
+              throw new Error('Anthropic redacted_thinking block is missing string data');
+            }
             output.content.push({
               type: 'thinking',
               thinking: '[Reasoning redacted]',
               thinkingSignature: contentBlock['data'],
               redacted: true,
-              index: event['index'],
+              index: contentIndex,
             });
             stream.push({
               type: 'thinking_start',
@@ -1739,29 +2598,48 @@ export function streamAnthropicViaBetaMessages(
               partial: output,
             });
           } else if (contentBlock['type'] === 'tool_use') {
+            if (
+              typeof contentBlock['id'] !== 'string' ||
+              typeof contentBlock['name'] !== 'string' ||
+              !isPlainObject(contentBlock['input'] ?? {})
+            ) {
+              throw new Error('Anthropic tool_use block is malformed');
+            }
             output.content.push({
               type: 'toolCall',
               id: contentBlock['id'],
               name: contentBlock['name'],
               arguments: contentBlock['input'] ?? {},
               partialJson: '',
-              index: event['index'],
+              index: contentIndex,
             });
             stream.push({
               type: 'toolcall_start',
               contentIndex: output.content.length - 1,
               partial: output,
             });
+          } else {
+            throw new Error(
+              `Anthropic beta messages stream emitted unsupported content block ${JSON.stringify(contentBlock['type'])}`,
+            );
           }
-        } else if (
-          event['type'] === 'content_block_delta' &&
-          typeof event['index'] === 'number' &&
-          isPlainObject(event['delta'])
-        ) {
-          const blockIndex = blocks.findIndex((block) => block.index === event['index']);
-          const block = blocks[blockIndex];
-          if (!block) continue;
+        } else if (eventType === 'content_block_delta') {
+          const contentIndex = event['index'];
           const delta = event['delta'];
+          if (
+            !Number.isSafeInteger(contentIndex) ||
+            !activeContentIndexes.has(contentIndex as number) ||
+            !isPlainObject(delta)
+          ) {
+            throw new Error(
+              'Anthropic beta messages stream emitted malformed/orphan content_block_delta',
+            );
+          }
+          const blockIndex = blocks.findIndex((block) => block.index === contentIndex);
+          const block = blocks[blockIndex];
+          if (!block) {
+            throw new Error('Anthropic beta messages stream delta has no projected content block');
+          }
           if (
             delta['type'] === 'text_delta' &&
             block['type'] === 'text' &&
@@ -1806,11 +2684,26 @@ export function streamAnthropicViaBetaMessages(
           ) {
             block['thinkingSignature'] =
               `${String(block['thinkingSignature'] ?? '')}${delta['signature']}`;
+          } else {
+            throw new Error(
+              `Anthropic beta messages stream emitted unsupported/mismatched delta ${JSON.stringify(delta['type'])}`,
+            );
           }
-        } else if (event['type'] === 'content_block_stop' && typeof event['index'] === 'number') {
-          const blockIndex = blocks.findIndex((block) => block.index === event['index']);
+        } else if (eventType === 'content_block_stop') {
+          const contentIndex = event['index'];
+          if (
+            !Number.isSafeInteger(contentIndex) ||
+            !activeContentIndexes.delete(contentIndex as number)
+          ) {
+            throw new Error(
+              'Anthropic beta messages stream emitted malformed/orphan content_block_stop',
+            );
+          }
+          const blockIndex = blocks.findIndex((block) => block.index === contentIndex);
           const block = blocks[blockIndex];
-          if (!block) continue;
+          if (!block) {
+            throw new Error('Anthropic beta messages stream stop has no projected content block');
+          }
           delete block.index;
           if (block['type'] === 'text') {
             stream.push({
@@ -1827,7 +2720,10 @@ export function streamAnthropicViaBetaMessages(
               partial: output,
             });
           } else if (block['type'] === 'toolCall') {
-            block['arguments'] = parseStreamingJsonFragment(block.partialJson ?? '{}');
+            block['arguments'] =
+              block.partialJson && block.partialJson.length > 0
+                ? parseCompletedToolInput(block.partialJson)
+                : canonicalizeJson(block['arguments'] ?? {});
             delete block.partialJson;
             stream.push({
               type: 'toolcall_end',
@@ -1836,19 +2732,54 @@ export function streamAnthropicViaBetaMessages(
               partial: output,
             });
           }
-        } else if (event['type'] === 'message_delta') {
-          if (isPlainObject(event['delta']) && event['delta']['stop_reason'])
-            output.stopReason = mapStopReason(event['delta']['stop_reason']);
+        } else if (eventType === 'message_delta') {
+          if (!isPlainObject(event['delta'])) {
+            throw new Error('Anthropic beta messages stream emitted malformed message_delta');
+          }
+          const stopReason = event['delta']['stop_reason'];
+          if (typeof stopReason === 'string') {
+            const mapped = mapStopReason(stopReason);
+            if (mapped === 'error') {
+              throw new Error(
+                `Anthropic beta messages stream emitted unsupported stop reason ${JSON.stringify(stopReason)}`,
+              );
+            }
+            output.stopReason = mapped;
+            sawTerminalStopReason = true;
+          }
           updateAnthropicUsage(
             output,
             isPlainObject(event['usage']) ? event['usage'] : undefined,
             model,
           );
+        } else if (eventType === 'message_stop') {
+          if (activeContentIndexes.size > 0) {
+            throw new Error(
+              'Anthropic beta messages message_stop arrived with open content blocks',
+            );
+          }
+          sawMessageStop = true;
+        } else {
+          throw new Error(
+            `Anthropic beta messages stream emitted unsupported event ${JSON.stringify(eventType)}`,
+          );
         }
       }
       if (options?.signal?.aborted) throw new Error('Request was aborted');
-      if (output.stopReason === 'error')
-        throw new Error(output.errorMessage || 'Anthropic stream ended with error stop reason');
+      if (!sawMessageStart) {
+        throw new Error('Anthropic beta messages stream ended without message_start');
+      }
+      if (!sawMessageStop) {
+        throw new Error('Anthropic beta messages stream ended without message_stop');
+      }
+      if (!sawTerminalStopReason || output.stopReason === 'error') {
+        throw new Error(
+          'Anthropic beta messages stream ended without a valid terminal stop reason',
+        );
+      }
+      if (preparedLineage === undefined)
+        throw new Error('Anthropic attribution completed without prepared cache lineage');
+      appendLineageDiagnostic(output, preparedLineage);
       stream.push({ type: 'done', reason: output.stopReason, message: output });
       stream.end();
     } catch (error) {
@@ -1860,6 +2791,8 @@ export function streamAnthropicViaBetaMessages(
       output.errorMessage = error instanceof Error ? error.message : String(error);
       stream.push({ type: 'error', reason: output.stopReason, error: output });
       stream.end();
+    } finally {
+      if (preparedLineage !== undefined) anthropicLineageCoordinator.release(preparedLineage);
     }
   })();
 
@@ -1921,7 +2854,7 @@ export default function spawnAnthropicAttribution(pi: PiExtensionHost): void {
     streamSimple: (model, context, options) =>
       streamAnthropicViaBetaMessages(model, context, {
         ...(options ?? {}),
-        cacheRetention: resolveCacheRetentionPreference(options, getSessionOverride()),
+        cacheRetention: resolveRegisteredCacheRetention(options, getSessionOverride()),
       }),
   });
 

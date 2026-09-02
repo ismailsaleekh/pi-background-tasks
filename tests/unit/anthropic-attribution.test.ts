@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import spawnAnthropicAttribution, {
   ANTHROPIC_ATTRIBUTION_CLAIM_CHANNEL,
+  buildAnthropicRequestParams,
   rewriteAnthropicRequestPayload,
   type PiExtensionHost,
   type PiContextLike,
@@ -120,6 +121,71 @@ void describe('global Anthropic attribution extension', () => {
     for (const rejected of BAD_SYSTEM_LINES) {
       assert.equal(JSON.stringify(rewritten).includes(rejected), false);
     }
+  });
+
+  void it('BUG-192 strips Codex/ZAI opaque and redacted reasoning before Anthropic transport', () => {
+    const params = buildAnthropicRequestParams(
+      {
+        provider: 'anthropic',
+        id: 'claude-fable-5-1',
+        maxTokens: 128_000,
+        reasoning: true,
+      },
+      {
+        messages: [
+          { role: 'user', content: 'start' },
+          {
+            role: 'assistant',
+            provider: 'openai-codex',
+            api: 'openai-codex-responses',
+            model: 'gpt-5.6-sol',
+            stopReason: 'stop',
+            content: [
+              {
+                type: 'thinking',
+                thinking: 'foreign summary',
+                thinkingSignature: '{"id":"foreign-signature"}',
+              },
+              {
+                type: 'thinking',
+                thinking: '[foreign redacted]',
+                thinkingSignature: 'foreign-redacted-data',
+                redacted: true,
+              },
+              { type: 'text', text: 'answer' },
+            ],
+          },
+          { role: 'user', content: 'continue through ZAI' },
+          {
+            role: 'assistant',
+            provider: 'zai',
+            api: 'openai-completions',
+            model: 'glm-5.2',
+            stopReason: 'stop',
+            content: [
+              {
+                type: 'thinking',
+                thinking: 'ZAI summary 😀',
+                thinkingSignature: 'reasoning_content',
+              },
+            ],
+          },
+          { role: 'user', content: 'continue' },
+        ],
+      },
+      { reasoning: 'high' },
+    );
+    const serialized = JSON.stringify(params);
+    assert.equal(serialized.includes('foreign-signature'), false);
+    assert.equal(serialized.includes('foreign summary'), true);
+    assert.equal(serialized.includes('foreign-redacted-data'), false);
+    assert.equal(serialized.includes('[foreign redacted]'), false);
+    assert.equal(serialized.includes('reasoning_content'), false);
+    assert.equal(serialized.includes('ZAI summary 😀'), true);
+    assert.deepEqual(params['thinking'], {
+      type: 'adaptive',
+      block_binding: { prefix_mismatch_behavior: 'error' },
+    });
   });
 
   void it('leaves non-Anthropic payloads untouched', () => {

@@ -26,7 +26,7 @@
       "state": "stale-authored-prose"
     },
     {
-      "authored_body_sha256": "sha256:72c53dcc104f9b5efa57e38bcb21a4c3c620d5caf1571af82348f94dcafbe941",
+      "authored_body_sha256": "sha256:fd861436efef0195654aaf32a28c922fb00d11c8fc0129e526a0ed5cf36208e6",
       "covers_sources": [
         "extensions/anthropic-attribution.ts",
         "src/core/anthropic-attribution-path.ts",
@@ -902,7 +902,7 @@
         "id": "command:claude-cache",
         "kind": "command",
         "name": "claude-cache",
-        "source": "src/core/anthropic-attribution.ts:1928"
+        "source": "src/core/anthropic-attribution.ts:2861"
       },
       {
         "description": "Start fixed-purpose Fusion reason in the background and return immediately.",

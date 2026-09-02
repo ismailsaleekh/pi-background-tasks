@@ -17,14 +17,24 @@ This subsystem owns the package-wide Anthropic subscription attribution provider
 
 For Anthropic sessions it registers the package-owned `anthropic` provider transport and applies the Claude Code subscription request contract:
 
-- subscription OAuth token transport only; metered Anthropic credentials are refused;
+- subscription OAuth token transport only; metered Anthropic credentials are refused, the bearer token is sent only to the exact official Anthropic HTTPS origin, and HTTP redirects are disabled;
 - Claude Code session, account, device, beta, user-agent, and system-identity attribution;
 - model-specific fixed/adaptive thinking policy;
 - the conservative 200K subscription context policy;
+- provenance-aware cross-provider history projection and Fable 5.1 thinking binding;
 - system, final-tool, and final-conversation cache surfaces;
-- provider-authoritative usage and one-hour cache-write accounting when reported.
+- provider-authoritative usage, cache diagnostics, and one-hour cache-write accounting when reported;
+- strict SSE completion: matching event names, one `message_start`, closed content blocks, a recognized terminal stop reason, and one `message_stop` are required before success or lineage persistence.
 
 The extension reads `userID` and `oauthAccount.accountUuid` from `~/.claude.json` without writing it. Missing/malformed account data, unsupported model policy, malformed payload/cache controls, and non-OAuth transport fail loudly.
+
+## Cross-provider history and cache lineage
+
+Assistant messages carry their producing `provider`, `api`, and `model`. The transport never parses an opaque reasoning signature. Foreign visible thinking is projected deterministically as text; foreign opaque, redacted, and signature-only blocks are omitted. Claude thinking is replayed only when a successful direct-Anthropic response carries a matching `anthropic-cache-lineage` diagnostic binding response ID, source tuple, assistant-content hash, system/tools attribution profile, effective cache retention, request-message count, and request-prefix hash. Empty, redacted, and valid non-BMP Unicode Claude blocks are preserved byte-for-byte. Fable 5.1 accepts lineage-proven earlier Claude blocks; reverse replay is denied.
+
+Every target model has an independent append-only lane. Before transport, the adapter proves the prior successful wire history remains an exact prefix and that model, sanitized system, canonical tools, thinking/effort, beta profile, and effective retention are unchanged. Unexpected drift fails before network. An intentional TTL change starts a cryptographically named signature epoch and suppresses prior-epoch signed thinking permanently, including after a later short→long return. A canonical leading Pi compaction summary likewise opens one hash-bound signature epoch only; retaining that old marker cannot excuse later unrelated history drift. Tool IDs, schemas, arguments, user messages, and text-only tool results have deterministic block-shaped serialization, so advancing the final cache marker does not rewrite prior content. Late payload hooks may add attribution metadata but cannot change the already-authorized message/static/profile/retention lineage.
+
+Fable 5.1 always sends `thinking-binding-controls-2026-08-01` with prefix mismatch set to `error`, plus `cache-diagnosis-2026-04-07`. The previous successful response ID is chained within the same model lane; provider diagnostics and `input_transformations` are persisted outside model context. There is no automatic signature retry or silent thinking drop.
 
 ## Sanitization
 
@@ -52,7 +62,7 @@ Arbitrary shell commands started through `bg_run` are not rewritten. An Anthropi
 
 ## Cache retention
 
-`PI_CACHE_RETENTION=none|short|long` selects process/provider policy. `/claude-cache status|short|long|default` stores a branch-local session override as a custom entry that does not enter model context. Call-level `cacheRetention` remains highest precedence, notably preserving Pi's compaction opt-out.
+`PI_CACHE_RETENTION=none|short|long` selects process/provider policy. `/claude-cache status|short|long|default` stores a branch-local session override as a custom entry that does not enter model context. Registered subscription sessions default to one hour even when Pi supplies its generic five-minute provider default; an intentional short policy must come from the session command or environment. Call-level `cacheRetention:none` remains authoritative for one-off compaction requests and emits no cache markers.
 
 ## Related docs
 
