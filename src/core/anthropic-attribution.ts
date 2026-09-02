@@ -209,6 +209,11 @@ const CLAUDE_CODE_MODEL_POLICIES: Record<string, ClaudeCodeModelPolicy> = Object
     CLAUDE_CODE_ADAPTIVE_200K_BETA,
     'adaptive-effort',
   ),
+  'claude-fable-5-1': claudeCode200KSubscriptionPolicy(
+    'claude-fable-5-1',
+    CLAUDE_CODE_ADAPTIVE_200K_BETA,
+    'adaptive-effort',
+  ),
   'claude-haiku-4-5': claudeCode200KSubscriptionPolicy(
     'claude-haiku-4-5',
     CLAUDE_CODE_BETA,

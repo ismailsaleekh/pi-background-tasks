@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import spawnAnthropicAttribution, {
   ANTHROPIC_ATTRIBUTION_CLAIM_CHANNEL,
+  resolveClaudeCodeModelPolicy,
   rewriteAnthropicRequestPayload,
   type PiExtensionHost,
   type PiContextLike,
@@ -191,5 +192,22 @@ void describe('global Anthropic attribution extension', () => {
     assert.equal(second.registrations.handlers, 0);
     assert.equal(second.registrations.providers, 0);
     assert.equal(bus.listenerCount(ANTHROPIC_ATTRIBUTION_CLAIM_CHANNEL), 1);
+  });
+
+  void it('resolves claude-fable-5-1 to the adaptive 200K subscription policy', () => {
+    for (const id of ['claude-fable-5-1', 'anthropic/claude-fable-5-1']) {
+      const policy = resolveClaudeCodeModelPolicy({ provider: 'anthropic', id });
+      assert.equal(policy.modelId, 'claude-fable-5-1');
+      assert.equal(policy.thinkingPolicy, 'adaptive-effort');
+      assert.equal(policy.contextWindow, 200_000);
+      assert.deepEqual(
+        policy.beta,
+        resolveClaudeCodeModelPolicy({ provider: 'anthropic', id: 'claude-fable-5' }).beta,
+      );
+    }
+    assert.throws(
+      () => resolveClaudeCodeModelPolicy({ provider: 'anthropic', id: 'claude-fable-9' }),
+      /has no Claude Code model policy for claude-fable-9/,
+    );
   });
 });

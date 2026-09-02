@@ -137,6 +137,7 @@ export const TOKEN_BUDGET_FAMILY_CALIBRATIONS: Readonly<
 const MODEL_OVERRIDES: Readonly<Record<string, TokenBudgetFamily>> = Object.freeze({
   'anthropic/claude-opus-5': 'anthropic',
   'anthropic/claude-fable-5': 'anthropic',
+  'anthropic/claude-fable-5-1': 'anthropic',
   'openai-codex/gpt-5.6-sol': 'openai-codex',
   'openai-codex/gpt-5.6-terra': 'openai-codex',
   'openai-codex/gpt-5.5': 'openai-codex',

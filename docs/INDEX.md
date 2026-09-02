@@ -132,7 +132,7 @@ Generated navigation for every package-local documentation page. This index inte
 | command | `bg-clear` | `command:bg-clear` | `src/extension.ts:559` |
 | command | `bg-tasks` | `command:bg-tasks` | `src/extension.ts:551` |
 | command | `bg-update` | `command:bg-update` | `src/extension.ts:567` |
-| command | `claude-cache` | `command:claude-cache` | `src/core/anthropic-attribution.ts:1928` |
+| command | `claude-cache` | `command:claude-cache` | `src/core/anthropic-attribution.ts:1933` |
 | command | `fusion` | `command:fusion` | `src/fusion-extension.ts:996` |
 | command | `fusion-models` | `command:fusion-models` | `src/fusion-extension.ts:1029` |
 | command | `jobs` | `command:jobs` | `src/extension.ts:605` |

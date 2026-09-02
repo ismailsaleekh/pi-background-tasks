@@ -12,7 +12,7 @@ covers_sources: []
 <!-- pi-docs:begin name="command-contract-claude-cache" generator="scripts/docs/generate.mjs" -->
 | Command | Description | Provenance |
 | --- | --- | --- |
-| `/claude-cache` | Show or set Claude cache retention for this session (short, long, default) | `src/core/anthropic-attribution.ts:1928` |
+| `/claude-cache` | Show or set Claude cache retention for this session (short, long, default) | `src/core/anthropic-attribution.ts:1933` |
 <!-- pi-docs:end name="command-contract-claude-cache" -->
 
 Show or change the Anthropic cache-retention preference for the current session.
