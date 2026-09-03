@@ -379,10 +379,6 @@ export interface PiExtensionHost extends PiProviderRegistrationHost {
     eventName: 'session_start' | 'session_shutdown' | 'session_tree' | 'before_agent_start',
     handler: (event: unknown, ctx: PiContextLike) => void,
   ): void;
-  on(
-    eventName: 'before_provider_request',
-    handler: (event: { readonly payload: unknown }, ctx: PiContextLike) => unknown,
-  ): void;
   registerCommand(name: string, config: PiCommandConfigLike): void;
   appendEntry(customType: string, data?: unknown): void;
 }
@@ -451,6 +447,10 @@ export interface PiSimpleStreamOptions {
     response: { readonly status: number; readonly headers: Record<string, string> },
     model: PiModelLike,
   ) => Promise<void> | void;
+}
+
+export interface AnthropicTransportDependencies {
+  readonly loadAccount?: () => ClaudeAttributionAccount;
 }
 
 export interface AssistantMessageLike {
@@ -777,8 +777,48 @@ function inspectCacheControls(payload: JsonObject): CacheControlInspection {
   return { count, retention: count === 0 ? undefined : hasLong ? 'long' : 'short' };
 }
 
+interface CacheControlOccurrence {
+  readonly path: string;
+  readonly control: AnthropicCacheControl;
+}
+
+function cacheControlOccurrences(payload: JsonObject): CacheControlOccurrence[] {
+  const occurrences: CacheControlOccurrence[] = [];
+  const inspectBlocks = (value: unknown, path: string): void => {
+    if (!Array.isArray(value)) return;
+    value.forEach((block, index) => {
+      if (!isPlainObject(block)) return;
+      const blockPath = `${path}[${String(index)}]`;
+      if (block['cache_control'] !== undefined) {
+        const control = cloneAnthropicCacheControl(block['cache_control']);
+        if (control !== undefined) occurrences.push({ path: blockPath, control });
+      }
+      if (block['type'] === 'tool_result') inspectBlocks(block['content'], `${blockPath}.content`);
+    });
+  };
+
+  if (payload['cache_control'] !== undefined) {
+    const control = cloneAnthropicCacheControl(payload['cache_control']);
+    if (control !== undefined) occurrences.push({ path: '$', control });
+  }
+  inspectBlocks(payload['system'], '$.system');
+  inspectBlocks(payload['tools'], '$.tools');
+  const messages = payload['messages'];
+  if (Array.isArray(messages)) {
+    messages.forEach((message, index) => {
+      if (isPlainObject(message))
+        inspectBlocks(message['content'], `$.messages[${String(index)}].content`);
+    });
+  }
+  return occurrences;
+}
+
 function countCacheControlBreakpoints(payload: JsonObject): number {
-  return inspectCacheControls(payload).count;
+  return cacheControlOccurrences(payload).length;
+}
+
+function cacheControlTopologySha256(payload: JsonObject): string {
+  return sha256Canonical(cacheControlOccurrences(payload));
 }
 
 function assertCacheControlBreakpointLimit(payload: JsonObject): void {
@@ -843,12 +883,15 @@ export function isAnthropicContext(ctx: PiContextLike): boolean {
   return ctx.model?.provider === 'anthropic';
 }
 
-function getSessionId(ctx: PiContextLike): string {
-  const sessionId = ctx.sessionManager.getSessionId();
-  if (typeof sessionId !== 'string' || sessionId.trim().length === 0) {
-    throw new Error('Anthropic attribution requires a non-empty Pi session id');
+function requireSessionId(value: unknown, source: string): string {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw new Error(`Anthropic attribution requires a non-empty ${source}`);
   }
-  return sessionId;
+  return value;
+}
+
+function getSessionId(ctx: PiContextLike): string {
+  return requireSessionId(ctx.sessionManager.getSessionId(), 'Pi session id');
 }
 
 function normalizedAnthropicModelId(model: PiModelLike): string {
@@ -929,16 +972,22 @@ export function registerAnthropicAttributionProvider(
   pi: PiProviderRegistrationHost,
   ctx: PiContextLike,
   getSessionOverride: () => Exclude<CacheRetention, 'none'> | undefined = () => undefined,
+  dependencies: AnthropicTransportDependencies = {},
 ): void {
   if (!isAnthropicContext(ctx)) return;
   pi.registerProvider('anthropic', {
     api: 'anthropic-messages',
     headers: buildAnthropicAttributionHeaders(getSessionId(ctx), ctx.model),
     streamSimple: (model, context, options) =>
-      streamAnthropicViaBetaMessages(model, context, {
-        ...(options ?? {}),
-        cacheRetention: resolveRegisteredCacheRetention(options, getSessionOverride()),
-      }),
+      streamAnthropicViaBetaMessages(
+        model,
+        context,
+        {
+          ...(options ?? {}),
+          cacheRetention: resolveRegisteredCacheRetention(options, getSessionOverride()),
+        },
+        dependencies,
+      ),
   });
 }
 
@@ -1093,26 +1142,50 @@ function appendAuditRecord(args: {
   appendFileSync(auditPath, `${JSON.stringify(record)}\n`, { encoding: 'utf8', mode: 0o600 });
 }
 
-export function rewriteAnthropicRequestPayload(args: {
+function requireAttributionAccount(value: unknown): ClaudeAttributionAccount {
+  if (
+    !isPlainObject(value) ||
+    typeof value['deviceId'] !== 'string' ||
+    value['deviceId'].trim().length === 0 ||
+    typeof value['accountUuid'] !== 'string' ||
+    value['accountUuid'].trim().length === 0
+  ) {
+    throw new Error('Anthropic attribution account loader returned malformed account identity');
+  }
+  return { deviceId: value['deviceId'], accountUuid: value['accountUuid'] };
+}
+
+function anthropicMetadataUserId(account: ClaudeAttributionAccount, sessionId: string): string {
+  return JSON.stringify({
+    account_uuid: account.accountUuid,
+    device_id: account.deviceId,
+    session_id: sessionId,
+  });
+}
+
+interface AnthropicAttributionForSessionArgs {
   readonly payload: unknown;
-  readonly ctx: PiContextLike;
+  readonly model: PiModelLike;
+  readonly sessionId: string;
   readonly account: ClaudeAttributionAccount;
   readonly headerRegistered?: boolean;
   readonly cacheRetention?: CacheRetention;
-  readonly env?: ProviderEnv;
-}): unknown {
-  if (!isAnthropicContext(args.ctx)) return undefined;
+}
+
+function rewriteAnthropicRequestPayloadForSession(
+  args: AnthropicAttributionForSessionArgs,
+): JsonObject {
   if (!isPlainObject(args.payload)) {
     throw new Error('Anthropic attribution expected provider payload to be a JSON object');
   }
 
-  const sessionId = getSessionId(args.ctx);
+  const sessionId = requireSessionId(args.sessionId, 'provider options.sessionId');
   const metadata = args.payload['metadata'] === undefined ? {} : args.payload['metadata'];
   if (!isPlainObject(metadata)) {
     throw new Error('Anthropic attribution expected payload.metadata to be an object when present');
   }
 
-  const policy = resolveClaudeCodeModelPolicy(args.ctx.model ?? {});
+  const policy = resolveClaudeCodeModelPolicy(args.model);
   const maxTokens =
     args.payload['max_tokens'] === undefined
       ? undefined
@@ -1130,7 +1203,7 @@ export function rewriteAnthropicRequestPayload(args: {
   const cacheControl =
     configuredCacheRetention === undefined
       ? undefined
-      : resolveAnthropicCacheControl(args.ctx.model, {
+      : resolveAnthropicCacheControl(args.model, {
           cacheRetention: configuredCacheRetention,
         });
 
@@ -1138,11 +1211,7 @@ export function rewriteAnthropicRequestPayload(args: {
     ...args.payload,
     metadata: {
       ...metadata,
-      user_id: JSON.stringify({
-        account_uuid: args.account.accountUuid,
-        device_id: args.account.deviceId,
-        session_id: sessionId,
-      }),
+      user_id: anthropicMetadataUserId(args.account, sessionId),
     },
     system: withClaudeCodeSystemIdentity(args.payload['system'], billingSystemText, cacheControl),
   };
@@ -1161,6 +1230,79 @@ export function rewriteAnthropicRequestPayload(args: {
   });
 
   return rewritten;
+}
+
+function assertProtectedAnthropicAttribution(args: {
+  readonly payload: JsonObject;
+  readonly account: ClaudeAttributionAccount;
+  readonly sessionId: string;
+  readonly billingSystemText: string;
+  readonly modelId: string;
+  readonly cacheControlTopologySha256: string;
+}): void {
+  if (args.payload['model'] !== args.modelId || args.payload['stream'] !== true) {
+    throw new Error(
+      'Anthropic protected attribution model/stream route changed during payload middleware',
+    );
+  }
+  const metadata = args.payload['metadata'];
+  if (
+    !isPlainObject(metadata) ||
+    metadata['user_id'] !== anthropicMetadataUserId(args.account, args.sessionId)
+  ) {
+    throw new Error(
+      'Anthropic protected attribution metadata.user_id/account/device/session_id changed during payload middleware',
+    );
+  }
+  const system = args.payload['system'];
+  if (!Array.isArray(system)) {
+    throw new Error(
+      'Anthropic protected attribution system identity was removed during payload middleware',
+    );
+  }
+  const billingBlocks = system.filter(
+    (block) =>
+      isPlainObject(block) &&
+      typeof block['text'] === 'string' &&
+      block['text'].startsWith('x-anthropic-billing-header:'),
+  );
+  const sdkBlocks = system.filter(
+    (block) => isPlainObject(block) && block['text'] === CLAUDE_AGENT_SDK_SYSTEM_TEXT,
+  );
+  if (
+    billingBlocks.length !== 1 ||
+    billingBlocks[0]?.['text'] !== args.billingSystemText ||
+    sdkBlocks.length !== 1 ||
+    system[0] !== billingBlocks[0] ||
+    system[1] !== sdkBlocks[0]
+  ) {
+    throw new Error(
+      'Anthropic protected attribution system identity changed during payload middleware',
+    );
+  }
+  assertCacheControlBreakpointLimit(args.payload);
+  if (cacheControlTopologySha256(args.payload) !== args.cacheControlTopologySha256) {
+    throw new Error('Anthropic protected cache-control topology changed during payload middleware');
+  }
+}
+
+export function rewriteAnthropicRequestPayload(args: {
+  readonly payload: unknown;
+  readonly ctx: PiContextLike;
+  readonly account: ClaudeAttributionAccount;
+  readonly headerRegistered?: boolean;
+  readonly cacheRetention?: CacheRetention;
+  readonly env?: ProviderEnv;
+}): unknown {
+  if (!isAnthropicContext(args.ctx)) return undefined;
+  return rewriteAnthropicRequestPayloadForSession({
+    payload: args.payload,
+    model: args.ctx.model ?? {},
+    sessionId: getSessionId(args.ctx),
+    account: args.account,
+    ...(args.headerRegistered === undefined ? {} : { headerRegistered: args.headerRegistered }),
+    ...(args.cacheRetention === undefined ? {} : { cacheRetention: args.cacheRetention }),
+  });
 }
 
 function sanitizeSurrogates(text: string): string {
@@ -2379,6 +2521,7 @@ export function streamAnthropicViaBetaMessages(
   model: PiModelLike,
   context: PiStreamContext,
   options?: PiSimpleStreamOptions,
+  dependencies: AnthropicTransportDependencies = {},
 ): AssistantMessageEventStreamLike {
   const stream = createAssistantMessageEventStream();
   const output = createOutput(model);
@@ -2403,9 +2546,16 @@ export function streamAnthropicViaBetaMessages(
         );
       }
 
+      const sessionId = requireSessionId(options?.sessionId, 'options.sessionId');
+      const account = requireAttributionAccount(
+        (dependencies.loadAccount ?? loadClaudeAttributionAccount)(),
+      );
       const url = resolveAnthropicBetaMessagesUrl(model);
       const policy = resolveClaudeCodeModelPolicy(model);
       let params = buildAnthropicRequestParams(model, context, options);
+      const billingSystemText = buildClaudeCodeBillingSystemText(
+        firstUserMessageTextFromPayload(params),
+      );
       const provisionalLineage = prepareAnthropicLineageDetails({
         model,
         policy,
@@ -2426,24 +2576,31 @@ export function streamAnthropicViaBetaMessages(
       ) {
         throw new Error('Anthropic thinking-binding policy is missing its required beta header');
       }
+      params = rewriteAnthropicRequestPayloadForSession({
+        payload: params,
+        model,
+        sessionId,
+        account,
+        headerRegistered: true,
+        ...(options?.cacheRetention === undefined
+          ? {}
+          : { cacheRetention: options.cacheRetention }),
+      });
+      const protectedCacheControlTopologySha256 = cacheControlTopologySha256(params);
       const nextParams = await options?.onPayload?.(params, model);
       if (nextParams !== undefined) {
         if (!isPlainObject(nextParams))
           throw new Error('Anthropic attribution onPayload returned a non-object payload');
         params = nextParams;
       }
-      const metadataUserId = isPlainObject(params['metadata'])
-        ? params['metadata']['user_id']
-        : undefined;
-      let sessionId: string | undefined;
-      if (typeof metadataUserId === 'string') {
-        const parsed = parseJsonObject(metadataUserId, 'Anthropic attribution metadata.user_id');
-        if (typeof parsed['session_id'] === 'string') sessionId = parsed['session_id'];
-      }
-      if (!sessionId)
-        throw new Error(
-          'Anthropic attribution could not derive session_id from rewritten metadata.user_id',
-        );
+      assertProtectedAnthropicAttribution({
+        payload: params,
+        account,
+        sessionId,
+        billingSystemText,
+        modelId: policy.modelId,
+        cacheControlTopologySha256: protectedCacheControlTopologySha256,
+      });
 
       preparedLineage = anthropicLineageCoordinator.prepare({
         sessionId,
@@ -2831,7 +2988,10 @@ function isAnthropicAttributionClaimProbe(value: unknown): value is AnthropicAtt
  * publishes ownership after every registration below succeeds; a factory that throws
  * cannot strand a false claim that suppresses a healthy later copy.
  */
-export default function spawnAnthropicAttribution(pi: PiExtensionHost): void {
+export default function spawnAnthropicAttribution(
+  pi: PiExtensionHost,
+  dependencies: AnthropicTransportDependencies = {},
+): void {
   const acknowledgements: true[] = [];
   const probe: AnthropicAttributionClaimProbe = {
     schema_version: ANTHROPIC_ATTRIBUTION_CLAIM_SCHEMA,
@@ -2847,15 +3007,20 @@ export default function spawnAnthropicAttribution(pi: PiExtensionHost): void {
     sessionCacheRetention;
 
   // Registration is global but route-scoped by provider name. Keeping it at
-  // factory scope avoids lifecycle-dependent provider availability; the custom
-  // transport derives session/model headers from the attributed payload.
+  // factory scope avoids lifecycle-dependent provider availability; every custom
+  // transport request owns attribution from its request-scoped session options.
   pi.registerProvider('anthropic', {
     api: 'anthropic-messages',
     streamSimple: (model, context, options) =>
-      streamAnthropicViaBetaMessages(model, context, {
-        ...(options ?? {}),
-        cacheRetention: resolveRegisteredCacheRetention(options, getSessionOverride()),
-      }),
+      streamAnthropicViaBetaMessages(
+        model,
+        context,
+        {
+          ...(options ?? {}),
+          cacheRetention: resolveRegisteredCacheRetention(options, getSessionOverride()),
+        },
+        dependencies,
+      ),
   });
 
   pi.registerCommand('claude-cache', {
@@ -2896,16 +3061,6 @@ export default function spawnAnthropicAttribution(pi: PiExtensionHost): void {
 
   pi.on('session_tree', (_event, ctx) => {
     sessionCacheRetention = restoreAnthropicSessionCacheRetention(ctx.sessionManager.getBranch());
-  });
-
-  pi.on('before_provider_request', (event, ctx) => {
-    if (!isAnthropicContext(ctx)) return undefined;
-    return rewriteAnthropicRequestPayload({
-      payload: event.payload,
-      ctx,
-      account: loadClaudeAttributionAccount(),
-      headerRegistered: true,
-    });
   });
 
   // Publish ownership last. Extension loading is sequential, so later independent

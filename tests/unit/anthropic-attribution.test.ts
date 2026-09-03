@@ -4,6 +4,7 @@ import spawnAnthropicAttribution, {
   ANTHROPIC_ATTRIBUTION_CLAIM_CHANNEL,
   buildAnthropicRequestParams,
   rewriteAnthropicRequestPayload,
+  streamAnthropicViaBetaMessages,
   type PiExtensionHost,
   type PiContextLike,
 } from '../../src/core/anthropic-attribution.js';
@@ -188,6 +189,83 @@ void describe('global Anthropic attribution extension', () => {
     });
   });
 
+  void it('BUG-193 owns hookless compaction attribution from request-scoped sessionId', async () => {
+    const originalFetch = globalThis.fetch;
+    const sessionId = '018f0000-0000-7000-8000-000000000193';
+    let captured: Record<string, unknown> | undefined;
+    try {
+      globalThis.fetch = async (_input, init) => {
+        assert.ok(init);
+        assert.equal(typeof init.body, 'string');
+        captured = JSON.parse(init.body as string) as Record<string, unknown>;
+        assert.equal(new Headers(init.headers).get('X-Claude-Code-Session-Id'), sessionId);
+        const events = [
+          {
+            type: 'message_start',
+            message: { id: 'msg_package_compaction', usage: { input_tokens: 1 } },
+          },
+          { type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } },
+          {
+            type: 'content_block_delta',
+            index: 0,
+            delta: { type: 'text_delta', text: 'summary' },
+          },
+          { type: 'content_block_stop', index: 0 },
+          {
+            type: 'message_delta',
+            delta: { stop_reason: 'end_turn' },
+            usage: { output_tokens: 1 },
+          },
+          { type: 'message_stop' },
+        ];
+        return new Response(
+          events
+            .map((event) => `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`)
+            .join(''),
+          { status: 200, headers: { 'content-type': 'text/event-stream' } },
+        );
+      };
+      const result = await streamAnthropicViaBetaMessages(
+        {
+          provider: 'anthropic',
+          api: 'anthropic-messages',
+          id: 'claude-fable-5-1',
+          baseUrl: 'https://api.anthropic.com',
+          maxTokens: 128_000,
+          reasoning: true,
+          compat: { supportsLongCacheRetention: true, supportsCacheControlOnTools: true },
+        },
+        {
+          systemPrompt: 'Summarize the conversation.',
+          messages: [{ role: 'user', content: 'history' }],
+        },
+        {
+          apiKey: 'sk-ant-oat-test',
+          sessionId,
+          cacheRetention: 'none',
+          reasoning: 'high',
+        },
+        {
+          loadAccount: () => ({
+            deviceId: 'd'.repeat(64),
+            accountUuid: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',
+          }),
+        },
+      ).result();
+      assert.equal(result.stopReason, 'stop');
+      assert.ok(captured);
+      assert.equal(JSON.stringify(captured).includes('cache_control'), false);
+      const metadata = captured['metadata'];
+      assert.ok(isJsonObject(metadata) && typeof metadata['user_id'] === 'string');
+      assert.equal(
+        (JSON.parse(metadata['user_id']) as Record<string, unknown>)['session_id'],
+        sessionId,
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   void it('leaves non-Anthropic payloads untouched', () => {
     const payload = { model: 'gpt-5.5', metadata: { untouched: true } };
     assert.equal(
@@ -251,7 +329,7 @@ void describe('global Anthropic attribution extension', () => {
     spawnAnthropicAttribution(second.host);
 
     assert.equal(first.registrations.commands, 1);
-    assert.equal(first.registrations.handlers, 4);
+    assert.equal(first.registrations.handlers, 3);
     assert.equal(first.registrations.providers, 1);
     assert.equal(second.registrations.commands, 0);
     assert.equal(second.registrations.handlers, 0);

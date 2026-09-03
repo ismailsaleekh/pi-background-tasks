@@ -12,7 +12,7 @@ covers_sources: []
 <!-- pi-docs:begin name="command-contract-claude-cache" generator="scripts/docs/generate.mjs" -->
 | Command | Description | Provenance |
 | --- | --- | --- |
-| `/claude-cache` | Show or set Claude cache retention for this session (short, long, default) | `src/core/anthropic-attribution.ts:2861` |
+| `/claude-cache` | Show or set Claude cache retention for this session (short, long, default) | `src/core/anthropic-attribution.ts:3026` |
 <!-- pi-docs:end name="command-contract-claude-cache" -->
 
 Show or change the Anthropic cache-retention preference for the current session.
@@ -36,7 +36,7 @@ Show or change the Anthropic cache-retention preference for the current session.
 
 The decision is persisted as a branch-local custom session entry and restored after reload, resume, and tree navigation. It does not enter model context.
 
-Pi's generic five-minute provider default does not override this package's one-hour subscription policy. Use `/claude-cache short` or `PI_CACHE_RETENTION=short` for an intentional short lane. An explicit call-level `none` remains authoritative, so Pi compaction requests are not re-marked by the session default.
+Pi's generic five-minute provider default does not override this package's one-hour subscription policy. Use `/claude-cache short` or `PI_CACHE_RETENTION=short` for an intentional short lane. An explicit call-level `none` remains authoritative, so Pi compaction and branch-summary requests are not re-marked by the session default. Those standalone requests still receive complete subscription attribution from Pi's fresh request-scoped routing ID.
 
 ## Errors and boundaries
 

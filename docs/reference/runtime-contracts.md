@@ -61,7 +61,7 @@ This generated registry lists production environment-variable references, runtim
 | `PI_SESSION_FILE` | remove | `src/core/delegate/launch.ts:330`<br>`src/core/fusion/pi-child.ts:100` |
 | `PI_SESSION_ID` | remove | `src/core/delegate/launch.ts:330`<br>`src/core/fusion/pi-child.ts:100` |
 | `PI_SKIP_VERSION_CHECK` | write | `src/core/delegate/launch.ts:352`<br>`src/core/fusion/pi-child.ts:272` |
-| `PIPELINE_ANTHROPIC_ATTRIBUTION_AUDIT_PATH` | read | `src/core/anthropic-attribution.ts:1075` |
+| `PIPELINE_ANTHROPIC_ATTRIBUTION_AUDIT_PATH` | read | `src/core/anthropic-attribution.ts:1124` |
 | `SHELL` | read | `src/core/common.ts:718` |
 | `SystemRoot` | read | `src/core/windows-taskkill.ts:96` |
 | `WINDIR` | read | `src/core/windows-taskkill.ts:101` |
