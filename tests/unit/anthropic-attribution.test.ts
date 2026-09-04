@@ -266,6 +266,196 @@ void describe('global Anthropic attribution extension', () => {
     }
   });
 
+  void it('normalizes observed cross-provider tool-call IDs while preserving valid IDs and images', async () => {
+    const originalFetch = globalThis.fetch;
+    const invalidToolId = 'call_x|fc_y';
+    const validToolId = 'tool_ok-1';
+    let captured: Record<string, unknown> | undefined;
+    try {
+      globalThis.fetch = async (_input, init) => {
+        assert.ok(init);
+        assert.equal(typeof init.body, 'string');
+        captured = JSON.parse(init.body as string) as Record<string, unknown>;
+        const events = [
+          {
+            type: 'message_start',
+            message: { id: 'msg_cross_provider_tools', usage: { input_tokens: 1 } },
+          },
+          { type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } },
+          {
+            type: 'content_block_delta',
+            index: 0,
+            delta: { type: 'text_delta', text: 'done' },
+          },
+          { type: 'content_block_stop', index: 0 },
+          {
+            type: 'message_delta',
+            delta: { stop_reason: 'end_turn' },
+            usage: { output_tokens: 1 },
+          },
+          { type: 'message_stop' },
+        ];
+        return new Response(
+          events
+            .map((event) => `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`)
+            .join(''),
+          { status: 200, headers: { 'content-type': 'text/event-stream' } },
+        );
+      };
+
+      const result = await streamAnthropicViaBetaMessages(
+        {
+          provider: 'anthropic',
+          api: 'anthropic-messages',
+          id: 'claude-fable-5-1',
+          baseUrl: 'https://api.anthropic.com',
+          maxTokens: 128_000,
+          reasoning: true,
+          compat: { supportsLongCacheRetention: true, supportsCacheControlOnTools: true },
+        },
+        {
+          messages: [
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: 'Inspect the screenshot and notes.' },
+                { type: 'image', mimeType: 'image/png', data: 'Zm9v' },
+              ],
+            },
+            {
+              role: 'assistant',
+              provider: 'cpa',
+              api: 'openai-responses',
+              model: 'gpt-5.5',
+              stopReason: 'toolUse',
+              content: [
+                {
+                  type: 'toolCall',
+                  id: invalidToolId,
+                  name: 'read_image',
+                  arguments: { path: 'screenshot.png' },
+                },
+                {
+                  type: 'toolCall',
+                  id: validToolId,
+                  name: 'read',
+                  arguments: { path: 'notes.txt' },
+                },
+              ],
+            },
+            {
+              role: 'toolResult',
+              toolCallId: invalidToolId,
+              toolName: 'read_image',
+              content: [{ type: 'text', text: 'Screenshot parsed.' }],
+            },
+            {
+              role: 'toolResult',
+              toolCallId: validToolId,
+              toolName: 'read',
+              content: [{ type: 'text', text: 'Notes parsed.' }],
+            },
+          ],
+          tools: [
+            {
+              name: 'read_image',
+              description: 'Read an image file',
+              parameters: {
+                type: 'object',
+                properties: { path: { type: 'string' } },
+                required: ['path'],
+              },
+            },
+            {
+              name: 'read',
+              description: 'Read a text file',
+              parameters: {
+                type: 'object',
+                properties: { path: { type: 'string' } },
+                required: ['path'],
+              },
+            },
+          ],
+        },
+        {
+          apiKey: 'sk-ant-oat-test',
+          sessionId: '018f0000-0000-7000-8000-0000000001d1',
+          cacheRetention: 'none',
+          reasoning: 'high',
+        },
+        {
+          loadAccount: () => ({
+            deviceId: 'd'.repeat(64),
+            accountUuid: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',
+          }),
+        },
+      ).result();
+
+      assert.ok(captured);
+      const outgoingMessages = captured['messages'];
+      assert.ok(Array.isArray(outgoingMessages));
+      const blocks = (role: string, type: string): Record<string, unknown>[] =>
+        outgoingMessages.flatMap((message) => {
+          if (!isJsonObject(message) || message['role'] !== role) return [];
+          const content = message['content'];
+          if (!Array.isArray(content)) return [];
+          return content.filter(
+            (block): block is Record<string, unknown> =>
+              isJsonObject(block) && block['type'] === type,
+          );
+        });
+
+      assert.deepEqual(blocks('user', 'image'), [
+        {
+          type: 'image',
+          source: { type: 'base64', media_type: 'image/png', data: 'Zm9v' },
+        },
+      ]);
+
+      const toolUses = blocks('assistant', 'tool_use');
+      assert.equal(toolUses.length, 2);
+      const normalizedToolUse = toolUses.find((block) => block['name'] === 'read_image');
+      assert.ok(normalizedToolUse);
+      assert.deepEqual(normalizedToolUse['input'], { path: 'screenshot.png' });
+      const normalizedToolUseId = normalizedToolUse['id'];
+      if (typeof normalizedToolUseId !== 'string') {
+        throw new TypeError('normalized tool_use.id must be a string');
+      }
+      assert.match(normalizedToolUseId, /^[a-zA-Z0-9_-]{1,64}$/u);
+      assert.notEqual(normalizedToolUseId, invalidToolId);
+      assert.equal(toolUses.some((block) => block['id'] === invalidToolId), false);
+
+      const preservedToolUse = toolUses.find((block) => block['name'] === 'read');
+      assert.ok(preservedToolUse);
+      assert.equal(preservedToolUse['id'], validToolId);
+      assert.deepEqual(preservedToolUse['input'], { path: 'notes.txt' });
+
+      const toolResults = blocks('user', 'tool_result');
+      const normalizedToolResult = toolResults.find(
+        (block) => block['tool_use_id'] === normalizedToolUseId,
+      );
+      assert.ok(normalizedToolResult);
+      assert.deepEqual(normalizedToolResult['content'], [
+        { type: 'text', text: 'Screenshot parsed.' },
+      ]);
+      assert.equal(
+        toolResults.some((block) => block['tool_use_id'] === invalidToolId),
+        false,
+      );
+
+      const preservedToolResult = toolResults.find(
+        (block) => block['tool_use_id'] === validToolId,
+      );
+      assert.ok(preservedToolResult);
+      assert.deepEqual(preservedToolResult['content'], [
+        { type: 'text', text: 'Notes parsed.' },
+      ]);
+      assert.equal(result.stopReason, 'stop');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   void it('leaves non-Anthropic payloads untouched', () => {
     const payload = { model: 'gpt-5.5', metadata: { untouched: true } };
     assert.equal(
