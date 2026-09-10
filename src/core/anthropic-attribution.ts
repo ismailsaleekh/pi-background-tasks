@@ -1858,12 +1858,20 @@ export function buildAnthropicRequestParams(
   context: PiStreamContext,
   options?: PiSimpleStreamOptions,
 ): JsonObject {
+  return buildAnthropicRequest(model, context, options).params;
+}
+
+function buildAnthropicRequest(
+  model: PiModelLike,
+  context: PiStreamContext,
+  options?: PiSimpleStreamOptions,
+): { readonly params: JsonObject; readonly signatureEpoch: SignatureEpochPolicy } {
   const policy = resolveClaudeCodeModelPolicy(model);
   const maxTokens = resolveAnthropicMaxTokens(model);
   const cacheControl = resolveAnthropicCacheControl(model, options);
   const cacheRetention: CacheRetention =
     cacheControl === undefined ? 'none' : cacheControl.ttl === '1h' ? 'long' : 'short';
-  const signatureEpoch = resolveSignatureEpochPolicy(
+  let signatureEpoch = resolveSignatureEpochPolicy(
     model,
     context.messages,
     cacheRetention,
@@ -1934,8 +1942,37 @@ export function buildAnthropicRequestParams(
     params['thinking'] = { type: 'disabled' };
     params['temperature'] = options?.temperature ?? 1;
   }
+  const previous = latestLineageForTarget(context, normalizedAnthropicModelId(model));
+  if (
+    previous !== undefined &&
+    signatureEpoch.sha256 === previous.signature_epoch_sha256 &&
+    (previous.cache_profile_sha256 !== cacheProfileHash(model, policy, params, staticSha256) ||
+      !hasLineageRequestPrefix(requestMessagesFromPayload(params), previous))
+  ) {
+    // Resume/reload and profile edits can invalidate a lane. Re-project before transport,
+    // rather than just clearing the response ID while retaining prefix-bound signatures.
+    signatureEpoch = {
+      sha256: sha256Canonical({
+        projection_version: ANTHROPIC_PROJECTION_VERSION,
+        kind: 'lineage-reset',
+        previous_signature_epoch_sha256: previous.signature_epoch_sha256,
+        previous_response_id: previous.response_id,
+        cache_profile_sha256: cacheProfileHash(model, policy, params, staticSha256),
+        request_messages_sha256: promptMessagesHash(requestMessagesFromPayload(params)),
+      }),
+      inheritsPrior: false,
+    };
+    params['messages'] = convertMessages(
+      model,
+      context.messages,
+      staticSha256,
+      cacheRetention,
+      signatureEpoch,
+      cacheControl,
+    );
+  }
   assertCacheControlBreakpointLimit(params);
-  return params;
+  return { params, signatureEpoch };
 }
 
 interface PreparedAnthropicLineage {
@@ -2035,11 +2072,23 @@ function declaredCompactionBoundarySha256(messages: readonly JsonObject[]): stri
   return sha256Canonical(promptMessagesWithoutCacheControls([firstMessage])[0]);
 }
 
+function hasLineageRequestPrefix(
+  messages: readonly JsonObject[],
+  previous: AnthropicLineageDetails,
+): boolean {
+  return (
+    messages.length >= previous.request_message_count &&
+    promptMessagesHash(messages.slice(0, previous.request_message_count)) ===
+      previous.request_messages_sha256
+  );
+}
+
 function prepareAnthropicLineageDetails(args: {
   readonly model: PiModelLike;
   readonly policy: ClaudeCodeModelPolicy;
   readonly context: PiStreamContext;
   readonly payload: JsonObject;
+  readonly signatureEpoch: SignatureEpochPolicy;
 }): PreparedAnthropicLineage['details'] {
   const targetModelId = normalizedAnthropicModelId(args.model);
   const messages = requestMessagesFromPayload(args.payload);
@@ -2050,37 +2099,16 @@ function prepareAnthropicLineageDetails(args: {
   const profileSha256 = cacheProfileHash(args.model, args.policy, args.payload, staticSha256);
   const cacheRetention = cacheRetentionFromPayload(args.payload);
   const compactionBoundarySha256 = declaredCompactionBoundarySha256(messages);
-  const signatureEpoch = resolveSignatureEpochPolicy(
-    args.model,
-    args.context.messages,
-    cacheRetention,
-    compactionBoundarySha256,
-  );
+  const signatureEpoch = args.signatureEpoch;
   let previous = latestLineageForTarget(args.context, targetModelId);
-  if (previous !== undefined) {
-    const prefixStillExists =
-      messages.length >= previous.request_message_count &&
-      promptMessagesHash(messages.slice(0, previous.request_message_count)) ===
-        previous.request_messages_sha256;
-    if (
-      !prefixStillExists &&
-      compactionBoundarySha256 !== null &&
-      compactionBoundarySha256 !== previous.compaction_boundary_sha256
-    ) {
-      previous = undefined;
-    } else {
-      if (!prefixStillExists) {
-        throw new Error(
-          'Anthropic cache lineage diverged before transport: message history is not append-only',
-        );
-      }
-      if (previous.cache_profile_sha256 !== profileSha256) {
-        throw new Error(
-          'Anthropic cache lineage diverged before transport: model/system/tools/thinking/beta profile changed',
-        );
-      }
-      if (previous.cache_retention !== cacheRetention) previous = undefined;
-    }
+  if (
+    previous !== undefined &&
+    (signatureEpoch.sha256 !== previous.signature_epoch_sha256 ||
+      !hasLineageRequestPrefix(messages, previous) ||
+      previous.cache_profile_sha256 !== profileSha256 ||
+      previous.cache_retention !== cacheRetention)
+  ) {
+    previous = undefined;
   }
   return {
     schema_version: ANTHROPIC_LINEAGE_SCHEMA,
@@ -2109,6 +2137,7 @@ class AnthropicLineageCoordinator {
     readonly policy: ClaudeCodeModelPolicy;
     readonly context: PiStreamContext;
     readonly payload: JsonObject;
+    readonly signatureEpoch: SignatureEpochPolicy;
   }): PreparedAnthropicLineage {
     const targetModelId = normalizedAnthropicModelId(args.model);
     const key = `${args.sessionId}\u0000${targetModelId}`;
@@ -2552,7 +2581,8 @@ export function streamAnthropicViaBetaMessages(
       );
       const url = resolveAnthropicBetaMessagesUrl(model);
       const policy = resolveClaudeCodeModelPolicy(model);
-      let params = buildAnthropicRequestParams(model, context, options);
+      const request = buildAnthropicRequest(model, context, options);
+      let params = request.params;
       const billingSystemText = buildClaudeCodeBillingSystemText(
         firstUserMessageTextFromPayload(params),
       );
@@ -2561,6 +2591,7 @@ export function streamAnthropicViaBetaMessages(
         policy,
         context,
         payload: params,
+        signatureEpoch: request.signatureEpoch,
       });
       if (policy.supportsCacheDiagnostics) {
         if (!policy.beta.split(',').includes(ANTHROPIC_CACHE_DIAGNOSTICS_BETA)) {
@@ -2608,6 +2639,7 @@ export function streamAnthropicViaBetaMessages(
         policy,
         context,
         payload: params,
+        signatureEpoch: request.signatureEpoch,
       });
       if (
         preparedLineage.details.previous_message_id !== provisionalLineage.previous_message_id ||
