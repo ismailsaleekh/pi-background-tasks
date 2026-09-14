@@ -5,7 +5,7 @@ mode: authored
 review_policy: behavioral
 stability: stable
 covers_surfaces: []
-covers_sources: [src/core/common.ts, src/core/registry.ts, src/core/windows-taskkill.ts]
+covers_sources: [src/core/common.ts, src/core/registry.ts, src/core/store-root.ts, src/core/windows-taskkill.ts]
 ---
 # Background task runtime
 
@@ -15,7 +15,7 @@ The runtime owns task identity, shell invocation, process lifecycle, bounded log
 
 - Task statuses are exactly `running`, `completed`, `failed`, and `killed`.
 - Terminal statuses are exactly `completed`, `failed`, and `killed`.
-- Runtime directory: `.pi/tasks/<session-id>-<pid>/` under the project cwd.
+- Runtime directory: `.pi/tasks/<session-id>-<pid>/` under the project cwd, or `<PI_BG_RUNTIME_ROOT>/tasks/<session-id>-<pid>/` when `PI_BG_RUNTIME_ROOT` is set (see [Configuration](../operations/configuration.md)).
 - Per task: `<task-id>.output` and `<task-id>.json`; some agent modes may add wrapper or attestation files.
 - In-memory recent retention prunes oldest finished tasks over the limit while preserving running tasks.
 - `resolveTask` accepts exact ids or unambiguous prefixes and fails loudly for empty, unknown, or ambiguous ids.
@@ -88,4 +88,4 @@ Windows never falls back to root-only `child.kill` for tree termination. The tas
 
 ## Source ownership/reference
 
-Primary source ownership for this document is `src/core/common.ts`, `src/core/registry.ts`, and `src/core/windows-taskkill.ts`.
+Primary source ownership for this document is `src/core/common.ts`, `src/core/registry.ts`, `src/core/store-root.ts`, and `src/core/windows-taskkill.ts`.

@@ -294,7 +294,7 @@ Agent tasks launched through `pi -p ...` or `pi --mode json ...` and marked `isA
 
 ## Architecture, trust, and safety
 
-- Runtime task files live under `.pi/tasks/<session-id>-<pid>/`; Fusion artifacts under `.pi/fusion/...`; delegate artifacts under `.pi/delegate/...`.
+- Runtime task files live under `.pi/tasks/<session-id>-<pid>/`; Fusion artifacts under `.pi/fusion/...`; delegate artifacts under `.pi/delegate/...`. Set `PI_BG_RUNTIME_ROOT=<absolute path>` (for example `~/.pi`) to relocate the whole runtime tree out of project working trees; see [Configuration](docs/operations/configuration.md).
 - Delegate launch budgeting uses backed route-family calibration for eligible large prompts and records a provable conservative counter-forecast across every byte class. During investigation, text and image-bearing tool output spill losslessly when retaining them would consume protected final-answer runway—even below the normal 64 KiB per-result threshold. Exact artifact ranges return as base64, final capture excludes intermediate tool-use narration, and near the runway boundary tools are disabled for graceful finalization. Runtime token estimates are advisory; Pi/provider own live context admission, avoiding Fusion BUG-185-style false refusals.
 - Shell jobs are tracked by the package, but they are not sandboxed. Treat commands as local processes with your permissions and credentials.
 - Delegate and Fusion child Pi processes are route-pinned where applicable; delegate/Fusion paths do not silently substitute routes.

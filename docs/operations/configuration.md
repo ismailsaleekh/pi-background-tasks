@@ -47,9 +47,19 @@ Invalid Windows shell settings fail loudly instead of falling back. `bash` is in
 |---|---|
 | `PI_BG_MAX_OUTPUT_BYTES` | Optional environment override for task output cap. Default is 20 MiB. Exceeding it fails/kills the task rather than claiming success. |
 | `bg_logs.maxBytes` / `/logs <id> [maxBytes]` | Bounded model-visible read. The package cap is 50 KiB. |
-| Full output | Written under `.pi/tasks/<session-id>-<pid>/<task-id>.output`. |
+| Full output | Written under `.pi/tasks/<session-id>-<pid>/<task-id>.output` (or under `PI_BG_RUNTIME_ROOT/tasks` when that variable is set). |
 
 Bounded logs are for context safety; they point to the full local output file when more bytes exist.
+
+## Runtime storage root
+
+By default, task output, Fusion artifacts, and delegate artifacts are stored under the session cwd in `.pi/tasks/`, `.pi/fusion/`, and `.pi/delegate/`.
+
+| Variable | Effect |
+|---|---|
+| `PI_BG_RUNTIME_ROOT=<absolute path>` | Store the runtime tree (`tasks/`, `fusion/`, `delegate/`) under this root instead of `<cwd>/.pi`, keeping project working trees free of `.pi/` runtime noise. |
+
+Set it to an absolute path or a `~`-prefixed path (for example `PI_BG_RUNTIME_ROOT=~/.pi`). Relative values fail loudly rather than resolving against an unpredictable cwd. When unset or empty, the default project-local layout applies unchanged. Paths surfaced to agents and the UI stay relative under the default layout and become absolute when the root is relocated.
 
 ## Pi-agent telemetry opt-out
 

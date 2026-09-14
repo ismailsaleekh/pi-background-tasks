@@ -202,6 +202,30 @@ void describe('fusion artifacts', () => {
     assert.equal(total.output, 11);
   });
 
+  void it('relocates run artifacts under PI_BG_RUNTIME_ROOT when set', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'pi-fusion-artifacts-'));
+    const storeRoot = await mkdtemp(join(tmpdir(), 'pi-bg-store-root-'));
+    try {
+      const store = await FusionArtifactStore.create({
+        cwd: root,
+        env: { PI_BG_RUNTIME_ROOT: storeRoot },
+        sessionId: 'session/id',
+        runId: 'reason-00000000000000000000000000000000',
+        source: 'command',
+        config: defaultFusionModelConfig(),
+        models: models(),
+        now: () => new Date('2026-01-01T00:00:00.000Z'),
+      });
+      assert.ok(store.artifactDirAbs.startsWith(join(storeRoot, 'fusion')), store.artifactDirAbs);
+      assert.equal(store.artifactDir, store.artifactDirAbs);
+      assert.ok(existsSync(store.artifactDirAbs));
+      assert.ok(!existsSync(join(root, '.pi')));
+    } finally {
+      await rm(root, { recursive: true, force: true });
+      await rm(storeRoot, { recursive: true, force: true });
+    }
+  });
+
   void it('creates private run files and records child attempt artifacts', async () => {
     const root = await mkdtemp(join(tmpdir(), 'pi-fusion-artifacts-'));
     try {

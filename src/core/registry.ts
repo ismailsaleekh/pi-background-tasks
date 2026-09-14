@@ -35,6 +35,7 @@ import {
   type TaskTokenUsage,
   type TaskToolUsage,
 } from './common.js';
+import { resolveBgRuntimeRoot } from './store-root.js';
 import {
   ATTESTED_TASK_ID_PATTERN,
   attestedPiChildEnv,
@@ -781,8 +782,11 @@ export class BackgroundTaskRegistry {
     if (this.runtimeDir) return this.runtimeDir;
     const sessionId = sanitizePathSegment(ctx.sessionId ?? `session-${String(process.pid)}`);
     const runId = `${sessionId}-${String(process.pid)}`;
-    const runtimeDirAbs = join(ctx.cwd, '.pi', 'tasks', runId);
-    const runtimeDirDisplay = join('.pi', 'tasks', runId);
+    const storeRoot = resolveBgRuntimeRoot(this.env);
+    const runtimeDirAbs = storeRoot
+      ? join(storeRoot, 'tasks', runId)
+      : join(ctx.cwd, '.pi', 'tasks', runId);
+    const runtimeDirDisplay = storeRoot ? runtimeDirAbs : join('.pi', 'tasks', runId);
     await mkdir(runtimeDirAbs, { recursive: true });
     this.runtimeDir = { abs: runtimeDirAbs, display: runtimeDirDisplay };
     return this.runtimeDir;

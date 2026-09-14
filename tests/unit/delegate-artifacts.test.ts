@@ -509,6 +509,29 @@ void describe('delegate terminal evaluation', () => {
 });
 
 void describe('delegate delivery decisions', () => {
+  void it('relocates artifacts under PI_BG_RUNTIME_ROOT when set', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'pi-bg-delegate-artifacts-'));
+    const storeRoot = await mkdtemp(join(tmpdir(), 'pi-bg-store-root-'));
+    roots.push(root, storeRoot);
+    const store = await DelegateArtifactStore.create({
+      cwd: root,
+      env: { PI_BG_RUNTIME_ROOT: storeRoot },
+      taskId: TASK_ID,
+      launchNonce: NONCE,
+      sessionId: 'unit-session',
+      childSessionId: 'delegate-child-session',
+      childSessionDir: '',
+      extensionMode: 'isolated',
+      route: ROUTE,
+      limits: LIMITS,
+      seedSha256: SEED_SHA,
+    });
+    assert.ok(store.artifactDirAbs.startsWith(join(storeRoot, 'delegate')), store.artifactDirAbs);
+    assert.equal(store.artifactDir, store.artifactDirAbs);
+    assert.ok(existsSync(store.artifactDirAbs));
+    assert.ok(!existsSync(join(root, '.pi')));
+  });
+
   void it('inlines at exactly the cap and degrades one byte past it', () => {
     assert.equal(decideDelegateDelivery(DELEGATE_INLINE_ANSWER_BYTES, undefined).mode, 'inline');
     assert.equal(decideDelegateDelivery(DELEGATE_INLINE_ANSWER_BYTES + 1, undefined).mode, 'artifact');

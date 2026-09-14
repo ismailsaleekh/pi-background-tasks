@@ -49,10 +49,11 @@
       "state": "stale-authored-prose"
     },
     {
-      "authored_body_sha256": "sha256:253948c8b1f4dd339b0c1eeabd6e8addf584fe208a0f71c3a7f094921ff4547f",
+      "authored_body_sha256": "sha256:bfb6b89e77c1cb4c295120091af24967f5c45ab624aeb8e822b6a248f35c3966",
       "covers_sources": [
         "src/core/common.ts",
         "src/core/registry.ts",
+        "src/core/store-root.ts",
         "src/core/windows-taskkill.ts"
       ],
       "doc_id": "subsystems/background-task-runtime",
@@ -412,6 +413,7 @@
       "covers_sources": [
         "src/core/common.ts",
         "src/core/registry.ts",
+        "src/core/store-root.ts",
         "src/core/windows-taskkill.ts"
       ],
       "covers_surfaces": [],
@@ -1174,7 +1176,7 @@
         "source": "src/delegate-extension.ts:516"
       },
       {
-        "description": "Start a named long-running shell command in the background and return immediately with a task ID and output path. By default, completed, failed, or killed terminal state is delivered automatically as <background-task-notification> and starts a follow-up agent turn; do not sleep or poll merely to wait. Output is written to .pi/tasks and model-visible logs are bounded to 50.0KB.",
+        "description": "Start a named long-running shell command in the background and return immediately with a task ID and output path. By default, completed, failed, or killed terminal state is delivered automatically as <background-task-notification> and starts a follow-up agent turn; do not sleep or poll merely to wait. Output is written to .pi/tasks (or under PI_BG_RUNTIME_ROOT/tasks when that environment variable is set) and model-visible logs are bounded to 50.0KB.",
         "id": "tool:bg_run",
         "kind": "tool",
         "label": "Background Run",
@@ -1784,6 +1786,9 @@
       "subsystems/child-launch-durability-and-safety"
     ],
     "src/core/registry.ts": [
+      "subsystems/background-task-runtime"
+    ],
+    "src/core/store-root.ts": [
       "subsystems/background-task-runtime"
     ],
     "src/core/update-check.ts": [
