@@ -8,6 +8,7 @@ import {
   assertWindowsCommandLineWithinLimit,
   piLaunchArgv,
   resolvePiLaunch,
+  resolvePiManifestFromHostScript,
   type PiLaunchDependencies,
   type PiLaunchSpec,
 } from '../../src/core/pi-launch.js';
@@ -167,6 +168,72 @@ void describe('Pi launch resolution', () => {
     } finally {
       await removeFixture(directoryTarget.root);
     }
+  });
+
+  void it('falls through to the running host script when both module lookups fail on Windows', async () => {
+    const fixture = await createPackageFixture(
+      { name: '@earendil-works/pi-coding-agent', bin: { pi: 'dist/cli.js' } },
+      ['dist/cli.js'],
+    );
+    try {
+      const attempted: string[] = [];
+      const { resolvePackageJson: _ignored, ...io } = fixture.deps;
+      const spec = resolvePiLaunch({
+        ...io,
+        resolveModule: (specifier) => {
+          attempted.push(specifier);
+          throw new Error(`Cannot find module '${specifier}'`);
+        },
+        hostScript: join(fixture.packageRoot, 'dist', 'cli.js'),
+      });
+      assert.deepEqual(attempted, [
+        '@earendil-works/pi-coding-agent/package.json',
+        '@earendil-works/pi-coding-agent',
+      ]);
+      assert.equal(spec.executable, process.execPath);
+      assert.equal(spec.kind, 'package-node-cli');
+      assert.equal(spec.argvPrefix[0], realpathSync(join(fixture.packageRoot, 'dist', 'cli.js')));
+    } finally {
+      await removeFixture(fixture.root);
+    }
+  });
+
+  void it('walks past a nameless sub-manifest to reach the Pi manifest', async () => {
+    const fixture = await createPackageFixture(
+      { name: '@earendil-works/pi-coding-agent', bin: { pi: 'dist/cli.js' } },
+      ['dist/cli.js'],
+    );
+    try {
+      await writeFile(join(fixture.packageRoot, 'dist', 'package.json'), '{"type":"module"}\n', 'utf8');
+      const manifest = resolvePiManifestFromHostScript(join(fixture.packageRoot, 'dist', 'cli.js'));
+      assert.equal(manifest, realpathSync(fixture.manifestPath));
+    } finally {
+      await removeFixture(fixture.root);
+    }
+  });
+
+  void it('fails closed with every attempt named when the host script belongs to another package', async () => {
+    const foreign = await createPackageFixture({ name: 'some-other-cli', bin: 'dist/cli.js' }, [
+      'dist/cli.js',
+    ]);
+    try {
+      const { resolvePackageJson: _ignored, ...io } = foreign.deps;
+      assert.throws(
+        () =>
+          resolvePiLaunch({
+            ...io,
+            resolveModule: (specifier) => {
+              throw new Error(`Cannot find module '${specifier}'`);
+            },
+            hostScript: join(foreign.packageRoot, 'dist', 'cli.js'),
+          }),
+        /pi_executable_resolution_failed: package manifest resolve failed .*Cannot find module '@earendil-works\/pi-coding-agent\/package.json'; package entry resolve failed: .*; host script resolve failed: nearest named manifest above host script is some-other-cli/,
+      );
+    } finally {
+      await removeFixture(foreign.root);
+    }
+
+    assert.throws(() => resolvePiManifestFromHostScript(undefined), /host script path is unavailable/);
   });
 
   void it('rejects oversized Windows command lines without leaking argument text', () => {

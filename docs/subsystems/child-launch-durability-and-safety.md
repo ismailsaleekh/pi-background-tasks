@@ -15,7 +15,7 @@ Primary sources: `src/core/pi-launch.ts` and `src/core/durable-fs.ts`.
 
 On non-Windows platforms, `resolvePiLaunch()` returns `{ executable: 'pi', argvPrefix: [], kind: 'path' }`.
 
-On Windows, the package does not trust shell PATH shims. It resolves `@earendil-works/pi-coding-agent/package.json`, reads `bin.pi`, realpaths the package root and bin target, verifies the target stays inside the package root, and accepts only a regular file with one of these forms:
+On Windows, the package does not trust shell PATH shims. It locates `@earendil-works/pi-coding-agent/package.json` by module resolution from this package's install location first. When that fails, as it does when Pi is installed globally and this package sits in Pi's extension prefix, it walks up from the running host script (`process.argv[1]`) to the nearest `package.json` that carries a `name`, and accepts it only when that name is `@earendil-works/pi-coding-agent`. Either way, it then reads `bin.pi`, realpaths the package root and bin target, verifies the target stays inside the package root, and accepts only a regular file with one of these forms:
 
 - `.js`, `.cjs`, `.mjs`: launch with `process.execPath` and the target as `argvPrefix[0]`;
 - `.exe`, `.com`: launch the target directly.

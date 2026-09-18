@@ -62,7 +62,7 @@
       "state": "stale-authored-prose"
     },
     {
-      "authored_body_sha256": "sha256:40ee5dac92b9e873d6a9f71a59c03ff1ccd44d6717a13d3be18f74b19e68326e",
+      "authored_body_sha256": "sha256:fb9e9110778c90e66e35e7c4652b29adf0e5a5290d70b35c81c226a891d3547d",
       "covers_sources": [
         "src/core/durable-fs.ts",
         "src/core/pi-launch.ts"

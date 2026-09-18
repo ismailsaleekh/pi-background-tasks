@@ -14,6 +14,8 @@ export interface PiLaunchDependencies {
   readonly platform?: NodeJS.Platform;
   readonly execPath?: string;
   readonly resolvePackageJson?: (specifier: string) => string;
+  readonly resolveModule?: (specifier: string) => string;
+  readonly hostScript?: string;
   readonly readFile?: (path: string) => string | Buffer;
   readonly realpath?: (path: string) => string;
   readonly stat?: (path: string) => Pick<Stats, 'isFile'>;
@@ -53,19 +55,81 @@ interface JsonRecord {
   readonly [key: string]: unknown;
 }
 
-function defaultResolvePackageJson(specifier: string): string {
-  const requireForPi = createRequire(import.meta.url);
+type ManifestIo = Required<Pick<PiLaunchDependencies, 'readFile' | 'realpath' | 'stat'>>;
+
+const nodeManifestIo: ManifestIo = {
+  readFile: (path) => readFileSync(path),
+  realpath: (path) => realpathSync(path),
+  stat: (path) => statSync(path),
+};
+
+function probeManifestName(candidate: string, io: ManifestIo, diagnostics: string[]): unknown {
   try {
-    return requireForPi.resolve(specifier);
+    if (!io.stat(candidate).isFile()) {
+      diagnostics.push(`${candidate} is not a regular file`);
+      return undefined;
+    }
+    const raw = io.readFile(candidate);
+    const parsed: unknown = JSON.parse(Buffer.isBuffer(raw) ? raw.toString('utf8') : raw);
+    const name = isJsonRecord(parsed) ? parsed['name'] : undefined;
+    if (typeof name !== 'string') diagnostics.push(`${candidate} carries no name`);
+    return name;
+  } catch (error) {
+    diagnostics.push(`${candidate}: ${errorMessage(error)}`);
+    return undefined;
+  }
+}
+
+export function resolvePiManifestFromHostScript(
+  hostScript: string | undefined,
+  io: ManifestIo = nodeManifestIo,
+): string {
+  if (!hostScript) throw new Error('host script path is unavailable');
+  const scriptReal = io.realpath(hostScript);
+  const diagnostics: string[] = [];
+  let dir = dirname(scriptReal);
+  for (;;) {
+    const candidate = join(dir, 'package.json');
+    const name = probeManifestName(candidate, io, diagnostics);
+    if (name === PI_PACKAGE_NAME) return candidate;
+    if (typeof name === 'string') {
+      throw new Error(`nearest named manifest above host script is ${name}: ${candidate}`);
+    }
+    const parent = dirname(dir);
+    if (parent === dir) {
+      throw new Error(`no ${PI_PACKAGE_NAME} manifest above host script: ${diagnostics.join('; ')}`);
+    }
+    dir = parent;
+  }
+}
+
+function defaultResolveModule(specifier: string): string {
+  if (specifier === PI_PACKAGE_MANIFEST) return createRequire(import.meta.url).resolve(specifier);
+  return fileURLToPath(import.meta.resolve(specifier));
+}
+
+function defaultResolvePackageJson(specifier: string, deps: PiLaunchDependencies): string {
+  const resolveModule = deps.resolveModule ?? defaultResolveModule;
+  try {
+    return resolveModule(specifier);
   } catch (manifestError) {
     if (specifier !== PI_PACKAGE_MANIFEST) throw manifestError;
     let packageEntry: string;
     try {
-      packageEntry = fileURLToPath(import.meta.resolve(PI_PACKAGE_NAME));
+      packageEntry = resolveModule(PI_PACKAGE_NAME);
     } catch (entryError) {
-      throw new Error(
-        `${errorMessage(manifestError)}; package entry resolve failed: ${errorMessage(entryError)}`,
-      );
+      try {
+        return resolvePiManifestFromHostScript(deps.hostScript ?? process.argv[1], {
+          ...nodeManifestIo,
+          ...(deps.readFile ? { readFile: deps.readFile } : {}),
+          ...(deps.realpath ? { realpath: deps.realpath } : {}),
+          ...(deps.stat ? { stat: deps.stat } : {}),
+        });
+      } catch (hostError) {
+        throw new Error(
+          `${errorMessage(manifestError)}; package entry resolve failed: ${errorMessage(entryError)}; host script resolve failed: ${errorMessage(hostError)}`,
+        );
+      }
     }
     const diagnostics: string[] = [];
     let dir = dirname(packageEntry);
@@ -138,7 +202,8 @@ export function resolvePiLaunch(deps: PiLaunchDependencies = {}): PiLaunchSpec {
   const platform = deps.platform ?? process.platform;
   if (platform !== 'win32') return { executable: 'pi', argvPrefix: [], kind: 'path' };
 
-  const resolvePackageJson = deps.resolvePackageJson ?? defaultResolvePackageJson;
+  const resolvePackageJson =
+    deps.resolvePackageJson ?? ((specifier: string) => defaultResolvePackageJson(specifier, deps));
   const readFile = deps.readFile ?? readFileSync;
   const realpath = deps.realpath ?? realpathSync;
   const stat = deps.stat ?? statSync;
