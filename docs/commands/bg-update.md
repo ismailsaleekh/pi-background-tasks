@@ -12,7 +12,7 @@ covers_sources: []
 <!-- pi-docs:begin name="command-contract-bg-update" generator="scripts/docs/generate.mjs" -->
 | Command | Description | Provenance |
 | --- | --- | --- |
-| `/bg-update` | Show how to update pi-background-tasks to the latest published version | `src/extension.ts:567` |
+| `/bg-update` | Show how to update pi-background-tasks to the latest published version | `src/extension.ts:569` |
 <!-- pi-docs:end name="command-contract-bg-update" -->
 
 Show update instructions for `pi-background-tasks`.

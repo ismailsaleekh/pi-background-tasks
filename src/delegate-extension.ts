@@ -11,7 +11,6 @@ import { Type, type Static } from 'typebox';
 import type { BgTask, BgTaskSnapshot, StartDelegateTaskOptions } from './core/common.js';
 import { truncateChars } from './core/common.js';
 import { sha256Buffer } from './core/attested-pi-run.js';
-import { readFusionCommittedResult, readFusionFailureResult } from './core/fusion/result-package.js';
 import {
   cloneFusionUsage,
   type FusionFailureResultView,
@@ -38,14 +37,6 @@ import {
   DELEGATE_DEFAULT_MAX_TURNS,
   DELEGATE_DEFAULT_TIMEOUT_SECONDS,
 } from './core/delegate/budget.js';
-import { resolveDelegateRoute } from './core/delegate/launch.js';
-import {
-  decideDelegateDelivery,
-  evaluateDelegateTerminal,
-  inlineTooLarge,
-  prepareDelegateLaunch,
-} from './core/delegate/runner.js';
-import { loadDelegateHookContractEvidence } from './core/delegate/launch.js';
 import type { DelegateHookContractEvidence } from './core/delegate/hook-contract.js';
 
 /**
@@ -328,6 +319,7 @@ async function defaultHookEvidence(): Promise<DelegateHookContractEvidence> {
       },
     );
   }
+  const { loadDelegateHookContractEvidence } = await import('./core/delegate/launch.js');
   return loadDelegateHookContractEvidence(raw);
 }
 
@@ -402,6 +394,8 @@ export function registerDelegateExtension(
       const extensionMode = requireExtensionMode(params.extensionMode);
       const autoDeliver = requireAutoDeliver(params.autoDeliver);
       const hookEvidence = await loadEvidence();
+      const { resolveDelegateRoute } = await import('./core/delegate/launch.js');
+      const { prepareDelegateLaunch } = await import('./core/delegate/runner.js');
       const route = resolveDelegateRoute({
         requested: params.route,
         currentModel:
@@ -571,6 +565,7 @@ export function registerDelegateExtension(
           };
         }
         if (task.status !== 'completed' || fusion.outcome?.status !== 'committed') {
+          const { readFusionFailureResult } = await import('./core/fusion/result-package.js');
           const terminal = await readFusionFailureResult({
             artifactDirAbs: fusion.artifactDirAbs,
             artifactDir: fusion.artifactDir,
@@ -614,6 +609,7 @@ export function registerDelegateExtension(
             details,
           };
         }
+        const { readFusionCommittedResult } = await import('./core/fusion/result-package.js');
         const verified = await readFusionCommittedResult({
           artifactDirAbs: fusion.artifactDirAbs,
           artifactDir: fusion.artifactDir,
@@ -691,6 +687,9 @@ export function registerDelegateExtension(
         };
       }
 
+      const { evaluateDelegateTerminal, decideDelegateDelivery, inlineTooLarge } = await import(
+        './core/delegate/runner.js'
+      );
       const terminal = await evaluateDelegateTerminal({
         artifactDirAbs: facts.artifactDirAbs,
         taskId: facts.taskId,

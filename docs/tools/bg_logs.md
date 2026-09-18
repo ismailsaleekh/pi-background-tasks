@@ -11,7 +11,7 @@ covers_sources: []
 
 <!-- pi-docs:begin name="tool-contract-bg_logs" generator="scripts/docs/generate.mjs" -->
 - Label: **Background Logs**
-- Source: `src/extension.ts:863`
+- Source: `src/extension.ts:865`
 - Description: Read bounded output from a background task for deliberate inspection; this is not a waiting primitive. Output is capped at 50.0KB for model safety and points to the full output file when truncated.
 - Root schema: `object`
 

@@ -41,10 +41,9 @@ import {
   installBackgroundTaskExtensionApi,
   type BackgroundTaskExtensionService,
 } from './core/extension-api.js';
-import {
-  BackgroundTasksManager,
-  type BackgroundTaskForUi,
-  type TaskManagerResult,
+import type {
+  BackgroundTaskForUi,
+  TaskManagerResult,
 } from './ui/background-tasks-manager.js';
 import { registerFusionExtension } from './fusion-extension.js';
 import { registerDelegateExtension } from './delegate-extension.js';
@@ -351,6 +350,9 @@ export default function backgroundTasksExtension(pi: ExtensionAPI): void {
     dockOpen = true;
     updateUi(ctx);
     try {
+      const { BackgroundTasksManager } = await import(
+        './ui/background-tasks-manager.js'
+      );
       await ctx.ui.custom<TaskManagerResult>(
         (tui, theme, _keybindings, done) => {
           const managerOptions = {

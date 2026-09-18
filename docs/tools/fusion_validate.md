@@ -11,7 +11,7 @@ covers_sources: []
 
 <!-- pi-docs:begin name="tool-contract-fusion_validate" generator="scripts/docs/generate.mjs" -->
 - Label: **Fusion Validate**
-- Source: `src/fusion-extension.ts:1236`
+- Source: `src/fusion-extension.ts:1248`
 - Description: Start an advisory, read-only Fusion validation review as a tracked background task and return immediately after durable preflight. Retrieve the verified result with bg_result after notification. It is not a build/test/lint substitute and never modifies files.
 - Root schema: `object`; additionalProperties: `false`
 

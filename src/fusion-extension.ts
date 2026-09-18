@@ -8,15 +8,10 @@ import type {
 import { getMarkdownTheme } from '@earendil-works/pi-coding-agent';
 import { Container, Markdown, Text } from '@earendil-works/pi-tui';
 import { Type, type TSchema } from 'typebox';
-import {
-  CURRENT_MODEL_SELECTION,
-  fusionModelConfigPath,
-  loadFusionModelConfig,
-  resolveFusionModels,
-  saveFusionModelConfig,
-} from './core/fusion/config.js';
-import * as FusionContextModule from './core/fusion/context.js';
-import type { BuiltFusionCanonicalInput } from './core/fusion/context.js';
+import type {
+  BuildFusionCanonicalInputOptions,
+  BuiltFusionCanonicalInput,
+} from './core/fusion/context.js';
 import {
   FUSION_INVESTIGATE,
   FUSION_REASON,
@@ -24,10 +19,7 @@ import {
   FUSION_VALIDATE,
   type FusionWorkflowProfile,
 } from './core/fusion/workflows.js';
-import {
-  buildCleanFusionCanonicalInput,
-  type BuiltFusionCleanTaskCanonicalInput,
-} from './core/fusion/clean-context.js';
+import type { BuiltFusionCleanTaskCanonicalInput } from './core/fusion/clean-context.js';
 import { canonicalizeFusionPublicUrl } from './core/fusion/source-policy.js';
 import { canonicalJson } from './core/attested-pi-run.js';
 import type {
@@ -37,7 +29,7 @@ import type {
   JsonObject,
   StartManagedTaskOptions,
 } from './core/common.js';
-import { FusionOrchestrator } from './core/fusion/orchestrator.js';
+import type { FusionOrchestrator } from './core/fusion/orchestrator.js';
 import {
   FUSION_LEGACY_RESULT_SCHEMA_VERSION,
   FUSION_RESULT_SCHEMA_VERSION,
@@ -49,14 +41,14 @@ import {
   type FusionResultDetails,
   type FusionRunResult,
 } from './core/fusion/types.js';
-import {
-  FusionModelSelector,
-  type FusionModelChoice,
-  type FusionModelSelectorResult,
+import type {
+  FusionModelChoice,
+  FusionModelSelectorResult,
 } from './ui/fusion-model-selector.js';
 
 const FUSION_RESULT_MESSAGE_TYPE = 'fusion-result';
 const FUSION_PROGRESS_SCHEMA_VERSION = 'pi-background-tasks.fusion-progress.v1';
+const CURRENT_MODEL_SELECTION = '$current';
 const FUSION_COMMAND_USAGE =
   'Usage: /fusion <prompt> (or run /fusion with no arguments to open the multiline editor).';
 const FUSION_MODEL_COMMAND_NAME = 'fusion-models';
@@ -720,17 +712,19 @@ function declaredSourcesForRequest(
   return 'sources' in request ? request.sources : [];
 }
 
-function buildFusionInput(request: FusionRunRequest): BuiltFusionWorkflowInput {
+async function buildFusionInput(request: FusionRunRequest): Promise<BuiltFusionWorkflowInput> {
   if (request.profile.contextKind === 'session_projection') {
-    const options: FusionContextModule.BuildFusionCanonicalInputOptions = {
+    const { buildFusionCanonicalInput } = await import('./core/fusion/context.js');
+    const options: BuildFusionCanonicalInputOptions = {
       source: request.source,
       request: serializePublicRequest(request.request),
       workflow: request.profile.id,
       toolName: request.toolName,
     };
     if (request.toolCallId !== undefined) options.toolCallId = request.toolCallId;
-    return FusionContextModule.buildFusionCanonicalInput(request.ctx, options);
+    return buildFusionCanonicalInput(request.ctx, options);
   }
+  const { buildCleanFusionCanonicalInput } = await import('./core/fusion/clean-context.js');
   return buildCleanFusionCanonicalInput({
     cwd: request.ctx.cwd,
     source: request.source,
@@ -759,7 +753,14 @@ function renderToolCall(name: string, preview: string, theme: Theme) {
 }
 
 export function registerFusionExtension(pi: ExtensionAPI, deps: FusionExtensionDependencies): void {
-  const orchestrator = new FusionOrchestrator();
+  let orchestrator: FusionOrchestrator | undefined;
+  async function getOrchestrator(): Promise<FusionOrchestrator> {
+    if (!orchestrator) {
+      const { FusionOrchestrator } = await import('./core/fusion/orchestrator.js');
+      orchestrator = new FusionOrchestrator();
+    }
+    return orchestrator;
+  }
   const activeRuns = new Set<ActiveFusionRun>();
   let shuttingDown = false;
   let lifecycleGeneration = 0;
@@ -790,12 +791,15 @@ export function registerFusionExtension(pi: ExtensionAPI, deps: FusionExtensionD
     };
     try {
       assertActive();
-      const built = buildFusionInput(request);
+      const built = await buildFusionInput(request);
       const cwd = request.ctx.cwd;
       const sessionId = request.ctx.sessionManager.getSessionId();
       const modelRegistry = request.ctx.modelRegistry;
       const currentModel = request.ctx.model;
       const thinkingLevel = pi.getThinkingLevel();
+      const { loadFusionModelConfig, resolveFusionModels } = await import(
+        './core/fusion/config.js'
+      );
       const loaded = await loadFusionModelConfig();
       assertActive();
       const models = resolveFusionModels({
@@ -819,7 +823,8 @@ export function registerFusionExtension(pi: ExtensionAPI, deps: FusionExtensionD
         onReady,
       };
       if ('ledger' in built) runInput.contextLedger = built.ledger;
-      return await orchestrator.run(runInput);
+      const orchestratorInstance = await getOrchestrator();
+      return await orchestratorInstance.run(runInput);
     } finally {
       unlink();
       activeRuns.delete(active);
@@ -968,7 +973,8 @@ export function registerFusionExtension(pi: ExtensionAPI, deps: FusionExtensionD
     args: string,
     ctx: ExtensionCommandContext,
   ): Promise<string | undefined> {
-    const direct = FusionContextModule.normalizeFusionCommandRequest(args);
+    const { normalizeFusionCommandRequest } = await import('./core/fusion/context.js');
+    const direct = normalizeFusionCommandRequest(args);
     if (direct.length > 0) return direct;
     if (!ctx.hasUI) throw new Error(FUSION_COMMAND_USAGE);
     const edited = await ctx.ui.editor('Fusion prompt', '');
@@ -1036,6 +1042,11 @@ export function registerFusionExtension(pi: ExtensionAPI, deps: FusionExtensionD
         ctx.ui.notify(modeError, 'error');
         return;
       }
+      const {
+        fusionModelConfigPath,
+        loadFusionModelConfig,
+        saveFusionModelConfig,
+      } = await import('./core/fusion/config.js');
       const path = fusionModelConfigPath();
       let loaded: Awaited<ReturnType<typeof loadFusionModelConfig>>;
       try {
@@ -1045,6 +1056,7 @@ export function registerFusionExtension(pi: ExtensionAPI, deps: FusionExtensionD
         return;
       }
       const choices = choicesForSelector(ctx, loaded.config);
+      const { FusionModelSelector } = await import('./ui/fusion-model-selector.js');
       const result = await ctx.ui.custom<FusionModelSelectorResult>(
         (tui, theme, _keybindings, done) =>
           new FusionModelSelector({

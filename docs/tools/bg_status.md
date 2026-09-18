@@ -11,7 +11,7 @@ covers_sources: []
 
 <!-- pi-docs:begin name="tool-contract-bg_status" generator="scripts/docs/generate.mjs" -->
 - Label: **Background Status**
-- Source: `src/extension.ts:832`
+- Source: `src/extension.ts:834`
 - Description: Inspect one background task or list all running/recent background tasks. This is a point-in-time inspection tool, not a waiting primitive.
 - Root schema: `object`
 
