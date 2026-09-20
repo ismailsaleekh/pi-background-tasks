@@ -56,6 +56,7 @@ Every production file under `src/**` and `extensions/**` has exactly one primary
 | `src/core/fusion/workflows.ts` | [subsystems/fusion](./subsystems/fusion.md) |
 | `src/core/pi-launch.ts` | [subsystems/child-launch-durability-and-safety](./subsystems/child-launch-durability-and-safety.md) |
 | `src/core/registry.ts` | [subsystems/background-task-runtime](./subsystems/background-task-runtime.md) |
+| `src/core/store-root.ts` | [subsystems/background-task-runtime](./subsystems/background-task-runtime.md) |
 | `src/core/update-check.ts` | [subsystems/host-ui-and-telemetry](./subsystems/host-ui-and-telemetry.md) |
 | `src/core/windows-taskkill.ts` | [subsystems/background-task-runtime](./subsystems/background-task-runtime.md) |
 | `src/delegate-child-extension.ts` | [subsystems/delegation](./subsystems/delegation.md) |

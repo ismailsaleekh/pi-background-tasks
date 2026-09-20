@@ -3,6 +3,7 @@ import { chmod, mkdir } from 'node:fs/promises';
 import { basename, isAbsolute, join, relative, sep } from 'node:path';
 import { canonicalJson, sha256Buffer } from '../attested-pi-run.js';
 import { sanitizePathSegment } from '../common.js';
+import { resolveBgRuntimeRoot } from '../store-root.js';
 import { replaceFileDurable } from '../durable-fs.js';
 import {
   EMPTY_FUSION_USAGE,
@@ -91,6 +92,7 @@ interface MutableFusionArtifactManifest {
 
 export interface CreateFusionArtifactStoreOptions {
   cwd: string;
+  env?: NodeJS.ProcessEnv | undefined;
   sessionId?: string | undefined;
   runId?: string | undefined;
   profile?: FusionWorkflowProfile | undefined;
@@ -560,8 +562,13 @@ export class FusionArtifactStore {
       options.sessionId ?? `session-${String(process.pid)}`,
     );
     const sessionDirName = `${sessionSegment}-${String(process.pid)}`;
-    const runDirAbs = join(options.cwd, '.pi', 'fusion', sessionDirName, runId);
-    const runDirDisplay = join('.pi', 'fusion', sessionDirName, runId);
+    const storeRoot = resolveBgRuntimeRoot(options.env);
+    const runDirAbs = storeRoot
+      ? join(storeRoot, 'fusion', sessionDirName, runId)
+      : join(options.cwd, '.pi', 'fusion', sessionDirName, runId);
+    const runDirDisplay = storeRoot
+      ? runDirAbs
+      : join('.pi', 'fusion', sessionDirName, runId);
     await mkdir(runDirAbs, { recursive: true, mode: 0o700 });
     await chmod(runDirAbs, 0o700);
     const timestamp = (options.now ?? (() => new Date()))().toISOString();

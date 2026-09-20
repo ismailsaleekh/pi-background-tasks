@@ -4,6 +4,7 @@ import { chmod, mkdir, open, readFile, rename, rm } from 'node:fs/promises';
 import { basename, isAbsolute, join, relative, sep } from 'node:path';
 import { canonicalJson } from '../attested-pi-run.js';
 import { sanitizePathSegment } from '../common.js';
+import { resolveBgRuntimeRoot } from '../store-root.js';
 import { replaceFileDurable, writeFileDurable } from '../durable-fs.js';
 import {
   DELEGATE_MANIFEST_SCHEMA_VERSION,
@@ -108,6 +109,7 @@ function artifactError(message: string, cause?: unknown): DelegateError {
 
 export interface CreateDelegateArtifactStoreOptions {
   cwd: string;
+  env?: NodeJS.ProcessEnv | undefined;
   taskId: string;
   launchNonce: string;
   sessionId?: string | undefined;
@@ -157,9 +159,14 @@ export class DelegateArtifactStore {
       options.sessionId ?? `session-${String(process.pid)}`,
     );
     const runDirName = `${sessionSegment}-${String(process.pid)}`;
-    const parentAbs = join(options.cwd, '.pi', 'delegate', runDirName);
+    const storeRoot = resolveBgRuntimeRoot(options.env);
+    const parentAbs = storeRoot
+      ? join(storeRoot, 'delegate', runDirName)
+      : join(options.cwd, '.pi', 'delegate', runDirName);
     const rootAbs = join(parentAbs, options.taskId);
-    const rootDisplay = join('.pi', 'delegate', runDirName, options.taskId);
+    const rootDisplay = storeRoot
+      ? rootAbs
+      : join('.pi', 'delegate', runDirName, options.taskId);
     try {
       await mkdir(parentAbs, { recursive: true, mode: 0o700 });
       await mkdir(rootAbs, { recursive: false, mode: 0o700 });

@@ -349,6 +349,32 @@ async function startFakeTask(
 }
 
 void describe('BackgroundTaskRegistry', () => {
+  void it('keeps the runtime dir under cwd when PI_BG_RUNTIME_ROOT is unset', async () => {
+    const h = await createHarness({ platform: 'linux', env: {} });
+    const dir = await h.registry.ensureRuntimeDir(h.ctx);
+    const runId = `registry-test-${String(process.pid)}`;
+    assert.equal(dir.abs, join(h.cwd, '.pi', 'tasks', runId));
+    assert.equal(dir.display, join('.pi', 'tasks', runId));
+  });
+
+  void it('relocates the runtime dir to PI_BG_RUNTIME_ROOT when set', async () => {
+    const store = await mkdtemp(join(tmpdir(), 'pi-bg-store-root-'));
+    try {
+      const h = await createHarness({
+        platform: 'linux',
+        env: { PI_BG_RUNTIME_ROOT: store },
+      });
+      const dir = await h.registry.ensureRuntimeDir(h.ctx);
+      assert.ok(dir.abs.startsWith(join(store, 'tasks')), dir.abs);
+      assert.ok(!dir.abs.startsWith(h.cwd), dir.abs);
+      // display becomes absolute: relative paths under a relocated root would
+      // resolve against the wrong cwd when surfaced to agents and the UI.
+      assert.equal(dir.display, dir.abs);
+    } finally {
+      await rm(store, { recursive: true, force: true });
+    }
+  });
+
   void it('preserves full shell command bytes except surrounding whitespace', async () => {
     const h = await createHarness({ platform: 'linux' });
     try {
