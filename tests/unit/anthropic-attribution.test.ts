@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import * as piAi from '@earendil-works/pi-ai';
 import spawnAnthropicAttribution, {
   ANTHROPIC_ATTRIBUTION_CLAIM_CHANNEL,
   buildAnthropicRequestParams,
@@ -7,6 +8,7 @@ import spawnAnthropicAttribution, {
   streamAnthropicViaBetaMessages,
   type PiExtensionHost,
   type PiContextLike,
+  type PiStreamContext,
 } from '../../src/core/anthropic-attribution.js';
 import { isJsonObject } from '../../src/core/common.js';
 import { buildAttestedPiArgv } from '../../src/core/attested-pi-run.js';
@@ -187,6 +189,56 @@ void describe('global Anthropic attribution extension', () => {
       type: 'adaptive',
       block_binding: { prefix_mismatch_behavior: 'error' },
     });
+  });
+
+  // pi >= 0.86 folds systemPrompt/tools into role 'system' transcript entries.
+  const transcriptWithSystemMessages: PiStreamContext = {
+    messages: [
+      {
+        role: 'system',
+        content: 'You are the base prompt.',
+        toolsAdded: [
+          { name: 'read', description: 'Read a file', parameters: { type: 'object', properties: {} } },
+        ],
+        timestamp: 1,
+      } as never,
+      { role: 'user', content: 'hello' },
+      { role: 'system', content: '', sections: { rules: 'Reply tersely.' }, timestamp: 2 } as never,
+      { role: 'user', content: 'again' },
+    ],
+  };
+
+  void it('skips pi >= 0.86 system messages instead of looping forever', () => {
+    // Before the fix the unknown role fell through to the toolResult branch,
+    // which reset `index` to -1 and restarted the loop forever.
+    const params = buildAnthropicRequestParams(
+      { provider: 'anthropic', id: 'claude-fable-5-1', maxTokens: 128_000, reasoning: true },
+      transcriptWithSystemMessages,
+      { reasoning: 'high' },
+    );
+    assert.deepEqual(
+      (params['messages'] as Array<{ role: string }>).map((message) => message.role),
+      ['user', 'user'],
+    );
+  });
+
+  void it('reads the prompt and tools from pi >= 0.86 system messages', (t) => {
+    if (typeof (piAi as { getCurrentSystemPrompt?: unknown }).getCurrentSystemPrompt !== 'function') {
+      t.skip('installed @earendil-works/pi-ai predates transcript contexts (< 0.86)');
+      return;
+    }
+    const params = buildAnthropicRequestParams(
+      { provider: 'anthropic', id: 'claude-fable-5-1', maxTokens: 128_000, reasoning: true },
+      transcriptWithSystemMessages,
+      { reasoning: 'high' },
+    );
+    const system = JSON.stringify(params['system']);
+    assert.equal(system.includes('You are the base prompt.'), true);
+    assert.equal(system.includes('Reply tersely.'), true);
+    assert.deepEqual(
+      (params['tools'] as Array<{ name: string }>).map((tool) => tool.name),
+      ['read'],
+    );
   });
 
   void it('BUG-193 owns hookless compaction attribution from request-scoped sessionId', async () => {

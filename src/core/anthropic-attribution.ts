@@ -2,8 +2,16 @@ import { createHash } from 'node:crypto';
 import { appendFileSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import * as piAi from '@earendil-works/pi-ai';
 
 export const CLAUDE_CODE_SESSION_HEADER = 'X-Claude-Code-Session-Id';
+
+// pi >= 0.86 exports transcript helpers and passes a TranscriptContext; on
+// older pi the context still carries systemPrompt/tools, so these stay unused.
+const transcript = piAi as {
+  getCurrentSystemPrompt?: (messages: readonly { role: string }[]) => string;
+  getCurrentTools?: (messages: readonly { role: string }[]) => readonly PiToolLike[];
+};
 
 const CLAUDE_CODE_VERSION = '2.1.251';
 const CLAUDE_CODE_ENTRYPOINT = 'sdk-cli';
@@ -394,6 +402,7 @@ interface PiAssistantDiagnosticLike {
 }
 
 type PiMessage =
+  | { readonly role: 'system'; readonly content?: unknown }
   | { readonly role: 'user'; readonly content: string | readonly PiContentBlock[] }
   | {
       readonly role: 'assistant';
@@ -413,6 +422,10 @@ type PiMessage =
       readonly isError?: boolean;
     };
 
+/**
+ * pi < 0.86 passes `systemPrompt`/`tools` alongside `messages`; pi >= 0.86
+ * passes a TranscriptContext where both live in role 'system' messages.
+ */
 export interface PiStreamContext {
   readonly messages: readonly PiMessage[];
   readonly systemPrompt?: string;
@@ -1756,6 +1769,10 @@ function convertMessages(
       continue;
     }
 
+    // System messages carry the prompt and tool deltas; they are read by
+    // getCurrentSystemPrompt/getCurrentTools and never sent inline.
+    if (message.role !== 'toolResult') continue;
+
     const toolResults: JsonObject[] = [];
     let lookahead = index;
     while (lookahead < messages.length && messages[lookahead]?.role === 'toolResult') {
@@ -1869,20 +1886,22 @@ export function buildAnthropicRequestParams(
     cacheRetention,
     compactionBoundarySha256FromPiMessages(context.messages),
   );
+  const systemPrompt =
+    context.systemPrompt ?? transcript.getCurrentSystemPrompt?.(context.messages) ?? '';
   const system =
-    context.systemPrompt && context.systemPrompt.trim().length > 0
+    systemPrompt.trim().length > 0
       ? markSystemCacheSurface(
           [
             {
               type: 'text',
-              text: sanitizeSurrogates(stripAnthropicSystemPromptBadLines(context.systemPrompt)),
+              text: sanitizeSurrogates(stripAnthropicSystemPromptBadLines(systemPrompt)),
             },
           ],
           cacheControl,
         )
       : [];
   const tools = convertTools(
-    context.tools,
+    context.tools ?? transcript.getCurrentTools?.(context.messages),
     model.compat?.supportsCacheControlOnTools === false ? undefined : cacheControl,
   );
   const staticSha256 = conversationStaticHash(system, tools);
