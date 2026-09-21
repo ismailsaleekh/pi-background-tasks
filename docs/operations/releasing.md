@@ -23,6 +23,7 @@ Current observed standalone git tags stop at `v0.6.0`. Do not advertise or certi
 Run from the `pi-background-tasks` package root in an isolated environment. These are release-candidate checks, not tag certification:
 
 ```bash
+npm run build:runtime
 npm run typecheck
 npm run test:type-safety
 npm run test:unit
@@ -51,11 +52,12 @@ Live evidence (`npx tsx scripts/delegate-live-run.ts`) is release-time and perfo
 
 Use `npm pack --dry-run --json` output as the payload source of truth. Verify at minimum:
 
-- `extensions/anthropic-attribution.ts` and `extensions/background-tasks.ts` are included as the ordered Pi entrypoints;
-- runtime `src/` files needed by both entrypoints are included;
+- `dist/extensions/anthropic-attribution.js` and `dist/extensions/background-tasks.js` are the ordered Pi entrypoints;
+- the complete compiled `dist/` runtime closure, source maps, copied hook-contract evidence, and minimal `dist/package.json` are included;
+- authoritative `extensions/` and runtime `src/` sources remain included for public source/API compatibility;
 - `docs/`, `README.md`, `TESTING.md`, `TEST_PLAN.md`, `PUBLISHING.md`, `BACKGROUND-TASKS-INSTRUCTIONS.md`, `THIRD_PARTY_NOTICES.md`, root `logo.png`, and `LICENSE` are included per current `package.json.files`;
 - tests, scripts, node_modules, local `.pi/` artifacts, generated evidence not meant for runtime, and nested tarballs are excluded;
-- TypeBox remains a Pi-provided peer and no private/nested runtime TypeBox copy is bundled;
+- TypeBox and `@earendil-works/pi-ai` remain Pi-provided peers and no private/nested runtime copies are bundled;
 - production dependencies use registry versions only; no exotic URL/git/file subdependency is shipped;
 - docs/assets/gateway/logo inclusion matches `package.json.files` exactly.
 

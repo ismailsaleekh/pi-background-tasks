@@ -90,8 +90,10 @@ void describe('delegate mutation resistance', () => {
     const runner = codeOnly(await source('src/core/delegate/runner.ts'));
     assert.match(runner, /result_too_large_for_inline/);
     assert.match(runner, /DELEGATE_INLINE_ANSWER_BYTES/);
+    const facadeContract = codeOnly(await source('src/core/delegate/facade-contract.ts'));
+    assert.match(facadeContract, /DELEGATE_INLINE_ANSWER_BYTES\s*=\s*48\s*\*\s*1024/);
     const budget = codeOnly(await source('src/core/delegate/budget.ts'));
-    assert.match(budget, /DELEGATE_INLINE_ANSWER_BYTES\s*=\s*\d/);
+    assert.match(budget, /from '\.\/facade-contract\.js'/);
   });
 
   void it('runs admission preflight before anything is created and never skips it', async () => {

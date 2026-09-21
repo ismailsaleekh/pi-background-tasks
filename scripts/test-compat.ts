@@ -39,6 +39,11 @@ function verifyTypeBoxPeerPosture(): void {
       `typebox must be declared as a "*" peer dependency per Pi package rules, saw ${String(peers['typebox'])}`,
     );
   }
+  if (peers['@earendil-works/pi-ai'] !== '*') {
+    throw new Error(
+      `@earendil-works/pi-ai must be declared as a host-provided "*" peer, saw ${String(peers['@earendil-works/pi-ai'])}`,
+    );
+  }
   for (const key of ['@earendil-works/pi-coding-agent', '@earendil-works/pi-tui']) {
     const range = peers[key];
     if (typeof range !== 'string') {
@@ -53,9 +58,13 @@ function verifyTypeBoxPeerPosture(): void {
   const deps = manifest['dependencies'];
   if (isRecord(deps) && deps['typebox'] !== undefined)
     throw new Error('typebox must not be a runtime dependency; Pi bundles it');
+  if (isRecord(deps) && deps['@earendil-works/pi-ai'] !== undefined)
+    throw new Error('@earendil-works/pi-ai must not be a private runtime dependency');
   const bundled = manifest['bundledDependencies'];
   if (Array.isArray(bundled) && bundled.includes('typebox'))
     throw new Error('typebox must never be bundled');
+  if (Array.isArray(bundled) && bundled.includes('@earendil-works/pi-ai'))
+    throw new Error('@earendil-works/pi-ai must never be bundled');
 }
 
 interface PackFileEntry {

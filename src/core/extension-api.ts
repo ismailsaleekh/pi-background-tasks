@@ -15,6 +15,18 @@ export const BG_TERMINAL_CHANNEL = 'pi-background-tasks:terminal:v1';
 export const BG_REQUEST_SCHEMA = 'pi-background-tasks.extension-request.v1';
 export const BG_RESPONSE_SCHEMA = 'pi-background-tasks.extension-response.v1';
 export const BG_TERMINAL_SCHEMA = 'pi-background-tasks.extension-terminal.v1';
+export const BG_EXTENSION_SERVICE_CLOSED_CODE = 'pi_background_tasks_eventbus_closed';
+
+export type BackgroundTaskExtensionServiceState = 'open' | 'closed';
+
+export class BackgroundTaskExtensionServiceClosedError extends Error {
+  readonly code = BG_EXTENSION_SERVICE_CLOSED_CODE;
+
+  constructor() {
+    super('pi-background-tasks EventBus service is closed');
+    this.name = 'BackgroundTaskExtensionServiceClosedError';
+  }
+}
 
 const MAX_ERROR_CHARS = 240;
 const MAX_REQUEST_ID_CHARS = 200;
@@ -109,6 +121,7 @@ export interface BackgroundTaskExtensionTerminal {
 }
 
 export interface BackgroundTaskExtensionService {
+  readonly state: BackgroundTaskExtensionServiceState;
   publishTerminal(task: BgTaskSnapshot): void;
   close(): void;
 }
@@ -406,7 +419,7 @@ class InstalledBackgroundTaskExtensionService implements BackgroundTaskExtension
   private readonly logger: Pick<Console, 'error'>;
   private readonly seenRequestIds = new Set<string>();
   private readonly unsubscribe: () => void;
-  private closed = false;
+  private serviceState: BackgroundTaskExtensionServiceState = 'open';
 
   constructor(options: BackgroundTaskExtensionServiceOptions) {
     this.events = options.events;
@@ -419,8 +432,16 @@ class InstalledBackgroundTaskExtensionService implements BackgroundTaskExtension
     });
   }
 
+  get state(): BackgroundTaskExtensionServiceState {
+    return this.serviceState;
+  }
+
+  private isClosed(): boolean {
+    return this.serviceState === 'closed';
+  }
+
   publishTerminal(task: BgTaskSnapshot): void {
-    if (this.closed) throw new Error('pi-background-tasks EventBus service is closed');
+    if (this.serviceState === 'closed') throw new BackgroundTaskExtensionServiceClosedError();
     const terminal: BackgroundTaskExtensionTerminal = {
       schema_version: BG_TERMINAL_SCHEMA,
       task,
@@ -429,8 +450,9 @@ class InstalledBackgroundTaskExtensionService implements BackgroundTaskExtension
   }
 
   close(): void {
-    if (this.closed) return;
-    this.closed = true;
+    if (this.serviceState === 'closed') return;
+    this.serviceState = 'closed';
+    this.registry.closeTerminalPublication('publisher_closed');
     this.unsubscribe();
   }
 
@@ -459,7 +481,7 @@ class InstalledBackgroundTaskExtensionService implements BackgroundTaskExtension
         ? createTerminalPublicationGate()
         : undefined;
     try {
-      if (this.closed) throw new Error('pi-background-tasks EventBus service is closed');
+      if (this.serviceState === 'closed') throw new BackgroundTaskExtensionServiceClosedError();
       if (this.isShuttingDown() || this.registry.isShuttingDown()) {
         throw new Error('pi-background-tasks EventBus service is shutting down');
       }
@@ -467,10 +489,16 @@ class InstalledBackgroundTaskExtensionService implements BackgroundTaskExtension
       if (ctx === undefined) {
         throw new Error('pi-background-tasks EventBus service is unavailable before session_start');
       }
-      this.emitResponse(
-        successResponse(request, await this.execute(ctx, request, terminalGate?.promise)),
-      );
+      const result = await this.execute(ctx, request, terminalGate?.promise);
+      if (this.isClosed()) return;
+      if (this.isShuttingDown() || this.registry.isShuttingDown()) {
+        throw new Error('pi-background-tasks EventBus service is shutting down');
+      }
+      this.emitResponse(successResponse(request, result));
     } catch (error) {
+      // A request accepted before close may report failure, but it must never
+      // report post-close success. Requests first emitted after close remain
+      // unhandled because the listener has already been removed.
       this.emitResponse(errorResponse(request.request_id, request.operation, error));
     } finally {
       await terminalGate?.releaseAfterResponse();

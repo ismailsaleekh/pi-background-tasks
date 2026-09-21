@@ -11,7 +11,9 @@ covers_sources: []
 
 <!-- pi-docs:begin name="tool-contract-fusion_reason" generator="scripts/docs/generate.mjs" -->
 - Label: **Fusion Reason**
-- Source: `src/fusion-extension.ts:1179`
+- Source: `src/fusion-extension.ts:1287`
+- Availability: `feature:fusion`
+- Available by default: **yes**
 - Description: Start a five-model Fusion reason workflow as a tracked background task and return immediately after durable preflight. Retrieve the verified result with bg_result after notification. Candidate children receive the reason projection and no tools; evaluator and merger also run without tools.
 - Root schema: `object`; additionalProperties: `false`
 

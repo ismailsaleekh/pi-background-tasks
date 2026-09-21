@@ -1,22 +1,37 @@
-import { readFileSync, realpathSync, statSync } from 'node:fs';
+import { accessSync, constants, readFileSync, realpathSync, statSync } from 'node:fs';
 import type { Stats } from 'node:fs';
 import { createRequire } from 'node:module';
-import { dirname, extname, isAbsolute, join, relative, sep } from 'node:path';
+import {
+  basename,
+  delimiter,
+  dirname,
+  extname,
+  isAbsolute,
+  join,
+  relative,
+  resolve,
+  sep,
+  win32 as win32Path,
+} from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export interface PiLaunchSpec {
   readonly executable: string;
   readonly argvPrefix: readonly string[];
-  readonly kind: 'path' | 'package-node-cli';
+  readonly kind: 'path' | 'package-node-cli' | 'compiled-host';
 }
 
 export interface PiLaunchDependencies {
   readonly platform?: NodeJS.Platform;
   readonly execPath?: string;
+  readonly hostScript?: string;
+  readonly path?: string;
   readonly resolvePackageJson?: (specifier: string) => string;
+  readonly resolveModule?: (specifier: string) => string;
   readonly readFile?: (path: string) => string | Buffer;
   readonly realpath?: (path: string) => string;
   readonly stat?: (path: string) => Pick<Stats, 'isFile'>;
+  readonly access?: (path: string, mode?: number) => void;
 }
 
 export class PiLaunchResolutionError extends Error {
@@ -48,44 +63,61 @@ export class PiCommandLineLimitError extends Error {
 const PI_PACKAGE_NAME = '@earendil-works/pi-coding-agent';
 const PI_PACKAGE_MANIFEST = `${PI_PACKAGE_NAME}/package.json`;
 const WINDOWS_COMMAND_LINE_LIMIT = 32767;
+const JAVASCRIPT_EXTENSIONS = new Set(['.js', '.cjs', '.mjs']);
+const WINDOWS_NATIVE_EXTENSIONS = new Set(['.exe', '.com']);
 
 interface JsonRecord {
   readonly [key: string]: unknown;
 }
 
-function defaultResolvePackageJson(specifier: string): string {
-  const requireForPi = createRequire(import.meta.url);
-  try {
-    return requireForPi.resolve(specifier);
-  } catch (manifestError) {
-    if (specifier !== PI_PACKAGE_MANIFEST) throw manifestError;
-    let packageEntry: string;
-    try {
-      packageEntry = fileURLToPath(import.meta.resolve(PI_PACKAGE_NAME));
-    } catch (entryError) {
-      throw new Error(
-        `${errorMessage(manifestError)}; package entry resolve failed: ${errorMessage(entryError)}`,
-      );
-    }
-    const diagnostics: string[] = [];
-    let dir = dirname(packageEntry);
-    for (;;) {
-      const candidate = join(dir, 'package.json');
-      try {
-        if (statSync(candidate).isFile()) return candidate;
-        diagnostics.push(`${candidate} is not a regular file`);
-      } catch (statError) {
-        diagnostics.push(`${candidate}: ${errorMessage(statError)}`);
-      }
-      const parent = dirname(dir);
-      if (parent === dir) {
-        throw new Error(
-          `${errorMessage(manifestError)}; package entry search failed: ${diagnostics.join('; ')}`,
-        );
-      }
-      dir = parent;
-    }
+interface LaunchIo {
+  readonly readFile: (path: string) => string | Buffer;
+  readonly realpath: (path: string) => string;
+  readonly stat: (path: string) => Pick<Stats, 'isFile'>;
+  readonly access: (path: string, mode?: number) => void;
+}
+
+interface NamedManifest {
+  readonly manifestPath: string;
+  readonly sourceReal: string;
+  readonly name: string;
+}
+
+class HostIsNotPiError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'HostIsNotPiError';
   }
+}
+
+class LaunchPathOperationError extends Error {
+  readonly operation: string;
+  readonly path: string;
+  readonly pathCause: unknown;
+
+  constructor(operation: string, path: string, cause: unknown) {
+    super(`${operation} failed for ${path}: ${errorMessage(cause)}`, { cause });
+    this.name = 'LaunchPathOperationError';
+    this.operation = operation;
+    this.path = path;
+    this.pathCause = cause;
+  }
+}
+
+const nodeLaunchIo: LaunchIo = {
+  readFile: (path) => readFileSync(path),
+  realpath: (path) => realpathSync(path),
+  stat: (path) => statSync(path),
+  access: (path, mode) => accessSync(path, mode),
+};
+
+function launchIo(deps: PiLaunchDependencies): LaunchIo {
+  return {
+    readFile: deps.readFile ?? nodeLaunchIo.readFile,
+    realpath: deps.realpath ?? nodeLaunchIo.realpath,
+    stat: deps.stat ?? nodeLaunchIo.stat,
+    access: deps.access ?? nodeLaunchIo.access,
+  };
 }
 
 function failResolution(message: string): never {
@@ -96,12 +128,18 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function readPath<T>(label: string, path: string, action: () => T): T {
+function pathOperation<T>(label: string, path: string, action: () => T): T {
   try {
     return action();
   } catch (error) {
-    failResolution(`${label} failed for ${path}: ${errorMessage(error)}`);
+    throw new LaunchPathOperationError(label, path, error);
   }
+}
+
+function isMissingPathError(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) return false;
+  const code = Reflect.get(error, 'code');
+  return code === 'ENOENT' || code === 'ENOTDIR';
 }
 
 function isJsonRecord(value: unknown): value is JsonRecord {
@@ -113,10 +151,28 @@ function parseManifest(raw: string | Buffer, manifestPath: string): JsonRecord {
   try {
     parsed = JSON.parse(Buffer.isBuffer(raw) ? raw.toString('utf8') : raw);
   } catch (error) {
-    failResolution(`manifest JSON is invalid at ${manifestPath}: ${errorMessage(error)}`);
+    throw new Error(`manifest JSON is invalid at ${manifestPath}: ${errorMessage(error)}`);
   }
-  if (!isJsonRecord(parsed)) failResolution(`manifest is not an object at ${manifestPath}`);
+  if (!isJsonRecord(parsed)) throw new Error(`manifest is not an object at ${manifestPath}`);
   return parsed;
+}
+
+function packageName(manifest: JsonRecord, manifestPath: string): string | undefined {
+  const name = manifest['name'];
+  if (name === undefined) return undefined;
+  if (typeof name !== 'string' || name.trim().length === 0) {
+    throw new Error(`manifest name is malformed at ${manifestPath}`);
+  }
+  return name;
+}
+
+function requirePiPackageName(manifest: JsonRecord, manifestPath: string): void {
+  const name = packageName(manifest, manifestPath);
+  if (name !== PI_PACKAGE_NAME) {
+    throw new Error(
+      `manifest package name must be ${PI_PACKAGE_NAME} at ${manifestPath}; received ${name === undefined ? '<missing>' : name}`,
+    );
+  }
 }
 
 function readPiBin(manifest: JsonRecord, manifestPath: string): string {
@@ -126,54 +182,323 @@ function readPiBin(manifest: JsonRecord, manifestPath: string): string {
     const pi = bin['pi'];
     if (typeof pi === 'string' && pi.trim().length > 0) return pi;
   }
-  failResolution(`manifest bin.pi is missing or malformed at ${manifestPath}`);
+  throw new Error(`manifest bin.pi is missing or malformed at ${manifestPath}`);
 }
 
 function pathInside(parent: string, child: string): boolean {
   const rel = relative(parent, child);
-  return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel) && !rel.split(sep).includes('..'));
+  return rel === '' || (!isAbsolute(rel) && rel !== '..' && !rel.startsWith(`..${sep}`));
+}
+
+function findNearestNamedManifest(sourcePath: string, io: LaunchIo): NamedManifest {
+  const sourceReal = pathOperation('source realpath', sourcePath, () => io.realpath(sourcePath));
+  let dir = dirname(sourceReal);
+  for (;;) {
+    const candidate = join(dir, 'package.json');
+    let candidateStat: Pick<Stats, 'isFile'>;
+    try {
+      candidateStat = io.stat(candidate);
+    } catch (error) {
+      if (!isMissingPathError(error)) {
+        throw new Error(`manifest stat failed for ${candidate}: ${errorMessage(error)}`);
+      }
+      const parent = dirname(dir);
+      if (parent === dir) {
+        throw new HostIsNotPiError(`no named package manifest above ${sourceReal}`);
+      }
+      dir = parent;
+      continue;
+    }
+    if (!candidateStat.isFile()) {
+      throw new Error(`package boundary manifest is not a regular file at ${candidate}`);
+    }
+    const manifest = parseManifest(
+      pathOperation('manifest read', candidate, () => io.readFile(candidate)),
+      candidate,
+    );
+    const name = packageName(manifest, candidate);
+    if (name !== undefined) return { manifestPath: candidate, sourceReal, name };
+
+    const parent = dirname(dir);
+    if (parent === dir) {
+      throw new HostIsNotPiError(`no named package manifest above ${sourceReal}`);
+    }
+    dir = parent;
+  }
+}
+
+function findPiManifestFromHostScript(hostScript: string | undefined, io: LaunchIo): NamedManifest {
+  if (!hostScript) throw new HostIsNotPiError('host script path is unavailable');
+  let found: NamedManifest;
+  try {
+    found = findNearestNamedManifest(hostScript, io);
+  } catch (error) {
+    if (error instanceof HostIsNotPiError) throw error;
+    if (
+      error instanceof LaunchPathOperationError &&
+      error.operation === 'source realpath' &&
+      isMissingPathError(error.pathCause)
+    ) {
+      throw new HostIsNotPiError(error.message);
+    }
+    throw error;
+  }
+  if (found.name !== PI_PACKAGE_NAME) {
+    throw new HostIsNotPiError(
+      `nearest named manifest above host script belongs to ${found.name}: ${found.manifestPath}`,
+    );
+  }
+  return found;
+}
+
+/**
+ * Resolve only a genuine running Pi package. This helper performs package-boundary
+ * discovery; resolvePiLaunch() additionally validates bin.pi and host/bin identity.
+ */
+export function resolvePiManifestFromHostScript(
+  hostScript: string | undefined,
+  deps: Pick<PiLaunchDependencies, 'readFile' | 'realpath' | 'stat' | 'access'> = {},
+): string {
+  return findPiManifestFromHostScript(hostScript, launchIo(deps)).manifestPath;
+}
+
+function normalizeResolvedModulePath(pathOrUrl: string): string {
+  return pathOrUrl.startsWith('file:') ? fileURLToPath(pathOrUrl) : pathOrUrl;
+}
+
+function defaultResolveModule(specifier: string): string {
+  if (specifier === PI_PACKAGE_MANIFEST) {
+    return createRequire(import.meta.url).resolve(specifier);
+  }
+  return normalizeResolvedModulePath(import.meta.resolve(specifier));
+}
+
+function resolvePiManifestFromModules(deps: PiLaunchDependencies, io: LaunchIo): string {
+  if (deps.resolvePackageJson) {
+    return normalizeResolvedModulePath(deps.resolvePackageJson(PI_PACKAGE_MANIFEST));
+  }
+
+  const resolveModule = deps.resolveModule ?? defaultResolveModule;
+  let manifestError: unknown;
+  try {
+    return normalizeResolvedModulePath(resolveModule(PI_PACKAGE_MANIFEST));
+  } catch (error) {
+    manifestError = error;
+  }
+
+  let packageEntry: string;
+  try {
+    packageEntry = normalizeResolvedModulePath(resolveModule(PI_PACKAGE_NAME));
+  } catch (entryError) {
+    throw new Error(
+      `package manifest resolve failed for ${PI_PACKAGE_MANIFEST}: ${errorMessage(manifestError)}; package entry resolve failed: ${errorMessage(entryError)}`,
+    );
+  }
+
+  let found: NamedManifest;
+  try {
+    found = findNearestNamedManifest(packageEntry, io);
+  } catch (searchError) {
+    throw new Error(
+      `package manifest resolve failed for ${PI_PACKAGE_MANIFEST}: ${errorMessage(manifestError)}; package entry manifest search failed: ${errorMessage(searchError)}`,
+    );
+  }
+  if (found.name !== PI_PACKAGE_NAME) {
+    throw new Error(
+      `package entry nearest named manifest belongs to ${found.name}: ${found.manifestPath}`,
+    );
+  }
+  return found.manifestPath;
+}
+
+function executableBasename(execPath: string, platform: NodeJS.Platform): string {
+  return platform === 'win32' ? win32Path.basename(execPath) : basename(execPath);
+}
+
+function isGenericJavaScriptRuntime(execPath: string, platform: NodeJS.Platform): boolean {
+  return /^(?:node|nodejs|bun)(?:\.exe)?$/i.test(executableBasename(execPath, platform));
+}
+
+function resolveCompiledHostLaunch(
+  deps: PiLaunchDependencies,
+  io: LaunchIo,
+  platform: NodeJS.Platform,
+): PiLaunchSpec | undefined {
+  const execPath = deps.execPath ?? process.execPath;
+  const executableName = executableBasename(execPath, platform);
+  const isNamedPiExecutable =
+    platform === 'win32' ? /^pi\.(?:exe|com)$/i.test(executableName) : executableName === 'pi';
+  // A Bun virtual script path describes packaging mechanics shared by every
+  // compiled SDK application; it is not Pi CLI authority. Retain the direct
+  // route only for the established Pi executable name.
+  if (isGenericJavaScriptRuntime(execPath, platform) || !isNamedPiExecutable) return undefined;
+
+  const executableReal = pathOperation('compiled host realpath', execPath, () => io.realpath(execPath));
+  const executableStat = pathOperation('compiled host stat', executableReal, () =>
+    io.stat(executableReal),
+  );
+  if (!executableStat.isFile()) throw new Error('compiled Pi host is not a regular file');
+  if (platform === 'win32') {
+    if (!WINDOWS_NATIVE_EXTENSIONS.has(extname(executableReal).toLowerCase())) {
+      throw new Error('compiled Windows Pi host must be an .exe or .com file');
+    }
+  } else {
+    pathOperation('compiled host execute access', executableReal, () =>
+      io.access(executableReal, constants.X_OK),
+    );
+  }
+  return { executable: executableReal, argvPrefix: [], kind: 'compiled-host' };
+}
+
+function resolvePackageLaunch(
+  manifestPath: string,
+  deps: PiLaunchDependencies,
+  io: LaunchIo,
+  platform: NodeJS.Platform,
+  expectedHostReal?: string,
+): PiLaunchSpec {
+  const manifestReal = pathOperation('manifest realpath', manifestPath, () => io.realpath(manifestPath));
+  if (basename(manifestReal).toLowerCase() !== 'package.json') {
+    throw new Error(`resolved Pi manifest is not package.json: ${manifestReal}`);
+  }
+  const manifestStat = pathOperation('manifest stat', manifestReal, () => io.stat(manifestReal));
+  if (!manifestStat.isFile()) throw new Error(`Pi package manifest is not a regular file: ${manifestReal}`);
+
+  const manifest = parseManifest(
+    pathOperation('manifest read', manifestReal, () => io.readFile(manifestReal)),
+    manifestReal,
+  );
+  requirePiPackageName(manifest, manifestReal);
+  const packageRootReal = pathOperation('package root realpath', dirname(manifestReal), () =>
+    io.realpath(dirname(manifestReal)),
+  );
+  if (!pathInside(packageRootReal, manifestReal)) {
+    throw new Error('Pi package manifest resolves outside the package root');
+  }
+
+  const bin = readPiBin(manifest, manifestReal);
+  if (
+    isAbsolute(bin) ||
+    (platform === 'win32' && (win32Path.isAbsolute(bin) || /^[a-z]:/i.test(bin)))
+  )
+    throw new Error('Pi package bin target must not be absolute; it must be relative to the package root');
+  const targetCandidate = resolve(packageRootReal, bin);
+  if (!pathInside(packageRootReal, targetCandidate)) {
+    throw new Error('Pi package bin target path escapes the package root');
+  }
+  const targetReal = pathOperation('bin target realpath', targetCandidate, () =>
+    io.realpath(targetCandidate),
+  );
+  if (!pathInside(packageRootReal, targetReal)) {
+    throw new Error('Pi package bin target resolves outside the package root');
+  }
+  const targetStat = pathOperation('bin target stat', targetReal, () => io.stat(targetReal));
+  if (!targetStat.isFile()) throw new Error('Pi package bin target is not a regular file');
+  if (expectedHostReal !== undefined && targetReal !== expectedHostReal) {
+    throw new Error(
+      `running host script does not match manifest bin.pi: host ${expectedHostReal}; bin ${targetReal}`,
+    );
+  }
+
+  const extension = extname(targetReal).toLowerCase();
+  if (JAVASCRIPT_EXTENSIONS.has(extension)) {
+    const execPath = deps.execPath ?? process.execPath;
+    if (!isGenericJavaScriptRuntime(execPath, platform)) {
+      throw new Error(
+        `Pi package JavaScript bin cannot launch through a non-generic JavaScript runtime: ${execPath}`,
+      );
+    }
+    return { executable: execPath, argvPrefix: [targetReal], kind: 'package-node-cli' };
+  }
+  if (platform === 'win32' && WINDOWS_NATIVE_EXTENSIONS.has(extension)) {
+    // Keep the historical package launch kind for compatibility; argvPrefix
+    // distinguishes this direct native form from the JavaScript package form.
+    return { executable: targetReal, argvPrefix: [], kind: 'package-node-cli' };
+  }
+  throw new Error(`Pi package bin target extension is unsupported: ${extension || '<none>'}`);
+}
+
+function resolveExecutableOnPosixPath(
+  deps: PiLaunchDependencies,
+  io: LaunchIo,
+): { readonly launch?: PiLaunchSpec; readonly diagnostics: readonly string[] } {
+  const rawPath = deps.path ?? process.env['PATH'] ?? '';
+  const diagnostics: string[] = [];
+  if (rawPath.length === 0) diagnostics.push('PATH is empty');
+  for (const entry of rawPath.split(delimiter)) {
+    const directory = entry.length === 0 ? process.cwd() : entry;
+    const candidate = resolve(directory, 'pi');
+    let candidateReal: string;
+    try {
+      candidateReal = io.realpath(candidate);
+    } catch (error) {
+      diagnostics.push(`${candidate}: ${errorMessage(error)}`);
+      continue;
+    }
+    try {
+      if (!io.stat(candidateReal).isFile()) {
+        diagnostics.push(`${candidateReal} is not a regular file`);
+        continue;
+      }
+      io.access(candidateReal, constants.X_OK);
+    } catch (error) {
+      diagnostics.push(`${candidateReal} is not executable: ${errorMessage(error)}`);
+      continue;
+    }
+    return {
+      // Bind the launch plan to the exact canonical executable admitted above.
+      // A later cwd or environment/PATH change must not trigger a second lookup.
+      launch: { executable: candidateReal, argvPrefix: [], kind: 'path' },
+      diagnostics,
+    };
+  }
+  return { diagnostics };
 }
 
 export function resolvePiLaunch(deps: PiLaunchDependencies = {}): PiLaunchSpec {
   const platform = deps.platform ?? process.platform;
-  if (platform !== 'win32') return { executable: 'pi', argvPrefix: [], kind: 'path' };
+  const io = launchIo(deps);
 
-  const resolvePackageJson = deps.resolvePackageJson ?? defaultResolvePackageJson;
-  const readFile = deps.readFile ?? readFileSync;
-  const realpath = deps.realpath ?? realpathSync;
-  const stat = deps.stat ?? statSync;
-  const execPath = deps.execPath ?? process.execPath;
+  try {
+    const compiled = resolveCompiledHostLaunch(deps, io, platform);
+    if (compiled) return compiled;
+  } catch (error) {
+    failResolution(errorMessage(error));
+  }
+
+  const hostScript = deps.hostScript ?? process.argv[1];
+  let pathDiagnostic: string | undefined;
+  if (platform !== 'win32') {
+    const pathResult = resolveExecutableOnPosixPath(deps, io);
+    if (pathResult.launch) return pathResult.launch;
+    pathDiagnostic = `no executable pi on PATH (${pathResult.diagnostics.join('; ') || 'no candidates'})`;
+  }
+
+  let hostDiagnostic = 'host script was not inspected';
+  try {
+    const host = findPiManifestFromHostScript(hostScript, io);
+    // A manifest that identifies the running host as Pi is authoritative. Never
+    // hide its invalid bin/identity behind another module installation.
+    return resolvePackageLaunch(host.manifestPath, deps, io, platform, host.sourceReal);
+  } catch (error) {
+    // Only genuine absence or a positively foreign package identity permits the
+    // exact installed-module route. I/O and integrity failures remain fatal.
+    if (!(error instanceof HostIsNotPiError)) failResolution(errorMessage(error));
+    hostDiagnostic = errorMessage(error);
+  }
 
   let manifestPath: string;
   try {
-    manifestPath = resolvePackageJson(PI_PACKAGE_MANIFEST);
+    manifestPath = resolvePiManifestFromModules(deps, io);
   } catch (error) {
-    failResolution(`package manifest resolve failed for ${PI_PACKAGE_MANIFEST}: ${errorMessage(error)}`);
+    const prefix = pathDiagnostic === undefined ? '' : `${pathDiagnostic}; `;
+    failResolution(`${prefix}${errorMessage(error)}; running host lookup: ${hostDiagnostic}`);
   }
-
-  const packageRoot = dirname(manifestPath);
-  const packageRootReal = readPath('package root realpath', packageRoot, () => realpath(packageRoot));
-  const manifest = parseManifest(
-    readPath('manifest read', manifestPath, () => readFile(manifestPath)),
-    manifestPath,
-  );
-  const bin = readPiBin(manifest, manifestPath);
-  const targetCandidate = join(packageRoot, bin);
-  const targetReal = readPath('bin target realpath', targetCandidate, () => realpath(targetCandidate));
-  if (!pathInside(packageRootReal, targetReal)) {
-    failResolution('Pi package bin target resolves outside the package root');
+  try {
+    return resolvePackageLaunch(manifestPath, deps, io, platform);
+  } catch (error) {
+    failResolution(errorMessage(error));
   }
-  const targetStat = readPath('bin target stat', targetReal, () => stat(targetReal));
-  if (!targetStat.isFile()) failResolution('Pi package bin target is not a regular file');
-
-  const extension = extname(targetReal).toLowerCase();
-  if (extension === '.js' || extension === '.cjs' || extension === '.mjs') {
-    return { executable: execPath, argvPrefix: [targetReal], kind: 'package-node-cli' };
-  }
-  if (extension === '.exe' || extension === '.com') {
-    return { executable: targetReal, argvPrefix: [], kind: 'package-node-cli' };
-  }
-  failResolution(`Pi package bin target extension is unsupported: ${extension || '<none>'}`);
 }
 
 export function piLaunchArgv(launch: PiLaunchSpec, piArgs: readonly string[]): string[] {

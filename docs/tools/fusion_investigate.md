@@ -11,7 +11,9 @@ covers_sources: []
 
 <!-- pi-docs:begin name="tool-contract-fusion_investigate" generator="scripts/docs/generate.mjs" -->
 - Label: **Fusion Investigate**
-- Source: `src/fusion-extension.ts:1197`
+- Source: `src/fusion-extension.ts:1305`
+- Availability: `feature:fusion`
+- Available by default: **yes**
 - Description: Start a five-model Fusion investigation as a tracked background task and return immediately after durable preflight. Retrieve the verified result with bg_result after notification. Candidate children run in clean bounded read-only contexts.
 - Root schema: `object`; additionalProperties: `false`
 

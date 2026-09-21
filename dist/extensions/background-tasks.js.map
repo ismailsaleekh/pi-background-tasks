@@ -1,0 +1,1 @@
+{"version":3,"file":"background-tasks.js","sourceRoot":"","sources":["../../extensions/background-tasks.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,OAAO,EAAE,MAAM,qBAAqB,CAAC","sourcesContent":["export { default } from '../src/extension.js';\n"]}

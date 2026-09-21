@@ -1,0 +1,20 @@
+▶ Pi launch resolution
+  ✔ returns the bare path form on POSIX when pi is on PATH, without package lookup (3.795625ms)
+  ✔ falls back to the running host CLI on POSIX when pi is absent (1.272042ms)
+  ✔ fails closed on POSIX when neither pi nor a node host CLI is available (1.581166ms)
+  ✔ resolves a Windows string bin JavaScript CLI through Node (1.887708ms)
+  ✔ resolves a Windows object bin JavaScript CLI through Node (1.591959ms)
+  ✔ permits direct Windows native executable package bins (4.349917ms)
+  ✔ rejects command shims, scripts, extensionless targets, and unknown extensions (8.704834ms)
+  ✔ rejects package bin targets that escape the package root (2.687875ms)
+  ✔ rejects malformed manifests, missing manifests, missing bins, and non-file targets (6.079709ms)
+  ✔ rejects oversized Windows command lines without leaking argument text (0.343292ms)
+✔ Pi launch resolution (32.978083ms)
+ℹ tests 10
+ℹ suites 1
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 144.659584

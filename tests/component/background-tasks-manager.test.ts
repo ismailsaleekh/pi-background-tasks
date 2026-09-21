@@ -87,6 +87,7 @@ function task(overrides: Partial<BackgroundTaskForUi> = {}): BackgroundTaskForUi
     startTime: now - 1000,
     bytesWritten: 0,
     isAgent: false,
+    surviveReload: false,
     notified: false,
     notifyOnCompletion: true,
     triggerOnCompletion: false,
@@ -175,6 +176,56 @@ function assertWidth(lines: string[], width: number) {
 }
 
 void describe('BackgroundTasksManager component', () => {
+  void it('passes the selected survival flag to dock rerun and accepts a new id/nonce', async () => {
+    const original = task({
+      id: 'bsurvive1',
+      surviveReload: true,
+      reloadSurvival: {
+        schemaVersion: 'pi-background-tasks.reload-shell.v1',
+        authority: 'same-process-live-owner',
+        hostPid: process.pid,
+        sessionId: 'component',
+        cwdRealpath: tmpdir(),
+        launchNonce: '1'.repeat(32),
+        completionId: 'bsurvive1:1',
+        spawnedAt: 1,
+        childPid: 100,
+        outputCapBytes: 1024,
+        leaseGeneration: 1,
+        handoffCount: 0,
+      },
+    });
+    let rerunInput: BackgroundTaskForUi | undefined;
+    const h = manager(
+      {
+        rerunTask: (selected) => {
+          rerunInput = selected;
+          return Promise.resolve(
+            task({
+              ...selected,
+              id: 'bsurvive2',
+              reloadSurvival: {
+                ...selected.reloadSurvival!,
+                launchNonce: '2'.repeat(32),
+                completionId: 'bsurvive2:1',
+              },
+            }),
+          );
+        },
+      },
+      [original],
+    );
+    try {
+      h.instance.handleInput('R');
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      assert.equal(rerunInput?.id, original.id);
+      assert.equal(rerunInput?.surviveReload, true);
+      assert.match(stripAnsi(h.instance.render(90).join('\n')), /Reran as .*\(bsurvive2\)/u);
+    } finally {
+      h.instance.dispose();
+    }
+  });
+
   void it('renders list within width and handles selection/actions', async () => {
     const baseTime = Date.now();
     const tasks = [

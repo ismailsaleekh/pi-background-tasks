@@ -156,7 +156,7 @@ void describe('fusion v5 core workflow contracts', () => {
 
 
   void it('builds exact v5 child argv and run-id manifest metadata', async () => {
-    const argv = buildFusionPiChildArgv(model('child'), 'system', '/ext/fusion-child.js', 'research', () => '/ext/anthropic-attribution.js');
+    const argv = buildFusionPiChildArgv(model('child'), 'system', '/ext/fusion-child.js', 'research', () => '/ext/anthropic-attribution-child.js');
     assert.deepEqual(argv.slice(0, 8), ['--mode', 'text', '--no-session', '--no-builtin-tools', '--tools', 'read,grep,find,ls,fusion_web_fetch', '--exclude-tools', FUSION_FORBIDDEN_TOOLS.join(',')]);
     assert.ok(argv.includes('--no-extensions'));
     assert.ok(argv.includes('--system-prompt'));

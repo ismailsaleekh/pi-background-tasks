@@ -1,0 +1,60 @@
+
+> pi-background-tasks@2.5.0 test:sdk
+> tsx --test --test-concurrency=1 tests/sdk/**/*.test.ts
+
+▶ bg_delegate and bg_result public surface
+  ✔ registers both tools at load (564.115875ms)
+  ✔ returns a launch receipt immediately and completes the whole loop (1121.769333ms)
+  ✔ gives the child its own session and strips parent identity (601.423916ms)
+  ✔ enables ambient extension discovery explicitly while retaining all other child restrictions (542.97825ms)
+  ✔ returns a typed not-ready result while the delegate is running (536.581917ms)
+  ✔ reports a child that exits cleanly without committing (565.69675ms)
+  ✔ detects a corrupted answer and never returns its bytes (551.106333ms)
+  ✔ rejects an answer produced on a different route (552.543916ms)
+  ✔ degrades an oversized answer to an artifact reference and never truncates it (556.464459ms)
+  ✔ refuses an unavailable explicit route without creating anything (253.076ms)
+  ✔ rejects a blank prompt and unknown arguments (193.730417ms)
+  ✔ rejects bg_result for an unknown task with a typed error (189.797334ms)
+  ✔ rejects bg_result for an ordinary background task (211.896541ms)
+✔ bg_delegate and bg_result public surface (6442.426791ms)
+▶ fusion SDK integration
+  ✔ builds a fake Pi package accepted by the win32 launch resolver (4.680334ms)
+  ✔ registers real public surfaces and /fusion launches a tracked background run (1613.301417ms)
+  ✔ runs fusion_reason as the host-level no-tools path (1400.902291ms)
+  ✔ keeps all clean Fusion workflows free of parent sentinels in prompts and artifacts (29421.788375ms)
+  ✔ BUG-182 returns exact merged text with host-valid usage and excludes the active tool-call leaf (1841.629208ms)
+  ✔ hands cancellation ownership from the tool call to the managed task after launch (1642.597667ms)
+  ✔ reports tool failure stage, slot, attempt, and durable artifact directory (978.229ms)
+  ✔ cancels live fusion children on session shutdown (966.73175ms)
+  ✔ rejects /fusion-models without UI instead of using the no-op notifier (108.924459ms)
+  ✔ supports no-argument editor flow, editor cancellation, selector save, and invalid config without child calls (1449.97525ms)
+  ✔ runs fusion_validate end to end with inspect-only reviewers (1338.246583ms)
+✔ fusion SDK integration (40768.670875ms)
+▶ sdk
+  ✔ registers commands, tools, shortcuts, renderers, and runs with output and metadata files (223.096833ms)
+  ✔ BUG-181 exposes an event-driven prompt contract and truthful launch receipts (203.307417ms)
+  ✔ serves real extension EventBus requests and terminal events through the shared registry (228.872125ms)
+  ✔ runs the structured bg_run_pi_attested tool and writes a complete flat attestation (808.220375ms)
+  ✔ supports status/log prefix resolution, all-task listing, head/tail truncation, and ambiguous/unknown ID errors (224.153959ms)
+  ✔ kills running tasks and rejects unknown or completed kills loudly (155.168291ms)
+  ✔ fails timed-out tasks loudly (1168.967833ms)
+  ✔ records completion notifications exactly once when enabled and suppresses them when disabled (265.330792ms)
+  ✔ captures only task-owned explicit telemetry in snapshots and metadata (386.109125ms)
+  ✔ wraps explicitly marked background Pi agents and captures context telemetry (668.811167ms)
+  ✔ wraps an explicitly marked real child Pi and counts JSON token/tool telemetry (778.977958ms)
+  ✔ keeps finished footer notices until explicit /bg-clear (327.3035ms)
+  ✔ reports failed/stopped/done footer combinations and focused dock status (439.480125ms)
+  ✔ uses bg_run prepareArguments for legacy calls without names (138.722791ms)
+  ✔ fails spawn errors loudly and writes failure metadata (200.207958ms)
+  ✔ cleans up multiple running tasks on shutdown (178.31075ms)
+  ✔ surfaces an update-available footer segment and registers a non-installing /bg-update command (186.646792ms)
+  ✔ shows no update segment when opted out, offline, already current, or the registry fails, and never throws (1403.843084ms)
+✔ sdk (7987.152583ms)
+ℹ tests 42
+ℹ suites 3
+ℹ pass 42
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 57146.385375

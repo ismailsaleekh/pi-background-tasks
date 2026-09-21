@@ -1,0 +1,872 @@
+diff --git a/docs/INDEX.md b/docs/INDEX.md
+index b6658e0..09947da 100644
+--- a/docs/INDEX.md
++++ b/docs/INDEX.md
+@@ -128,32 +128,32 @@ Generated navigation for every package-local documentation page. This index inte
+ 
+ | Kind | Name | ID | Provenance |
+ | --- | --- | --- | --- |
+-| command | `bg` | `command:bg` | `src/extension.ts:517` |
+-| command | `bg-clear` | `command:bg-clear` | `src/extension.ts:559` |
+-| command | `bg-tasks` | `command:bg-tasks` | `src/extension.ts:551` |
+-| command | `bg-update` | `command:bg-update` | `src/extension.ts:567` |
++| command | `bg` | `command:bg` | `src/extension.ts:519` |
++| command | `bg-clear` | `command:bg-clear` | `src/extension.ts:561` |
++| command | `bg-tasks` | `command:bg-tasks` | `src/extension.ts:553` |
++| command | `bg-update` | `command:bg-update` | `src/extension.ts:569` |
+ | command | `claude-cache` | `command:claude-cache` | `src/core/anthropic-attribution.ts:3026` |
+-| command | `fusion` | `command:fusion` | `src/fusion-extension.ts:996` |
+-| command | `fusion-models` | `command:fusion-models` | `src/fusion-extension.ts:1029` |
+-| command | `jobs` | `command:jobs` | `src/extension.ts:605` |
+-| command | `kill` | `command:kill` | `src/extension.ts:649` |
+-| command | `logs` | `command:logs` | `src/extension.ts:618` |
+-| command | `tasks` | `command:tasks` | `src/extension.ts:543` |
+-| tool | `bg_delegate` | `tool:bg_delegate` | `src/delegate-extension.ts:340` |
+-| tool | `bg_kill` | `tool:bg_kill` | `src/extension.ts:908` |
+-| tool | `bg_logs` | `tool:bg_logs` | `src/extension.ts:863` |
+-| tool | `bg_result` | `tool:bg_result` | `src/delegate-extension.ts:516` |
+-| tool | `bg_run` | `tool:bg_run` | `src/extension.ts:682` |
+-| tool | `bg_run_pi_attested` | `tool:bg_run_pi_attested` | `src/extension.ts:767` |
+-| tool | `bg_status` | `tool:bg_status` | `src/extension.ts:832` |
+-| tool | `fusion_investigate` | `tool:fusion_investigate` | `src/fusion-extension.ts:1197` |
+-| tool | `fusion_reason` | `tool:fusion_reason` | `src/fusion-extension.ts:1179` |
+-| tool | `fusion_research` | `tool:fusion_research` | `src/fusion-extension.ts:1216` |
+-| tool | `fusion_validate` | `tool:fusion_validate` | `src/fusion-extension.ts:1236` |
+-| shortcut | `ctrl+alt+c` | `shortcut:ctrl+alt+c` | `src/extension.ts:597` |
+-| shortcut | `shift+down` | `shortcut:shift+down` | `src/extension.ts:590` |
+-| renderer | `background-task-notification` | `renderer:background-task-notification` | `src/extension.ts:426` |
+-| renderer | `fusion-result` | `renderer:fusion-result` | `src/fusion-extension.ts:980` |
++| command | `fusion` | `command:fusion` | `src/fusion-extension.ts:1002` |
++| command | `fusion-models` | `command:fusion-models` | `src/fusion-extension.ts:1035` |
++| command | `jobs` | `command:jobs` | `src/extension.ts:607` |
++| command | `kill` | `command:kill` | `src/extension.ts:651` |
++| command | `logs` | `command:logs` | `src/extension.ts:620` |
++| command | `tasks` | `command:tasks` | `src/extension.ts:545` |
++| tool | `bg_delegate` | `tool:bg_delegate` | `src/delegate-extension.ts:332` |
++| tool | `bg_kill` | `tool:bg_kill` | `src/extension.ts:910` |
++| tool | `bg_logs` | `tool:bg_logs` | `src/extension.ts:865` |
++| tool | `bg_result` | `tool:bg_result` | `src/delegate-extension.ts:510` |
++| tool | `bg_run` | `tool:bg_run` | `src/extension.ts:684` |
++| tool | `bg_run_pi_attested` | `tool:bg_run_pi_attested` | `src/extension.ts:769` |
++| tool | `bg_status` | `tool:bg_status` | `src/extension.ts:834` |
++| tool | `fusion_investigate` | `tool:fusion_investigate` | `src/fusion-extension.ts:1209` |
++| tool | `fusion_reason` | `tool:fusion_reason` | `src/fusion-extension.ts:1191` |
++| tool | `fusion_research` | `tool:fusion_research` | `src/fusion-extension.ts:1228` |
++| tool | `fusion_validate` | `tool:fusion_validate` | `src/fusion-extension.ts:1248` |
++| shortcut | `ctrl+alt+c` | `shortcut:ctrl+alt+c` | `src/extension.ts:599` |
++| shortcut | `shift+down` | `shortcut:shift+down` | `src/extension.ts:592` |
++| renderer | `background-task-notification` | `renderer:background-task-notification` | `src/extension.ts:428` |
++| renderer | `fusion-result` | `renderer:fusion-result` | `src/fusion-extension.ts:986` |
+ | eventbus | `background-task-v1` | `eventbus:background-task-v1` | `src/core/extension-api.ts` |
+ | workflow | `investigate` | `workflow:investigate` | `src/core/fusion/workflows.ts:80` |
+ | workflow | `reason` | `workflow:reason` | `src/core/fusion/workflows.ts:61` |
+diff --git a/docs/commands/bg-clear.md b/docs/commands/bg-clear.md
+index 5f91b1f..43f926e 100644
+--- a/docs/commands/bg-clear.md
++++ b/docs/commands/bg-clear.md
+@@ -12,7 +12,7 @@ covers_sources: []
+ <!-- pi-docs:begin name="command-contract-bg-clear" generator="scripts/docs/generate.mjs" -->
+ | Command | Description | Provenance |
+ | --- | --- | --- |
+-| `/bg-clear` | Clear finished background task footer notices | `src/extension.ts:559` |
++| `/bg-clear` | Clear finished background task footer notices | `src/extension.ts:561` |
+ <!-- pi-docs:end name="command-contract-bg-clear" -->
+ 
+ Clear finished background task footer notices.
+diff --git a/docs/commands/bg-update.md b/docs/commands/bg-update.md
+index 196ef6d..3437c1a 100644
+--- a/docs/commands/bg-update.md
++++ b/docs/commands/bg-update.md
+@@ -12,7 +12,7 @@ covers_sources: []
+ <!-- pi-docs:begin name="command-contract-bg-update" generator="scripts/docs/generate.mjs" -->
+ | Command | Description | Provenance |
+ | --- | --- | --- |
+-| `/bg-update` | Show how to update pi-background-tasks to the latest published version | `src/extension.ts:567` |
++| `/bg-update` | Show how to update pi-background-tasks to the latest published version | `src/extension.ts:569` |
+ <!-- pi-docs:end name="command-contract-bg-update" -->
+ 
+ Show update instructions for `pi-background-tasks`.
+diff --git a/docs/commands/bg.md b/docs/commands/bg.md
+index 85abdfe..8d35fb5 100644
+--- a/docs/commands/bg.md
++++ b/docs/commands/bg.md
+@@ -12,7 +12,7 @@ covers_sources: []
+ <!-- pi-docs:begin name="command-contract-bg" generator="scripts/docs/generate.mjs" -->
+ | Command | Description | Provenance |
+ | --- | --- | --- |
+-| `/bg` | Start a shell command as a tracked background task: /bg [--agent] [--name "Task name"] <command> | `src/extension.ts:517` |
++| `/bg` | Start a shell command as a tracked background task: /bg [--agent] [--name "Task name"] <command> | `src/extension.ts:519` |
+ <!-- pi-docs:end name="command-contract-bg" -->
+ 
+ Start a shell command as a tracked background task from the command line.
+diff --git a/docs/commands/fusion-models.md b/docs/commands/fusion-models.md
+index f04cad0..8524eaa 100644
+--- a/docs/commands/fusion-models.md
++++ b/docs/commands/fusion-models.md
+@@ -12,7 +12,7 @@ covers_sources: []
+ <!-- pi-docs:begin name="command-contract-fusion-models" generator="scripts/docs/generate.mjs" -->
+ | Command | Description | Provenance |
+ | --- | --- | --- |
+-| `/fusion-models` | Open the five-slot global fusion model selector. | `src/fusion-extension.ts:1029` |
++| `/fusion-models` | Open the five-slot global fusion model selector. | `src/fusion-extension.ts:1035` |
+ <!-- pi-docs:end name="command-contract-fusion-models" -->
+ 
+ Open the global Fusion model selector.
+diff --git a/docs/commands/fusion.md b/docs/commands/fusion.md
+index 1a90554..fed2592 100644
+--- a/docs/commands/fusion.md
++++ b/docs/commands/fusion.md
+@@ -12,7 +12,7 @@ covers_sources: []
+ <!-- pi-docs:begin name="command-contract-fusion" generator="scripts/docs/generate.mjs" -->
+ | Command | Description | Provenance |
+ | --- | --- | --- |
+-| `/fusion` | Start fixed-purpose Fusion reason in the background and return immediately. | `src/fusion-extension.ts:996` |
++| `/fusion` | Start fixed-purpose Fusion reason in the background and return immediately. | `src/fusion-extension.ts:1002` |
+ <!-- pi-docs:end name="command-contract-fusion" -->
+ 
+ Run the fixed-purpose Fusion **reason** workflow from the command line.
+diff --git a/docs/commands/jobs.md b/docs/commands/jobs.md
+index f819926..1b64990 100644
+--- a/docs/commands/jobs.md
++++ b/docs/commands/jobs.md
+@@ -12,7 +12,7 @@ covers_sources: []
+ <!-- pi-docs:begin name="command-contract-jobs" generator="scripts/docs/generate.mjs" -->
+ | Command | Description | Provenance |
+ | --- | --- | --- |
+-| `/jobs` | List running and recent background tasks | `src/extension.ts:605` |
++| `/jobs` | List running and recent background tasks | `src/extension.ts:607` |
+ <!-- pi-docs:end name="command-contract-jobs" -->
+ 
+ List running and recent background tasks.
+diff --git a/docs/commands/kill.md b/docs/commands/kill.md
+index 6962d50..0e8dbc8 100644
+--- a/docs/commands/kill.md
++++ b/docs/commands/kill.md
+@@ -12,7 +12,7 @@ covers_sources: []
+ <!-- pi-docs:begin name="command-contract-kill" generator="scripts/docs/generate.mjs" -->
+ | Command | Description | Provenance |
+ | --- | --- | --- |
+-| `/kill` | Stop a running background task: /kill <id> | `src/extension.ts:649` |
++| `/kill` | Stop a running background task: /kill <id> | `src/extension.ts:651` |
+ <!-- pi-docs:end name="command-contract-kill" -->
+ 
+ Stop a running background task.
+diff --git a/docs/commands/logs.md b/docs/commands/logs.md
+index 6318438..8ebd183 100644
+--- a/docs/commands/logs.md
++++ b/docs/commands/logs.md
+@@ -12,7 +12,7 @@ covers_sources: []
+ <!-- pi-docs:begin name="command-contract-logs" generator="scripts/docs/generate.mjs" -->
+ | Command | Description | Provenance |
+ | --- | --- | --- |
+-| `/logs` | Show bounded output from a background task: /logs <id> [maxBytes] | `src/extension.ts:618` |
++| `/logs` | Show bounded output from a background task: /logs <id> [maxBytes] | `src/extension.ts:620` |
+ <!-- pi-docs:end name="command-contract-logs" -->
+ 
+ Show bounded output from a background task.
+diff --git a/docs/commands/task-manager.md b/docs/commands/task-manager.md
+index 58828ad..d2ca193 100644
+--- a/docs/commands/task-manager.md
++++ b/docs/commands/task-manager.md
+@@ -12,8 +12,8 @@ covers_sources: []
+ <!-- pi-docs:begin name="command-contract-tasks-bg-tasks" generator="scripts/docs/generate.mjs" -->
+ | Command | Description | Provenance |
+ | --- | --- | --- |
+-| `/tasks` | Open the Claude-like background task manager UI | `src/extension.ts:543` |
+-| `/bg-tasks` | Open the background task manager UI | `src/extension.ts:551` |
++| `/tasks` | Open the Claude-like background task manager UI | `src/extension.ts:545` |
++| `/bg-tasks` | Open the background task manager UI | `src/extension.ts:553` |
+ <!-- pi-docs:end name="command-contract-tasks-bg-tasks" -->
+ 
+ Open the interactive background task manager. `/tasks` and `/bg-tasks` are aliases.
+diff --git a/docs/manifest.json b/docs/manifest.json
+index d75c271..901ddbc 100644
+--- a/docs/manifest.json
++++ b/docs/manifest.json
+@@ -874,28 +874,28 @@
+         "id": "command:bg",
+         "kind": "command",
+         "name": "bg",
+-        "source": "src/extension.ts:517"
++        "source": "src/extension.ts:519"
+       },
+       {
+         "description": "Clear finished background task footer notices",
+         "id": "command:bg-clear",
+         "kind": "command",
+         "name": "bg-clear",
+-        "source": "src/extension.ts:559"
++        "source": "src/extension.ts:561"
+       },
+       {
+         "description": "Open the background task manager UI",
+         "id": "command:bg-tasks",
+         "kind": "command",
+         "name": "bg-tasks",
+-        "source": "src/extension.ts:551"
++        "source": "src/extension.ts:553"
+       },
+       {
+         "description": "Show how to update pi-background-tasks to the latest published version",
+         "id": "command:bg-update",
+         "kind": "command",
+         "name": "bg-update",
+-        "source": "src/extension.ts:567"
++        "source": "src/extension.ts:569"
+       },
+       {
+         "description": "Show or set Claude cache retention for this session (short, long, default)",
+@@ -909,42 +909,42 @@
+         "id": "command:fusion",
+         "kind": "command",
+         "name": "fusion",
+-        "source": "src/fusion-extension.ts:996"
++        "source": "src/fusion-extension.ts:1002"
+       },
+       {
+         "description": "Open the five-slot global fusion model selector.",
+         "id": "command:fusion-models",
+         "kind": "command",
+         "name": "fusion-models",
+-        "source": "src/fusion-extension.ts:1029"
++        "source": "src/fusion-extension.ts:1035"
+       },
+       {
+         "description": "List running and recent background tasks",
+         "id": "command:jobs",
+         "kind": "command",
+         "name": "jobs",
+-        "source": "src/extension.ts:605"
++        "source": "src/extension.ts:607"
+       },
+       {
+         "description": "Stop a running background task: /kill <id>",
+         "id": "command:kill",
+         "kind": "command",
+         "name": "kill",
+-        "source": "src/extension.ts:649"
++        "source": "src/extension.ts:651"
+       },
+       {
+         "description": "Show bounded output from a background task: /logs <id> [maxBytes]",
+         "id": "command:logs",
+         "kind": "command",
+         "name": "logs",
+-        "source": "src/extension.ts:618"
++        "source": "src/extension.ts:620"
+       },
+       {
+         "description": "Open the Claude-like background task manager UI",
+         "id": "command:tasks",
+         "kind": "command",
+         "name": "tasks",
+-        "source": "src/extension.ts:543"
++        "source": "src/extension.ts:545"
+       }
+     ],
+     "eventbus": [
+@@ -972,13 +972,13 @@
+         "id": "renderer:background-task-notification",
+         "kind": "renderer",
+         "name": "background-task-notification",
+-        "source": "src/extension.ts:426"
++        "source": "src/extension.ts:428"
+       },
+       {
+         "id": "renderer:fusion-result",
+         "kind": "renderer",
+         "name": "fusion-result",
+-        "source": "src/fusion-extension.ts:980"
++        "source": "src/fusion-extension.ts:986"
+       }
+     ],
+     "shortcut": [
+@@ -987,14 +987,14 @@
+         "id": "shortcut:ctrl+alt+c",
+         "kind": "shortcut",
+         "name": "ctrl+alt+c",
+-        "source": "src/extension.ts:597"
++        "source": "src/extension.ts:599"
+       },
+       {
+         "description": "Open focused background task footer dock",
+         "id": "shortcut:shift+down",
+         "kind": "shortcut",
+         "name": "shift+down",
+-        "source": "src/extension.ts:590"
++        "source": "src/extension.ts:592"
+       }
+     ],
+     "tool": [
+@@ -1083,7 +1083,7 @@
+           ],
+           "type": "object"
+         },
+-        "source": "src/delegate-extension.ts:340"
++        "source": "src/delegate-extension.ts:332"
+       },
+       {
+         "description": "Stop a running background task by ID. Fails loudly if the task is unknown or already finished.",
+@@ -1107,7 +1107,7 @@
+           ],
+           "type": "object"
+         },
+-        "source": "src/extension.ts:908"
++        "source": "src/extension.ts:910"
+       },
+       {
+         "description": "Read bounded output from a background task for deliberate inspection; this is not a waiting primitive. Output is capped at 50.0KB for model safety and points to the full output file when truncated.",
+@@ -1141,7 +1141,7 @@
+           ],
+           "type": "object"
+         },
+-        "source": "src/extension.ts:863"
++        "source": "src/extension.ts:865"
+       },
+       {
+         "description": "Retrieve a hash-verified result from a bg_delegate or background Fusion task. Never blocks: a running task returns a typed not-ready result. Oversized answers are never truncated.",
+@@ -1171,7 +1171,7 @@
+           ],
+           "type": "object"
+         },
+-        "source": "src/delegate-extension.ts:516"
++        "source": "src/delegate-extension.ts:510"
+       },
+       {
+         "description": "Start a named long-running shell command in the background and return immediately with a task ID and output path. By default, completed, failed, or killed terminal state is delivered automatically as <background-task-notification> and starts a follow-up agent turn; do not sleep or poll merely to wait. Output is written to .pi/tasks and model-visible logs are bounded to 50.0KB.",
+@@ -1228,7 +1228,7 @@
+           ],
+           "type": "object"
+         },
+-        "source": "src/extension.ts:682"
++        "source": "src/extension.ts:684"
+       },
+       {
+         "description": "Opt-in evidence-oriented direct Pi spawn. Launches exactly one `pi --mode json` child, records raw Pi events/stderr, hashes prompt/report/output, observes OAuth through ModelRegistry, and emits a strict attestation sidecar only after successful completion.",
+@@ -1289,7 +1289,7 @@
+           ],
+           "type": "object"
+         },
+-        "source": "src/extension.ts:767"
++        "source": "src/extension.ts:769"
+       },
+       {
+         "description": "Inspect one background task or list all running/recent background tasks. This is a point-in-time inspection tool, not a waiting primitive.",
+@@ -1313,7 +1313,7 @@
+           "required": [],
+           "type": "object"
+         },
+-        "source": "src/extension.ts:832"
++        "source": "src/extension.ts:834"
+       },
+       {
+         "description": "Start a five-model Fusion investigation as a tracked background task and return immediately after durable preflight. Retrieve the verified result with bg_result after notification. Candidate children run in clean bounded read-only contexts.",
+@@ -1376,7 +1376,7 @@
+           ],
+           "type": "object"
+         },
+-        "source": "src/fusion-extension.ts:1197"
++        "source": "src/fusion-extension.ts:1209"
+       },
+       {
+         "description": "Start a five-model Fusion reason workflow as a tracked background task and return immediately after durable preflight. Retrieve the verified result with bg_result after notification. Candidate children receive the reason projection and no tools; evaluator and merger also run without tools.",
+@@ -1404,7 +1404,7 @@
+           ],
+           "type": "object"
+         },
+-        "source": "src/fusion-extension.ts:1179"
++        "source": "src/fusion-extension.ts:1191"
+       },
+       {
+         "description": "Start a five-model Fusion research workflow as a tracked background task and return immediately after durable preflight. Retrieve the verified result with bg_result after notification. Targeted URL fetch is not web search; fetched pages and URLs are untrusted.",
+@@ -1493,7 +1493,7 @@
+           ],
+           "type": "object"
+         },
+-        "source": "src/fusion-extension.ts:1216"
++        "source": "src/fusion-extension.ts:1228"
+       },
+       {
+         "description": "Start an advisory, read-only Fusion validation review as a tracked background task and return immediately after durable preflight. Retrieve the verified result with bg_result after notification. It is not a build/test/lint substitute and never modifies files.",
+@@ -1623,7 +1623,7 @@
+           ],
+           "type": "object"
+         },
+-        "source": "src/fusion-extension.ts:1236"
++        "source": "src/fusion-extension.ts:1248"
+       }
+     ],
+     "workflow": [
+diff --git a/docs/reference/runtime-contracts.md b/docs/reference/runtime-contracts.md
+index 7719be8..fb243b4 100644
+--- a/docs/reference/runtime-contracts.md
++++ b/docs/reference/runtime-contracts.md
+@@ -43,9 +43,9 @@ This generated registry lists production environment-variable references, runtim
+ | `PI_BG_DELEGATE_SEED_SHA256` | read, write | `src/core/delegate/launch.ts:355`<br>`src/delegate-child-extension.ts:386` |
+ | `PI_BG_DELEGATE_TASK_ID` | read, write | `src/core/delegate/launch.ts:356`<br>`src/delegate-child-extension.ts:387` |
+ | `PI_BG_DISABLE_PI_TELEMETRY` | read | `src/core/registry.ts:195` |
+-| `PI_BG_DISABLE_UPDATE_CHECK` | read | `src/extension.ts:455` |
++| `PI_BG_DISABLE_UPDATE_CHECK` | read | `src/extension.ts:457` |
+ | `PI_BG_MAX_OUTPUT_BYTES` | read | `src/core/registry.ts:69` |
+-| `PI_BG_REGISTRY_URL` | read | `src/extension.ts:464` |
++| `PI_BG_REGISTRY_URL` | read | `src/extension.ts:466` |
+ | `PI_BG_SHELL` | read | `src/core/common.ts:722` |
+ | `PI_BG_SHELL_PATH` | read | `src/core/common.ts:723` |
+ | `PI_CACHE_RETENTION` | read, write | `src/core/anthropic-attribution.ts:635`<br>`src/core/anthropic-attribution.ts:646`<br>`src/core/fusion/claude-cache.ts:57`<br>`src/core/fusion/pi-child.ts:273`<br>`src/core/fusion/pi-child.ts:274` |
+@@ -55,7 +55,7 @@ This generated registry lists production environment-variable references, runtim
+ | `PI_FUSION_SOURCE_POLICY_SHA256` | read, remove, write | `src/core/fusion/pi-child.ts:100`<br>`src/core/fusion/pi-child.ts:1904`<br>`src/fusion-child-extension.ts:556` |
+ | `PI_FUSION_TOOL_CALL_LOG_PATH` | read, remove, write | `src/core/fusion/pi-child.ts:100`<br>`src/core/fusion/pi-child.ts:1891`<br>`src/fusion-child-extension.ts:598` |
+ | `PI_MODEL` | remove | `src/core/delegate/launch.ts:330`<br>`src/core/fusion/pi-child.ts:100` |
+-| `PI_OFFLINE` | read | `src/extension.ts:456` |
++| `PI_OFFLINE` | read | `src/extension.ts:458` |
+ | `PI_PROVIDER` | remove | `src/core/delegate/launch.ts:330`<br>`src/core/fusion/pi-child.ts:100` |
+ | `PI_REASONING_LEVEL` | remove | `src/core/delegate/launch.ts:330`<br>`src/core/fusion/pi-child.ts:100` |
+ | `PI_SESSION_FILE` | remove | `src/core/delegate/launch.ts:330`<br>`src/core/fusion/pi-child.ts:100` |
+@@ -117,12 +117,12 @@ This generated registry lists production environment-variable references, runtim
+ | `pi-background-tasks.delegate-budget-plan.v3` | `src/core/delegate/types.ts:21` |
+ | `pi-background-tasks.delegate-child-terminal.v1` | `src/delegate-child-extension.ts:584` |
+ | `pi-background-tasks.delegate-hook-contract.v1` | `src/core/delegate/hook-contract.ts:15` |
+-| `pi-background-tasks.delegate-launch.v1` | `src/delegate-extension.ts:458` |
++| `pi-background-tasks.delegate-launch.v1` | `src/delegate-extension.ts:452` |
+ | `pi-background-tasks.delegate-ledger.v1` | `src/core/delegate/types.ts:16` |
+ | `pi-background-tasks.delegate-manifest.v2` | `src/core/delegate/types.ts:22` |
+ | `pi-background-tasks.delegate-outcome.v1` | `src/core/delegate/runner.ts:228` |
+ | `pi-background-tasks.delegate-receipt.v1` | `src/core/delegate/types.ts:19` |
+-| `pi-background-tasks.delegate-result-view.v1` | `src/delegate-extension.ts:734` |
++| `pi-background-tasks.delegate-result-view.v1` | `src/delegate-extension.ts:733` |
+ | `pi-background-tasks.delegate-result.v1` | `src/core/delegate/types.ts:18` |
+ | `pi-background-tasks.delegate-runtime-budget.v1` | `src/delegate-child-extension.ts:489` |
+ | `pi-background-tasks.delegate-seed.v2` | `src/core/delegate/types.ts:15` |
+@@ -143,13 +143,13 @@ This generated registry lists production environment-variable references, runtim
+ | `pi-background-tasks.fusion-failure-summary.v1` | `src/core/fusion/types.ts:34` |
+ | `pi-background-tasks.fusion-input.v4` | `src/core/fusion/types.ts:14` |
+ | `pi-background-tasks.fusion-input.v5` | `src/core/fusion/types.ts:15` |
+-| `pi-background-tasks.fusion-launch.v1` | `src/fusion-extension.ts:1125` |
++| `pi-background-tasks.fusion-launch.v1` | `src/fusion-extension.ts:1137` |
+ | `pi-background-tasks.fusion-manifest.v3` | `src/core/fusion/types.ts:23` |
+ | `pi-background-tasks.fusion-manifest.v4` | `src/core/fusion/types.ts:24` |
+ | `pi-background-tasks.fusion-merge-input.v1` | `src/core/fusion/prompts.ts:336` |
+ | `pi-background-tasks.fusion-models.v1` | `src/core/fusion/types.ts:13` |
+-| `pi-background-tasks.fusion-progress.v1` | `src/fusion-extension.ts:59` |
+-| `pi-background-tasks.fusion-result-view.v1` | `src/delegate-extension.ts:775` |
++| `pi-background-tasks.fusion-progress.v1` | `src/fusion-extension.ts:50` |
++| `pi-background-tasks.fusion-result-view.v1` | `src/delegate-extension.ts:774` |
+ | `pi-background-tasks.fusion-result.v4` | `src/core/fusion/types.ts:19` |
+ | `pi-background-tasks.fusion-result.v5` | `src/core/fusion/types.ts:20` |
+ | `pi-background-tasks.fusion-runtime-guard.v2` | `src/core/fusion/child-protocol.ts:24` |
+diff --git a/docs/reference/shortcuts-and-dock.md b/docs/reference/shortcuts-and-dock.md
+index 7d47c24..bcde020 100644
+--- a/docs/reference/shortcuts-and-dock.md
++++ b/docs/reference/shortcuts-and-dock.md
+@@ -12,8 +12,8 @@ covers_sources: []
+ <!-- pi-docs:begin name="shortcut-contracts" generator="scripts/docs/generate.mjs" -->
+ | Shortcut | Description | Provenance |
+ | --- | --- | --- |
+-| `ctrl+alt+c` | Clear finished background task footer notices (terminal-dependent fallback for /bg-clear) | `src/extension.ts:597` |
+-| `shift+down` | Open focused background task footer dock | `src/extension.ts:590` |
++| `ctrl+alt+c` | Clear finished background task footer notices (terminal-dependent fallback for /bg-clear) | `src/extension.ts:599` |
++| `shift+down` | Open focused background task footer dock | `src/extension.ts:592` |
+ <!-- pi-docs:end name="shortcut-contracts" -->
+ 
+ ## Registered shortcuts
+diff --git a/docs/tools/bg_delegate.md b/docs/tools/bg_delegate.md
+index 6e60d01..be37457 100644
+--- a/docs/tools/bg_delegate.md
++++ b/docs/tools/bg_delegate.md
+@@ -11,7 +11,7 @@ covers_sources: []
+ 
+ <!-- pi-docs:begin name="tool-contract-bg_delegate" generator="scripts/docs/generate.mjs" -->
+ - Label: **Background Delegate**
+-- Source: `src/delegate-extension.ts:340`
++- Source: `src/delegate-extension.ts:332`
+ - Description: Launch one background Pi agent seeded with a frozen projection of the current conversation, then return a launch receipt immediately. The child has its own session, a route pinned at launch that is never substituted, and read-only tools. Extension discovery is isolated by default; ambient mode supports extension-registered providers but executes arbitrary discovered extension code. Retrieve its verified answer with bg_result.
+ - Root schema: `object`; additionalProperties: `false`
+ 
+diff --git a/docs/tools/bg_kill.md b/docs/tools/bg_kill.md
+index 4d58569..824078f 100644
+--- a/docs/tools/bg_kill.md
++++ b/docs/tools/bg_kill.md
+@@ -11,7 +11,7 @@ covers_sources: []
+ 
+ <!-- pi-docs:begin name="tool-contract-bg_kill" generator="scripts/docs/generate.mjs" -->
+ - Label: **Background Kill**
+-- Source: `src/extension.ts:908`
++- Source: `src/extension.ts:910`
+ - Description: Stop a running background task by ID. Fails loudly if the task is unknown or already finished.
+ - Root schema: `object`
+ 
+diff --git a/docs/tools/bg_logs.md b/docs/tools/bg_logs.md
+index 8eafd69..318958d 100644
+--- a/docs/tools/bg_logs.md
++++ b/docs/tools/bg_logs.md
+@@ -11,7 +11,7 @@ covers_sources: []
+ 
+ <!-- pi-docs:begin name="tool-contract-bg_logs" generator="scripts/docs/generate.mjs" -->
+ - Label: **Background Logs**
+-- Source: `src/extension.ts:863`
++- Source: `src/extension.ts:865`
+ - Description: Read bounded output from a background task for deliberate inspection; this is not a waiting primitive. Output is capped at 50.0KB for model safety and points to the full output file when truncated.
+ - Root schema: `object`
+ 
+diff --git a/docs/tools/bg_result.md b/docs/tools/bg_result.md
+index 3f01912..b09d052 100644
+--- a/docs/tools/bg_result.md
++++ b/docs/tools/bg_result.md
+@@ -11,7 +11,7 @@ covers_sources: []
+ 
+ <!-- pi-docs:begin name="tool-contract-bg_result" generator="scripts/docs/generate.mjs" -->
+ - Label: **Background Result**
+-- Source: `src/delegate-extension.ts:516`
++- Source: `src/delegate-extension.ts:510`
+ - Description: Retrieve a hash-verified result from a bg_delegate or background Fusion task. Never blocks: a running task returns a typed not-ready result. Oversized answers are never truncated.
+ - Root schema: `object`; additionalProperties: `false`
+ 
+diff --git a/docs/tools/bg_run.md b/docs/tools/bg_run.md
+index c3fd2e5..15c0b3b 100644
+--- a/docs/tools/bg_run.md
++++ b/docs/tools/bg_run.md
+@@ -11,7 +11,7 @@ covers_sources: []
+ 
+ <!-- pi-docs:begin name="tool-contract-bg_run" generator="scripts/docs/generate.mjs" -->
+ - Label: **Background Run**
+-- Source: `src/extension.ts:682`
++- Source: `src/extension.ts:684`
+ - Description: Start a named long-running shell command in the background and return immediately with a task ID and output path. By default, completed, failed, or killed terminal state is delivered automatically as <background-task-notification> and starts a follow-up agent turn; do not sleep or poll merely to wait. Output is written to .pi/tasks and model-visible logs are bounded to 50.0KB.
+ - Root schema: `object`
+ 
+diff --git a/docs/tools/bg_run_pi_attested.md b/docs/tools/bg_run_pi_attested.md
+index d2b993e..e097907 100644
+--- a/docs/tools/bg_run_pi_attested.md
++++ b/docs/tools/bg_run_pi_attested.md
+@@ -11,7 +11,7 @@ covers_sources: []
+ 
+ <!-- pi-docs:begin name="tool-contract-bg_run_pi_attested" generator="scripts/docs/generate.mjs" -->
+ - Label: **Attested Pi Run**
+-- Source: `src/extension.ts:767`
++- Source: `src/extension.ts:769`
+ - Description: Opt-in evidence-oriented direct Pi spawn. Launches exactly one `pi --mode json` child, records raw Pi events/stderr, hashes prompt/report/output, observes OAuth through ModelRegistry, and emits a strict attestation sidecar only after successful completion.
+ - Root schema: `object`
+ 
+diff --git a/docs/tools/bg_status.md b/docs/tools/bg_status.md
+index 6c81ef9..3088af0 100644
+--- a/docs/tools/bg_status.md
++++ b/docs/tools/bg_status.md
+@@ -11,7 +11,7 @@ covers_sources: []
+ 
+ <!-- pi-docs:begin name="tool-contract-bg_status" generator="scripts/docs/generate.mjs" -->
+ - Label: **Background Status**
+-- Source: `src/extension.ts:832`
++- Source: `src/extension.ts:834`
+ - Description: Inspect one background task or list all running/recent background tasks. This is a point-in-time inspection tool, not a waiting primitive.
+ - Root schema: `object`
+ 
+diff --git a/docs/tools/fusion_investigate.md b/docs/tools/fusion_investigate.md
+index d1ee31a..7077dce 100644
+--- a/docs/tools/fusion_investigate.md
++++ b/docs/tools/fusion_investigate.md
+@@ -11,7 +11,7 @@ covers_sources: []
+ 
+ <!-- pi-docs:begin name="tool-contract-fusion_investigate" generator="scripts/docs/generate.mjs" -->
+ - Label: **Fusion Investigate**
+-- Source: `src/fusion-extension.ts:1197`
++- Source: `src/fusion-extension.ts:1209`
+ - Description: Start a five-model Fusion investigation as a tracked background task and return immediately after durable preflight. Retrieve the verified result with bg_result after notification. Candidate children run in clean bounded read-only contexts.
+ - Root schema: `object`; additionalProperties: `false`
+ 
+diff --git a/docs/tools/fusion_reason.md b/docs/tools/fusion_reason.md
+index cc49925..4bed573 100644
+--- a/docs/tools/fusion_reason.md
++++ b/docs/tools/fusion_reason.md
+@@ -11,7 +11,7 @@ covers_sources: []
+ 
+ <!-- pi-docs:begin name="tool-contract-fusion_reason" generator="scripts/docs/generate.mjs" -->
+ - Label: **Fusion Reason**
+-- Source: `src/fusion-extension.ts:1179`
++- Source: `src/fusion-extension.ts:1191`
+ - Description: Start a five-model Fusion reason workflow as a tracked background task and return immediately after durable preflight. Retrieve the verified result with bg_result after notification. Candidate children receive the reason projection and no tools; evaluator and merger also run without tools.
+ - Root schema: `object`; additionalProperties: `false`
+ 
+diff --git a/docs/tools/fusion_research.md b/docs/tools/fusion_research.md
+index dd83606..589b2a2 100644
+--- a/docs/tools/fusion_research.md
++++ b/docs/tools/fusion_research.md
+@@ -11,7 +11,7 @@ covers_sources: []
+ 
+ <!-- pi-docs:begin name="tool-contract-fusion_research" generator="scripts/docs/generate.mjs" -->
+ - Label: **Fusion Research**
+-- Source: `src/fusion-extension.ts:1216`
++- Source: `src/fusion-extension.ts:1228`
+ - Description: Start a five-model Fusion research workflow as a tracked background task and return immediately after durable preflight. Retrieve the verified result with bg_result after notification. Targeted URL fetch is not web search; fetched pages and URLs are untrusted.
+ - Root schema: `object`; additionalProperties: `false`
+ 
+diff --git a/docs/tools/fusion_validate.md b/docs/tools/fusion_validate.md
+index 979fbc5..257d940 100644
+--- a/docs/tools/fusion_validate.md
++++ b/docs/tools/fusion_validate.md
+@@ -11,7 +11,7 @@ covers_sources: []
+ 
+ <!-- pi-docs:begin name="tool-contract-fusion_validate" generator="scripts/docs/generate.mjs" -->
+ - Label: **Fusion Validate**
+-- Source: `src/fusion-extension.ts:1236`
++- Source: `src/fusion-extension.ts:1248`
+ - Description: Start an advisory, read-only Fusion validation review as a tracked background task and return immediately after durable preflight. Retrieve the verified result with bg_result after notification. It is not a build/test/lint substitute and never modifies files.
+ - Root schema: `object`; additionalProperties: `false`
+ 
+diff --git a/src/delegate-extension.ts b/src/delegate-extension.ts
+index 20880d3..adae8ac 100644
+--- a/src/delegate-extension.ts
++++ b/src/delegate-extension.ts
+@@ -11,7 +11,6 @@ import { Type, type Static } from 'typebox';
+ import type { BgTask, BgTaskSnapshot, StartDelegateTaskOptions } from './core/common.js';
+ import { truncateChars } from './core/common.js';
+ import { sha256Buffer } from './core/attested-pi-run.js';
+-import { readFusionCommittedResult, readFusionFailureResult } from './core/fusion/result-package.js';
+ import {
+   cloneFusionUsage,
+   type FusionFailureResultView,
+@@ -38,14 +37,6 @@ import {
+   DELEGATE_DEFAULT_MAX_TURNS,
+   DELEGATE_DEFAULT_TIMEOUT_SECONDS,
+ } from './core/delegate/budget.js';
+-import { resolveDelegateRoute } from './core/delegate/launch.js';
+-import {
+-  decideDelegateDelivery,
+-  evaluateDelegateTerminal,
+-  inlineTooLarge,
+-  prepareDelegateLaunch,
+-} from './core/delegate/runner.js';
+-import { loadDelegateHookContractEvidence } from './core/delegate/launch.js';
+ import type { DelegateHookContractEvidence } from './core/delegate/hook-contract.js';
+ 
+ /**
+@@ -328,6 +319,7 @@ async function defaultHookEvidence(): Promise<DelegateHookContractEvidence> {
+       },
+     );
+   }
++  const { loadDelegateHookContractEvidence } = await import('./core/delegate/launch.js');
+   return loadDelegateHookContractEvidence(raw);
+ }
+ 
+@@ -402,6 +394,8 @@ export function registerDelegateExtension(
+       const extensionMode = requireExtensionMode(params.extensionMode);
+       const autoDeliver = requireAutoDeliver(params.autoDeliver);
+       const hookEvidence = await loadEvidence();
++      const { resolveDelegateRoute } = await import('./core/delegate/launch.js');
++      const { prepareDelegateLaunch } = await import('./core/delegate/runner.js');
+       const route = resolveDelegateRoute({
+         requested: params.route,
+         currentModel:
+@@ -571,6 +565,7 @@ export function registerDelegateExtension(
+           };
+         }
+         if (task.status !== 'completed' || fusion.outcome?.status !== 'committed') {
++          const { readFusionFailureResult } = await import('./core/fusion/result-package.js');
+           const terminal = await readFusionFailureResult({
+             artifactDirAbs: fusion.artifactDirAbs,
+             artifactDir: fusion.artifactDir,
+@@ -614,6 +609,7 @@ export function registerDelegateExtension(
+             details,
+           };
+         }
++        const { readFusionCommittedResult } = await import('./core/fusion/result-package.js');
+         const verified = await readFusionCommittedResult({
+           artifactDirAbs: fusion.artifactDirAbs,
+           artifactDir: fusion.artifactDir,
+@@ -691,6 +687,9 @@ export function registerDelegateExtension(
+         };
+       }
+ 
++      const { evaluateDelegateTerminal, decideDelegateDelivery, inlineTooLarge } = await import(
++        './core/delegate/runner.js'
++      );
+       const terminal = await evaluateDelegateTerminal({
+         artifactDirAbs: facts.artifactDirAbs,
+         taskId: facts.taskId,
+diff --git a/src/extension.ts b/src/extension.ts
+index 3afbd8e..f4c8744 100644
+--- a/src/extension.ts
++++ b/src/extension.ts
+@@ -41,10 +41,9 @@ import {
+   installBackgroundTaskExtensionApi,
+   type BackgroundTaskExtensionService,
+ } from './core/extension-api.js';
+-import {
+-  BackgroundTasksManager,
+-  type BackgroundTaskForUi,
+-  type TaskManagerResult,
++import type {
++  BackgroundTaskForUi,
++  TaskManagerResult,
+ } from './ui/background-tasks-manager.js';
+ import { registerFusionExtension } from './fusion-extension.js';
+ import { registerDelegateExtension } from './delegate-extension.js';
+@@ -351,6 +350,9 @@ export default function backgroundTasksExtension(pi: ExtensionAPI): void {
+     dockOpen = true;
+     updateUi(ctx);
+     try {
++      const { BackgroundTasksManager } = await import(
++        './ui/background-tasks-manager.js'
++      );
+       await ctx.ui.custom<TaskManagerResult>(
+         (tui, theme, _keybindings, done) => {
+           const managerOptions = {
+diff --git a/src/fusion-extension.ts b/src/fusion-extension.ts
+index 7dd8399..fbb30c0 100644
+--- a/src/fusion-extension.ts
++++ b/src/fusion-extension.ts
+@@ -8,15 +8,10 @@ import type {
+ import { getMarkdownTheme } from '@earendil-works/pi-coding-agent';
+ import { Container, Markdown, Text } from '@earendil-works/pi-tui';
+ import { Type, type TSchema } from 'typebox';
+-import {
+-  CURRENT_MODEL_SELECTION,
+-  fusionModelConfigPath,
+-  loadFusionModelConfig,
+-  resolveFusionModels,
+-  saveFusionModelConfig,
+-} from './core/fusion/config.js';
+-import * as FusionContextModule from './core/fusion/context.js';
+-import type { BuiltFusionCanonicalInput } from './core/fusion/context.js';
++import type {
++  BuildFusionCanonicalInputOptions,
++  BuiltFusionCanonicalInput,
++} from './core/fusion/context.js';
+ import {
+   FUSION_INVESTIGATE,
+   FUSION_REASON,
+@@ -24,10 +19,7 @@ import {
+   FUSION_VALIDATE,
+   type FusionWorkflowProfile,
+ } from './core/fusion/workflows.js';
+-import {
+-  buildCleanFusionCanonicalInput,
+-  type BuiltFusionCleanTaskCanonicalInput,
+-} from './core/fusion/clean-context.js';
++import type { BuiltFusionCleanTaskCanonicalInput } from './core/fusion/clean-context.js';
+ import { canonicalizeFusionPublicUrl } from './core/fusion/source-policy.js';
+ import { canonicalJson } from './core/attested-pi-run.js';
+ import type {
+@@ -37,7 +29,7 @@ import type {
+   JsonObject,
+   StartManagedTaskOptions,
+ } from './core/common.js';
+-import { FusionOrchestrator } from './core/fusion/orchestrator.js';
++import type { FusionOrchestrator } from './core/fusion/orchestrator.js';
+ import {
+   FUSION_LEGACY_RESULT_SCHEMA_VERSION,
+   FUSION_RESULT_SCHEMA_VERSION,
+@@ -49,14 +41,14 @@ import {
+   type FusionResultDetails,
+   type FusionRunResult,
+ } from './core/fusion/types.js';
+-import {
+-  FusionModelSelector,
+-  type FusionModelChoice,
+-  type FusionModelSelectorResult,
++import type {
++  FusionModelChoice,
++  FusionModelSelectorResult,
+ } from './ui/fusion-model-selector.js';
+ 
+ const FUSION_RESULT_MESSAGE_TYPE = 'fusion-result';
+ const FUSION_PROGRESS_SCHEMA_VERSION = 'pi-background-tasks.fusion-progress.v1';
++const CURRENT_MODEL_SELECTION = '$current';
+ const FUSION_COMMAND_USAGE =
+   'Usage: /fusion <prompt> (or run /fusion with no arguments to open the multiline editor).';
+ const FUSION_MODEL_COMMAND_NAME = 'fusion-models';
+@@ -720,17 +712,19 @@ function declaredSourcesForRequest(
+   return 'sources' in request ? request.sources : [];
+ }
+ 
+-function buildFusionInput(request: FusionRunRequest): BuiltFusionWorkflowInput {
++async function buildFusionInput(request: FusionRunRequest): Promise<BuiltFusionWorkflowInput> {
+   if (request.profile.contextKind === 'session_projection') {
+-    const options: FusionContextModule.BuildFusionCanonicalInputOptions = {
++    const { buildFusionCanonicalInput } = await import('./core/fusion/context.js');
++    const options: BuildFusionCanonicalInputOptions = {
+       source: request.source,
+       request: serializePublicRequest(request.request),
+       workflow: request.profile.id,
+       toolName: request.toolName,
+     };
+     if (request.toolCallId !== undefined) options.toolCallId = request.toolCallId;
+-    return FusionContextModule.buildFusionCanonicalInput(request.ctx, options);
++    return buildFusionCanonicalInput(request.ctx, options);
+   }
++  const { buildCleanFusionCanonicalInput } = await import('./core/fusion/clean-context.js');
+   return buildCleanFusionCanonicalInput({
+     cwd: request.ctx.cwd,
+     source: request.source,
+@@ -759,7 +753,14 @@ function renderToolCall(name: string, preview: string, theme: Theme) {
+ }
+ 
+ export function registerFusionExtension(pi: ExtensionAPI, deps: FusionExtensionDependencies): void {
+-  const orchestrator = new FusionOrchestrator();
++  let orchestrator: FusionOrchestrator | undefined;
++  async function getOrchestrator(): Promise<FusionOrchestrator> {
++    if (!orchestrator) {
++      const { FusionOrchestrator } = await import('./core/fusion/orchestrator.js');
++      orchestrator = new FusionOrchestrator();
++    }
++    return orchestrator;
++  }
+   const activeRuns = new Set<ActiveFusionRun>();
+   let shuttingDown = false;
+   let lifecycleGeneration = 0;
+@@ -790,12 +791,15 @@ export function registerFusionExtension(pi: ExtensionAPI, deps: FusionExtensionD
+     };
+     try {
+       assertActive();
+-      const built = buildFusionInput(request);
++      const built = await buildFusionInput(request);
+       const cwd = request.ctx.cwd;
+       const sessionId = request.ctx.sessionManager.getSessionId();
+       const modelRegistry = request.ctx.modelRegistry;
+       const currentModel = request.ctx.model;
+       const thinkingLevel = pi.getThinkingLevel();
++      const { loadFusionModelConfig, resolveFusionModels } = await import(
++        './core/fusion/config.js'
++      );
+       const loaded = await loadFusionModelConfig();
+       assertActive();
+       const models = resolveFusionModels({
+@@ -819,7 +823,8 @@ export function registerFusionExtension(pi: ExtensionAPI, deps: FusionExtensionD
+         onReady,
+       };
+       if ('ledger' in built) runInput.contextLedger = built.ledger;
+-      return await orchestrator.run(runInput);
++      const orchestratorInstance = await getOrchestrator();
++      return await orchestratorInstance.run(runInput);
+     } finally {
+       unlink();
+       activeRuns.delete(active);
+@@ -968,7 +973,8 @@ export function registerFusionExtension(pi: ExtensionAPI, deps: FusionExtensionD
+     args: string,
+     ctx: ExtensionCommandContext,
+   ): Promise<string | undefined> {
+-    const direct = FusionContextModule.normalizeFusionCommandRequest(args);
++    const { normalizeFusionCommandRequest } = await import('./core/fusion/context.js');
++    const direct = normalizeFusionCommandRequest(args);
+     if (direct.length > 0) return direct;
+     if (!ctx.hasUI) throw new Error(FUSION_COMMAND_USAGE);
+     const edited = await ctx.ui.editor('Fusion prompt', '');
+@@ -1036,6 +1042,11 @@ export function registerFusionExtension(pi: ExtensionAPI, deps: FusionExtensionD
+         ctx.ui.notify(modeError, 'error');
+         return;
+       }
++      const {
++        fusionModelConfigPath,
++        loadFusionModelConfig,
++        saveFusionModelConfig,
++      } = await import('./core/fusion/config.js');
+       const path = fusionModelConfigPath();
+       let loaded: Awaited<ReturnType<typeof loadFusionModelConfig>>;
+       try {
+@@ -1045,6 +1056,7 @@ export function registerFusionExtension(pi: ExtensionAPI, deps: FusionExtensionD
+         return;
+       }
+       const choices = choicesForSelector(ctx, loaded.config);
++      const { FusionModelSelector } = await import('./ui/fusion-model-selector.js');
+       const result = await ctx.ui.custom<FusionModelSelectorResult>(
+         (tui, theme, _keybindings, done) =>
+           new FusionModelSelector({

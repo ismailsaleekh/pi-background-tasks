@@ -69,16 +69,27 @@ void describe('TypeBox compatibility', () => {
     assert.ok(isRecord(manifest));
     const peers = manifest['peerDependencies'];
     assert.ok(isRecord(peers));
-    // Pi bundles typebox: it must be a "*" peer and must never be bundled.
+    // Pi bundles its extension SDK modules: they are host-provided peers and must
+    // never be bundled as private runtime copies.
     assert.equal(peers['typebox'], '*');
+    assert.equal(peers['@earendil-works/pi-ai'], '*');
     const deps = manifest['dependencies'];
     assert.equal(
       isRecord(deps) ? deps['typebox'] : undefined,
       undefined,
       'typebox must not be a runtime dependency',
     );
+    assert.equal(
+      isRecord(deps) ? deps['@earendil-works/pi-ai'] : undefined,
+      undefined,
+      'pi-ai must not be a private runtime dependency',
+    );
     const bundled = manifest['bundledDependencies'];
     assert.equal(Array.isArray(bundled) && bundled.includes('typebox'), false);
+    assert.equal(
+      Array.isArray(bundled) && bundled.includes('@earendil-works/pi-ai'),
+      false,
+    );
   });
 
   void it('requires Pi lines that expose the Fusion settlement and provider-request hooks', async () => {

@@ -1,0 +1,1 @@
+{"version":3,"file":"facade-contract.js","sourceRoot":"","sources":["../../../../src/core/fusion/facade-contract.ts"],"names":[],"mappings":"AAAA,+FAA+F;AAC/F,MAAM,CAAC,MAAM,uBAAuB,GAAG,UAAmB,CAAC","sourcesContent":["/** Light registration/config sentinel that must not pull the config engine into the facade. */\nexport const CURRENT_MODEL_SELECTION = '$current' as const;\n"]}

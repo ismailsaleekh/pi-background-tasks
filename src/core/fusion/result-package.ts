@@ -1,6 +1,6 @@
 import { lstat, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { canonicalJson, sha256Buffer } from '../attested-pi-run.js';
+import { canonicalJson, sha256Buffer } from '../canonical-json.js';
 import { parseJsonText, type JsonObject } from '../common.js';
 import {
   FUSION_FAILURE_SUMMARY_ATTEMPT_CAP,
@@ -461,21 +461,41 @@ export async function readFusionCommittedResult(
 // Keep the verified details below 8 KiB even after that model-visible envelope.
 const FAILURE_VIEW_MAX_BYTES = 6 * 1024;
 const FAILURE_CODES = new Set([
-  'config_invalid', 'config_conflict', 'model_unavailable', 'context_capture_failed',
-  'context_policy_unsupported_block', 'prompt_budget_exceeded_forecast',
-  'prompt_budget_exceeded_measured', 'model_capacity_unknown', 'child_spawn_failed',
-  'child_stdin_failed', 'child_event_invalid', 'child_exit_failed',
-  'child_runtime_limit_exceeded', 'child_runtime_payload_invalid',
-  'child_cache_policy_invalid', 'child_timeout', 'child_output_cap', 'child_cancelled',
-  'evaluation_invalid', 'artifact_error', 'state_transition_invalid', 'orchestration_failed',
+  'config_invalid',
+  'config_conflict',
+  'model_unavailable',
+  'context_capture_failed',
+  'context_policy_unsupported_block',
+  'prompt_budget_exceeded_forecast',
+  'prompt_budget_exceeded_measured',
+  'model_capacity_unknown',
+  'child_spawn_failed',
+  'child_stdin_failed',
+  'child_event_invalid',
+  'child_exit_failed',
+  'child_runtime_limit_exceeded',
+  'child_runtime_payload_invalid',
+  'child_cache_policy_invalid',
+  'child_timeout',
+  'child_output_cap',
+  'child_cancelled',
+  'evaluation_invalid',
+  'artifact_error',
+  'state_transition_invalid',
+  'orchestration_failed',
 ]);
 const FAILURE_REMEDIATION_IDS = new Set([
-  'inspect_manifest_bound_evidence', 'inspect_terminal_error', 'split_or_reduce_work',
+  'inspect_manifest_bound_evidence',
+  'inspect_terminal_error',
+  'split_or_reduce_work',
   'retry_same_route_after_operator_review',
 ]);
 const FAILURE_CLASSIFICATIONS = new Set([
-  'complete_stage_output', 'partial_stage_output', 'oversized_original',
-  'empty_rejected_output', 'evidence_only',
+  'complete_stage_output',
+  'partial_stage_output',
+  'oversized_original',
+  'empty_rejected_output',
+  'evidence_only',
 ]);
 
 interface TrustedFailureManifest {
@@ -498,7 +518,8 @@ function failureUnavailable(
     summary_status: status,
     terminal_state: state,
     answer: { present: false, reason: 'run_did_not_commit' },
-    summary_unavailable_reason: status === 'unavailable' ? 'manifest_untrusted' : 'summary_integrity_failed',
+    summary_unavailable_reason:
+      status === 'unavailable' ? 'manifest_untrusted' : 'summary_integrity_failed',
   };
 }
 
@@ -531,7 +552,11 @@ function failureRef(value: unknown, label: string, artifactDir: string): FusionA
 }
 
 function sameFailureRef(left: FusionArtifactRef, right: FusionArtifactRef): boolean {
-  return left.path === right.path && left.byte_length === right.byte_length && left.sha256 === right.sha256;
+  return (
+    left.path === right.path &&
+    left.byte_length === right.byte_length &&
+    left.sha256 === right.sha256
+  );
 }
 
 function trustedFailureManifest(
@@ -540,12 +565,16 @@ function trustedFailureManifest(
 ): TrustedFailureManifest {
   if (!isRecord(value)) throw new Error('manifest must be an object');
   const schemaVersion = value['schema_version'];
-  if (schemaVersion !== FUSION_MANIFEST_SCHEMA_VERSION && schemaVersion !== FUSION_LEGACY_MANIFEST_SCHEMA_VERSION)
+  if (
+    schemaVersion !== FUSION_MANIFEST_SCHEMA_VERSION &&
+    schemaVersion !== FUSION_LEGACY_MANIFEST_SCHEMA_VERSION
+  )
     throw new Error('manifest schema version mismatch');
   if (value['run_id'] !== options.runId || value['workflow'] !== options.workflow)
     throw new Error('manifest identity mismatch');
   const state = value['state'];
-  if (state !== 'failed' && state !== 'cancelled') throw new Error('manifest is not failed or cancelled');
+  if (state !== 'failed' && state !== 'cancelled')
+    throw new Error('manifest is not failed or cancelled');
   const source = value['source'];
   if (source !== 'command' && source !== 'tool') throw new Error('manifest source is invalid');
   const artifactsValue = value['artifacts'];
@@ -571,14 +600,18 @@ function trustedFailureManifest(
   for (const attemptValue of attemptsValue) {
     if (!isRecord(attemptValue)) throw new Error('manifest attempt is invalid');
     const metadata = failureAttempt({
-      stage: attemptValue['stage'], slot: attemptValue['slot'], attempt: attemptValue['attempt'],
-      status: attemptValue['status'], child_created: attemptValue['child_created'],
+      stage: attemptValue['stage'],
+      slot: attemptValue['slot'],
+      attempt: attemptValue['attempt'],
+      status: attemptValue['status'],
+      child_created: attemptValue['child_created'],
     });
     attempts.push(metadata);
     const response = attemptArtifact(attemptValue['response_path'], 'manifest response_path');
     if (response !== undefined) {
       const responseRef = artifacts[response];
-      if (responseRef === undefined) throw new Error('manifest response_path is not manifest-bound');
+      if (responseRef === undefined)
+        throw new Error('manifest response_path is not manifest-bound');
       classifications[response] =
         responseRef.byte_length === 0 && metadata.status !== 'completed'
           ? 'empty_rejected_output'
@@ -596,30 +629,48 @@ function trustedFailureManifest(
         recovery['original_response_path'],
         'manifest output_recovery.original_response_path',
       );
-      if (original === undefined) throw new Error('manifest output recovery has no original response');
+      if (original === undefined)
+        throw new Error('manifest output recovery has no original response');
       classifications[original] = 'oversized_original';
     }
   }
-  attempts.sort((left, right) =>
-    compareFailureText(left.stage, right.stage) ||
-    (left.slot ?? 0) - (right.slot ?? 0) ||
-    left.attempt - right.attempt,
+  attempts.sort(
+    (left, right) =>
+      compareFailureText(left.stage, right.stage) ||
+      (left.slot ?? 0) - (right.slot ?? 0) ||
+      left.attempt - right.attempt,
   );
   const manifestUsage = failureUsage(value['usage'], options.artifactDir);
   const error = value['error'];
-  if (error !== undefined && typeof error !== 'string') throw new Error('manifest error is invalid');
-  return { schemaVersion, source, state, usage: manifestUsage, artifacts, attempts, classifications, ...(error === undefined ? {} : { error }) };
+  if (error !== undefined && typeof error !== 'string')
+    throw new Error('manifest error is invalid');
+  return {
+    schemaVersion,
+    source,
+    state,
+    usage: manifestUsage,
+    artifacts,
+    attempts,
+    classifications,
+    ...(error === undefined ? {} : { error }),
+  };
 }
 
 function failureMessage(value: unknown): FusionFailureSummaryV1['failure']['message'] {
   if (!isRecord(value)) throw new Error('failure message is invalid');
-  assertOnlyKeys(value, ['byte_length', 'sha256', 'inline_message', 'omission_reason'], 'failure message', 'failure-summary.json');
+  assertOnlyKeys(
+    value,
+    ['byte_length', 'sha256', 'inline_message', 'omission_reason'],
+    'failure message',
+    'failure-summary.json',
+  );
   const byteLength = failureInteger(value['byte_length'], 'failure message byte_length');
   const sha256 = failureString(value['sha256'], 'failure message sha256');
   if (!SHA256_PATTERN.test(sha256)) throw new Error('failure message sha256 is invalid');
   const inline = value['inline_message'];
   const omission = value['omission_reason'];
-  if ((inline === undefined) === (omission === undefined)) throw new Error('failure message must have exactly one representation');
+  if ((inline === undefined) === (omission === undefined))
+    throw new Error('failure message must have exactly one representation');
   if (inline !== undefined) {
     if (
       typeof inline !== 'string' ||
@@ -654,7 +705,12 @@ function failureList<T>(
 
 function failureAttempt(value: unknown): FusionFailureAttemptMetadata {
   if (!isRecord(value)) throw new Error('failure attempt is invalid');
-  assertOnlyKeys(value, ['stage', 'slot', 'attempt', 'status', 'child_created'], 'failure attempt', 'failure-summary.json');
+  assertOnlyKeys(
+    value,
+    ['stage', 'slot', 'attempt', 'status', 'child_created'],
+    'failure attempt',
+    'failure-summary.json',
+  );
   const stage = failureStage(value['stage'], 'failure attempt stage');
   const slot = value['slot'];
   if (slot !== undefined && slot !== 1 && slot !== 2 && slot !== 3)
@@ -662,11 +718,19 @@ function failureAttempt(value: unknown): FusionFailureAttemptMetadata {
   if ((stage === 'candidate') !== (slot !== undefined))
     throw new Error('failure attempt stage/slot is inconsistent');
   const status = value['status'];
-  if (status !== 'completed' && status !== 'failed' && status !== 'cancelled') throw new Error('failure attempt status is invalid');
-  if (typeof value['child_created'] !== 'boolean') throw new Error('failure attempt child_created is invalid');
+  if (status !== 'completed' && status !== 'failed' && status !== 'cancelled')
+    throw new Error('failure attempt status is invalid');
+  if (typeof value['child_created'] !== 'boolean')
+    throw new Error('failure attempt child_created is invalid');
   const attempt = failureInteger(value['attempt'], 'failure attempt number');
   if (attempt === 0) throw new Error('failure attempt number must be positive');
-  return { stage, ...(slot === undefined ? {} : { slot }), attempt, status, child_created: value['child_created'] };
+  return {
+    stage,
+    ...(slot === undefined ? {} : { slot }),
+    attempt,
+    status,
+    child_created: value['child_created'],
+  };
 }
 
 function failureEvidence(
@@ -686,35 +750,81 @@ function failureEvidence(
   if (manifestRef === undefined || !sameFailureRef(ref, manifestRef))
     throw new Error('failure evidence ref diverges from manifest');
   const expectedClassification = manifest.classifications[name] ?? 'evidence_only';
-  if (classification !== expectedClassification) throw new Error('failure evidence classification diverges from manifest');
+  if (classification !== expectedClassification)
+    throw new Error('failure evidence classification diverges from manifest');
   return { name, classification: expectedClassification, ref };
 }
 
-function failureProgress(value: unknown, manifest: TrustedFailureManifest, artifactDir: string): FusionRunProgress {
+function failureProgress(
+  value: unknown,
+  manifest: TrustedFailureManifest,
+  artifactDir: string,
+): FusionRunProgress {
   if (!isRecord(value)) throw new Error('failure progress is invalid');
-  assertOnlyKeys(value, ['manifest_state', 'candidates', 'evaluation', 'merge', 'usage_so_far'], 'failure progress', artifactDir);
-  if (value['manifest_state'] !== manifest.state) throw new Error('failure progress state diverges from manifest');
-  const stage = (entry: unknown, label: string, candidates: boolean): FusionRunProgress['candidates'] => {
+  assertOnlyKeys(
+    value,
+    ['manifest_state', 'candidates', 'evaluation', 'merge', 'usage_so_far'],
+    'failure progress',
+    artifactDir,
+  );
+  if (value['manifest_state'] !== manifest.state)
+    throw new Error('failure progress state diverges from manifest');
+  const stage = (
+    entry: unknown,
+    label: string,
+    candidates: boolean,
+  ): FusionRunProgress['candidates'] => {
     if (!isRecord(entry)) throw new Error(`${label} is invalid`);
-    assertOnlyKeys(entry, ['status', 'attempts_recorded', 'children_created', 'children_completed', 'children_failed', 'children_cancelled', 'not_started_slots'], label, artifactDir);
+    assertOnlyKeys(
+      entry,
+      [
+        'status',
+        'attempts_recorded',
+        'children_created',
+        'children_completed',
+        'children_failed',
+        'children_cancelled',
+        'not_started_slots',
+      ],
+      label,
+      artifactDir,
+    );
     const status = entry['status'];
-    if (status !== 'not_started' && status !== 'incomplete' && status !== 'completed') throw new Error(`${label}.status is invalid`);
+    if (status !== 'not_started' && status !== 'incomplete' && status !== 'completed')
+      throw new Error(`${label}.status is invalid`);
     const notStarted = entry['not_started_slots'];
-    if (candidates ? !Number.isSafeInteger(notStarted) || Number(notStarted) < 0 || Number(notStarted) > 3 : notStarted !== undefined)
+    if (
+      candidates
+        ? !Number.isSafeInteger(notStarted) || Number(notStarted) < 0 || Number(notStarted) > 3
+        : notStarted !== undefined
+    )
       throw new Error(`${label}.not_started_slots is invalid`);
     return {
       status,
       attempts_recorded: failureInteger(entry['attempts_recorded'], `${label}.attempts_recorded`),
       children_created: failureInteger(entry['children_created'], `${label}.children_created`),
-      children_completed: failureInteger(entry['children_completed'], `${label}.children_completed`),
+      children_completed: failureInteger(
+        entry['children_completed'],
+        `${label}.children_completed`,
+      ),
       children_failed: failureInteger(entry['children_failed'], `${label}.children_failed`),
-      children_cancelled: failureInteger(entry['children_cancelled'], `${label}.children_cancelled`),
+      children_cancelled: failureInteger(
+        entry['children_cancelled'],
+        `${label}.children_cancelled`,
+      ),
       ...(candidates ? { not_started_slots: Number(notStarted) } : {}),
     };
   };
   const usageSoFar = failureUsage(value['usage_so_far'], artifactDir);
-  if (canonicalJson(usageSoFar) !== canonicalJson(manifest.usage)) throw new Error('failure progress usage diverges from manifest');
-  return { manifest_state: manifest.state, candidates: stage(value['candidates'], 'failure candidates', true), evaluation: stage(value['evaluation'], 'failure evaluation', false), merge: stage(value['merge'], 'failure merge', false), usage_so_far: usageSoFar };
+  if (canonicalJson(usageSoFar) !== canonicalJson(manifest.usage))
+    throw new Error('failure progress usage diverges from manifest');
+  return {
+    manifest_state: manifest.state,
+    candidates: stage(value['candidates'], 'failure candidates', true),
+    evaluation: stage(value['evaluation'], 'failure evaluation', false),
+    merge: stage(value['merge'], 'failure merge', false),
+    usage_so_far: usageSoFar,
+  };
 }
 
 function parseFailureSummary(
@@ -723,22 +833,57 @@ function parseFailureSummary(
   options: ReadFusionCommittedResultOptions,
 ): FusionFailureSummaryV1 {
   if (!isRecord(value)) throw new Error('failure summary must be an object');
-  assertOnlyKeys(value, ['schema_version', 'run_id', 'workflow', 'source', 'terminal_state', 'created_at', 'answer', 'failure', 'progress', 'usage_so_far', 'attempts', 'evidence_artifacts', 'remediation_ids'], 'failure summary', options.artifactDir);
-  if (value['schema_version'] !== FUSION_FAILURE_SUMMARY_SCHEMA_VERSION || value['run_id'] !== options.runId || value['workflow'] !== options.workflow || value['source'] !== manifest.source || value['terminal_state'] !== manifest.state || typeof value['created_at'] !== 'string')
+  assertOnlyKeys(
+    value,
+    [
+      'schema_version',
+      'run_id',
+      'workflow',
+      'source',
+      'terminal_state',
+      'created_at',
+      'answer',
+      'failure',
+      'progress',
+      'usage_so_far',
+      'attempts',
+      'evidence_artifacts',
+      'remediation_ids',
+    ],
+    'failure summary',
+    options.artifactDir,
+  );
+  if (
+    value['schema_version'] !== FUSION_FAILURE_SUMMARY_SCHEMA_VERSION ||
+    value['run_id'] !== options.runId ||
+    value['workflow'] !== options.workflow ||
+    value['source'] !== manifest.source ||
+    value['terminal_state'] !== manifest.state ||
+    typeof value['created_at'] !== 'string'
+  )
     throw new Error('failure summary identity is invalid');
   const answer = value['answer'];
-  if (!isRecord(answer) || answer['present'] !== false || answer['reason'] !== 'run_did_not_commit') throw new Error('failure summary answer assertion is invalid');
+  if (!isRecord(answer) || answer['present'] !== false || answer['reason'] !== 'run_did_not_commit')
+    throw new Error('failure summary answer assertion is invalid');
   const failure = value['failure'];
   if (!isRecord(failure)) throw new Error('failure summary failure metadata is invalid');
-  assertOnlyKeys(failure, ['code', 'stage', 'slot', 'attempt', 'child_created', 'message'], 'failure metadata', options.artifactDir);
+  assertOnlyKeys(
+    failure,
+    ['code', 'stage', 'slot', 'attempt', 'child_created', 'message'],
+    'failure metadata',
+    options.artifactDir,
+  );
   const code = failure['code'];
-  if (code !== null && (typeof code !== 'string' || !FAILURE_CODES.has(code))) throw new Error('failure code is invalid');
+  if (code !== null && (typeof code !== 'string' || !FAILURE_CODES.has(code)))
+    throw new Error('failure code is invalid');
   const stageValue = failure['stage'];
   const stage = stageValue === undefined ? undefined : failureStage(stageValue, 'failure stage');
   const slot = failure['slot'];
-  if (slot !== undefined && slot !== 1 && slot !== 2 && slot !== 3) throw new Error('failure slot is invalid');
+  if (slot !== undefined && slot !== 1 && slot !== 2 && slot !== 3)
+    throw new Error('failure slot is invalid');
   if (failure['attempt'] !== undefined) failureInteger(failure['attempt'], 'failure attempt');
-  if (typeof failure['child_created'] !== 'boolean') throw new Error('failure child_created is invalid');
+  if (typeof failure['child_created'] !== 'boolean')
+    throw new Error('failure child_created is invalid');
   const progress = failureProgress(value['progress'], manifest, options.artifactDir);
   const expectedProgress = buildFusionRunProgress(manifest);
   if (canonicalJson(progress) !== canonicalJson(expectedProgress))
@@ -775,7 +920,11 @@ function parseFailureSummary(
   );
   const expectedEvidence = Object.entries(manifest.artifacts)
     .filter(([name]) => name !== 'failure-summary.json')
-    .map(([name, ref]) => ({ name, classification: manifest.classifications[name] ?? 'evidence_only', ref }))
+    .map(([name, ref]) => ({
+      name,
+      classification: manifest.classifications[name] ?? 'evidence_only',
+      ref,
+    }))
     .sort((left, right) => compareFailureText(left.name, right.name));
   const expectedEvidenceListedCount = Math.min(
     expectedEvidence.length,
@@ -818,11 +967,25 @@ function parseFailureSummary(
   if (canonicalJson(terminalMessage) !== canonicalJson(expectedMessage))
     throw new Error('failure message diverges from manifest terminal error');
   return {
-    schema_version: FUSION_FAILURE_SUMMARY_SCHEMA_VERSION, run_id: options.runId, workflow: options.workflow,
-    source: manifest.source, terminal_state: manifest.state, created_at: value['created_at'],
+    schema_version: FUSION_FAILURE_SUMMARY_SCHEMA_VERSION,
+    run_id: options.runId,
+    workflow: options.workflow,
+    source: manifest.source,
+    terminal_state: manifest.state,
+    created_at: value['created_at'],
     answer: { present: false, reason: 'run_did_not_commit' },
-    failure: { code: code as FusionFailureSummaryV1['failure']['code'], ...(stage === undefined ? {} : { stage }), ...(slot === undefined ? {} : { slot }), ...(failure['attempt'] === undefined ? {} : { attempt: Number(failure['attempt']) }), child_created: failure['child_created'], message: terminalMessage },
-    progress, usage_so_far: usageSoFar, attempts, evidence_artifacts: evidence,
+    failure: {
+      code: code as FusionFailureSummaryV1['failure']['code'],
+      ...(stage === undefined ? {} : { stage }),
+      ...(slot === undefined ? {} : { slot }),
+      ...(failure['attempt'] === undefined ? {} : { attempt: Number(failure['attempt']) }),
+      child_created: failure['child_created'],
+      message: terminalMessage,
+    },
+    progress,
+    usage_so_far: usageSoFar,
+    attempts,
+    evidence_artifacts: evidence,
     remediation_ids: [...remediationIds] as FusionFailureSummaryV1['remediation_ids'],
   };
 }
@@ -842,17 +1005,21 @@ function boundedFailureView(
   status: FusionFailureResultView['summary_status'],
   summaryRef?: FusionArtifactRef,
 ): FusionFailureResultView {
-  const attempts = { listed: [...source.attempts.listed], omitted_count: source.attempts.omitted_count };
-  const evidence = { listed: [...source.evidence_artifacts.listed], omitted_count: source.evidence_artifacts.omitted_count };
+  const attempts = {
+    listed: [...source.attempts.listed],
+    omitted_count: source.attempts.omitted_count,
+  };
+  const evidence = {
+    listed: [...source.evidence_artifacts.listed],
+    omitted_count: source.evidence_artifacts.omitted_count,
+  };
   const failure = source.failure;
   const view: FusionFailureResultView = {
     schema_version: FUSION_FAILURE_SUMMARY_SCHEMA_VERSION,
     summary_status: status,
     terminal_state: source.terminal_state,
     answer: { present: false, reason: 'run_did_not_commit' },
-    ...(failure === undefined
-      ? {}
-      : { failure: { ...failure, message: { ...failure.message } } }),
+    ...(failure === undefined ? {} : { failure: { ...failure, message: { ...failure.message } } }),
     progress: source.progress,
     usage_so_far: source.usage_so_far,
     attempts,
@@ -860,7 +1027,8 @@ function boundedFailureView(
     remediation_ids: source.remediation_ids,
     ...(summaryRef === undefined ? {} : { failure_summary_ref: summaryRef }),
   };
-  const fits = (): boolean => Buffer.byteLength(canonicalJson(view), 'utf8') <= FAILURE_VIEW_MAX_BYTES;
+  const fits = (): boolean =>
+    Buffer.byteLength(canonicalJson(view), 'utf8') <= FAILURE_VIEW_MAX_BYTES;
   if (!fits() && view.failure?.message.inline_message !== undefined) {
     const message = view.failure.message;
     view.failure = {
@@ -872,15 +1040,22 @@ function boundedFailureView(
       },
     };
   }
-  while (!fits() && evidence.listed.length > 0) { evidence.listed.pop(); evidence.omitted_count += 1; }
-  while (!fits() && attempts.listed.length > 0) { attempts.listed.pop(); attempts.omitted_count += 1; }
-  if (!fits()) throw new Error('failure result view exceeds its byte budget without a safe whole-section omission');
+  while (!fits() && evidence.listed.length > 0) {
+    evidence.listed.pop();
+    evidence.omitted_count += 1;
+  }
+  while (!fits() && attempts.listed.length > 0) {
+    attempts.listed.pop();
+    attempts.omitted_count += 1;
+  }
+  if (!fits())
+    throw new Error(
+      'failure result view exceeds its byte budget without a safe whole-section omission',
+    );
   return view;
 }
 
-function legacyFailureSource(
-  manifest: TrustedFailureManifest,
-): FailureViewSource {
+function legacyFailureSource(manifest: TrustedFailureManifest): FailureViewSource {
   const message =
     manifest.error === undefined
       ? undefined
@@ -913,11 +1088,13 @@ function legacyFailureSource(
     usage_so_far: manifest.usage,
     attempts: {
       listed: attempts.filter((_attempt, index) => index < FUSION_FAILURE_SUMMARY_ATTEMPT_CAP),
-      omitted_count: attempts.length - Math.min(attempts.length, FUSION_FAILURE_SUMMARY_ATTEMPT_CAP),
+      omitted_count:
+        attempts.length - Math.min(attempts.length, FUSION_FAILURE_SUMMARY_ATTEMPT_CAP),
     },
     evidence_artifacts: {
       listed: evidence.filter((_evidence, index) => index < FUSION_FAILURE_SUMMARY_EVIDENCE_CAP),
-      omitted_count: evidence.length - Math.min(evidence.length, FUSION_FAILURE_SUMMARY_EVIDENCE_CAP),
+      omitted_count:
+        evidence.length - Math.min(evidence.length, FUSION_FAILURE_SUMMARY_EVIDENCE_CAP),
     },
     remediation_ids: ['inspect_manifest_bound_evidence', 'inspect_terminal_error'],
   };
@@ -929,7 +1106,11 @@ export async function readFusionFailureResult(
 ): Promise<FusionFailureResultView> {
   let manifest: TrustedFailureManifest;
   try {
-    const file = await readUtf8(join(options.artifactDirAbs, 'manifest.json'), 'manifest.json', options.artifactDir);
+    const file = await readUtf8(
+      join(options.artifactDirAbs, 'manifest.json'),
+      'manifest.json',
+      options.artifactDir,
+    );
     manifest = trustedFailureManifest(parseJsonText(file.text), options);
   } catch {
     return failureUnavailable('failed', 'unavailable');
@@ -938,7 +1119,10 @@ export async function readFusionFailureResult(
   if (summaryRef === undefined) {
     return boundedFailureView(legacyFailureSource(manifest), 'legacy_manifest_only');
   }
-  if (manifest.schemaVersion !== FUSION_MANIFEST_SCHEMA_VERSION || summaryRef.path !== 'failure-summary.json')
+  if (
+    manifest.schemaVersion !== FUSION_MANIFEST_SCHEMA_VERSION ||
+    summaryRef.path !== 'failure-summary.json'
+  )
     return failureUnavailable(manifest.state, 'integrity_failed');
   try {
     if (summaryRef.byte_length > FUSION_FAILURE_SUMMARY_MAX_BYTES)
@@ -949,7 +1133,10 @@ export async function readFusionFailureResult(
       options.artifactDir,
       FUSION_FAILURE_SUMMARY_MAX_BYTES,
     );
-    if (file.bytes.length !== summaryRef.byte_length || sha256Buffer(file.bytes) !== summaryRef.sha256)
+    if (
+      file.bytes.length !== summaryRef.byte_length ||
+      sha256Buffer(file.bytes) !== summaryRef.sha256
+    )
       throw new Error('failure summary hash/length mismatch');
     const summary = parseFailureSummary(parseJsonText(file.text), manifest, options);
     return boundedFailureView(summary, 'verified', summaryRef);

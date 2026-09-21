@@ -36,6 +36,12 @@ pi install .
 pi install . -l
 ```
 
+## SDK embedding requirement
+
+**Initialized-host contract:** package resources that require post-bind initialization are available in normal Pi TUI, RPC, print, and JSON modes. An SDK embedder must call `bindExtensions()` with at least one counted binding for lifecycle restoration—such as `onError`, UI/command actions, or shutdown handling—so `session_start` is emitted again by `reload()`. If the embedder uses an empty or mode-only binding, it must explicitly call `bindExtensions()` again after every reload.
+
+Bare `createAgentSession()` does not emit `session_start`; `{}` or `{ mode: "print" }` binds once but does not make a later reload emit it. Post-bind resources such as ambient Anthropic attribution, `/claude-cache`, and session-context EventBus readiness are therefore unavailable on those bare/reloaded paths until an explicit bind. This is a current public Pi SDK blocker, not supported package behavior. The generated availability tables describe this initialized-host contract; they are not a pre-bind availability guarantee.
+
 ## 2. Start your first `/bg` task
 
 Inside a project, run:
@@ -55,7 +61,7 @@ Use the footer dock or commands:
 /logs <task id> 20000
 ```
 
-Press **Shift↓** to open the dock when the `bg ...` footer appears. `/bg-clear` acknowledges finished-task footer notices.
+Press the configured dock key (**Shift↓** by default, or **Ctrl+Alt+B**) when the `bg ...` footer appears. With `PI_BG_DOCK_SHORTCUT=off`, use `/tasks` or `/bg-tasks`. `/bg-clear` acknowledges finished-task footer notices.
 
 ## 4. Start an agent-launched background task
 

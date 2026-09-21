@@ -14,9 +14,9 @@ try {
     [
       '--no-extensions',
       '-e',
-      './extensions/anthropic-attribution.ts',
+      './dist/extensions/anthropic-attribution.js',
       '-e',
-      './extensions/background-tasks.ts',
+      './dist/extensions/background-tasks.js',
       '--offline',
       '--no-tools',
       '--no-session',

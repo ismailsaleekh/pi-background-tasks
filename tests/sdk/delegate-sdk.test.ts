@@ -1,9 +1,9 @@
 import { describe, it, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
+import { existsSync, realpathSync } from 'node:fs';
 import { chmod, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { delimiter, join, resolve } from 'node:path';
 import {
   ModelRuntime,
   createAgentSession,
@@ -31,6 +31,7 @@ interface Harness {
   session: AgentSession;
   cwd: string;
   root: string;
+  hostCliPath: string;
   restore: () => void;
 }
 
@@ -71,6 +72,7 @@ fs.writeFileSync(
       PI_SESSION_FILE: process.env.PI_SESSION_FILE ?? null,
       PI_PROVIDER: process.env.PI_PROVIDER ?? null,
       PI_MODEL: process.env.PI_MODEL ?? null,
+      PI_CHILD_ENTRY: process.argv[1] ?? null,
     },
     null,
     2,
@@ -144,72 +146,127 @@ fs.renameSync(tmp, path.join(dir, 'result.json'));
 process.exit(0);
 `;
 
-async function harness(scenario = 'commit'): Promise<Harness> {
+async function harness(
+  scenario = 'commit',
+  options: { failAfterMutation?: boolean } = {},
+): Promise<Harness> {
   const root = await mkdtemp(join(tmpdir(), 'pi-bg-delegate-sdk-'));
   roots.push(root);
   const cwd = join(root, 'project');
   const agentDir = join(root, 'agent');
-  const binDir = join(root, 'bin');
+  const emptyBinA = join(root, 'empty-bin-a');
+  const emptyBinB = join(root, 'empty-bin-b');
+  const hostPackageRoot = join(
+    root,
+    'global Pi installation',
+    'node_modules',
+    '@earendil-works',
+    'pi-coding-agent',
+  );
+  const fakePi = join(hostPackageRoot, 'dist', 'cli.cjs');
   await mkdir(cwd, { recursive: true });
   await mkdir(agentDir, { recursive: true });
-  await mkdir(binDir, { recursive: true });
-  const fakePi = join(binDir, 'pi');
+  await mkdir(emptyBinA, { recursive: true });
+  await mkdir(emptyBinB, { recursive: true });
+  await mkdir(join(hostPackageRoot, 'dist'), { recursive: true });
+  await writeFile(
+    join(hostPackageRoot, 'package.json'),
+    `${JSON.stringify(
+      {
+        name: '@earendil-works/pi-coding-agent',
+        version: '0.0.0-delegate-sdk-fixture',
+        bin: { pi: 'dist/cli.cjs' },
+      },
+      null,
+      2,
+    )}\n`,
+    'utf8',
+  );
   await writeFile(fakePi, FAKE_PI, 'utf8');
   await chmod(fakePi, 0o755);
 
   const previous = {
     path: process.env['PATH'],
     scenario: process.env['PI_BG_DELEGATE_FAKE_SCENARIO'],
+    offline: process.env['PI_OFFLINE'],
+    skipVersionCheck: process.env['PI_SKIP_VERSION_CHECK'],
+    telemetry: process.env['PI_TELEMETRY'],
+    ci: process.env['CI'],
+    argv1: process.argv[1],
   };
   Object.assign(process.env, isolatedTestEnv, {
-    PATH: `${binDir}:${process.env['PATH'] ?? ''}`,
+    // Deliberately provide no `pi` executable. POSIX and Windows must both use
+    // the same genuine named-host-package route exercised by production Pi.
+    PATH: `${emptyBinA}${delimiter}${emptyBinB}`,
     PI_BG_DELEGATE_FAKE_SCENARIO: scenario,
   });
 
-  const settingsManager = SettingsManager.inMemory({});
-  const loader = new DefaultResourceLoader({
-    cwd,
-    agentDir,
-    settingsManager,
-    additionalExtensionPaths: [extensionPath],
-    noExtensions: true,
-    noSkills: true,
-    noPromptTemplates: true,
-    noContextFiles: true,
-    noThemes: true,
-  });
-  await loader.reload();
-  const modelRuntime = await ModelRuntime.create({
-    authPath: join(agentDir, 'auth.json'),
-    modelsPath: null,
-  });
-  const { session } = await createAgentSession({
-    cwd,
-    agentDir,
-    resourceLoader: loader,
-    sessionManager: SessionManager.inMemory(cwd),
-    settingsManager,
-    modelRuntime,
-    noTools: 'builtin',
-  });
-  await session.extensionRunner.emit({ type: 'session_start', reason: 'startup' });
-  return {
-    session,
-    cwd,
-    root,
-    restore: () => {
-      restoreEnvValue('PATH', previous.path);
-      restoreEnvValue('PI_BG_DELEGATE_FAKE_SCENARIO', previous.scenario);
-    },
+  let restored = false;
+  const restore = () => {
+    if (restored) return;
+    restored = true;
+    restoreEnvValue('PATH', previous.path);
+    restoreEnvValue('PI_BG_DELEGATE_FAKE_SCENARIO', previous.scenario);
+    restoreEnvValue('PI_OFFLINE', previous.offline);
+    restoreEnvValue('PI_SKIP_VERSION_CHECK', previous.skipVersionCheck);
+    restoreEnvValue('PI_TELEMETRY', previous.telemetry);
+    restoreEnvValue('CI', previous.ci);
+    if (previous.argv1 === undefined) process.argv.splice(1, 1);
+    else process.argv[1] = previous.argv1;
   };
+  process.argv[1] = fakePi;
+
+  try {
+    if (options.failAfterMutation) throw new Error('fixture setup failure after global mutation');
+    const settingsManager = SettingsManager.inMemory({});
+    const loader = new DefaultResourceLoader({
+      cwd,
+      agentDir,
+      settingsManager,
+      additionalExtensionPaths: [extensionPath],
+      noExtensions: true,
+      noSkills: true,
+      noPromptTemplates: true,
+      noContextFiles: true,
+      noThemes: true,
+    });
+    await loader.reload();
+    const modelRuntime = await ModelRuntime.create({
+      authPath: join(agentDir, 'auth.json'),
+      modelsPath: null,
+    });
+    const { session } = await createAgentSession({
+      cwd,
+      agentDir,
+      resourceLoader: loader,
+      sessionManager: SessionManager.inMemory(cwd),
+      settingsManager,
+      modelRuntime,
+      noTools: 'builtin',
+    });
+    await session.extensionRunner.emit({ type: 'session_start', reason: 'startup' });
+    return {
+      session,
+      cwd,
+      root,
+      hostCliPath: realpathSync(fakePi),
+      restore,
+    };
+  } catch (error) {
+    restore();
+    throw error;
+  }
 }
 
 async function dispose(h: Harness): Promise<void> {
   try {
     await h.session.extensionRunner.emit({ type: 'session_shutdown', reason: 'quit' });
   } finally {
-    h.session.dispose();
-    h.restore();
+    try {
+      h.session.dispose();
+    } finally {
+      h.restore();
+    }
   }
 }
 
@@ -335,6 +392,77 @@ afterEach(async () => {
 });
 
 void describe('bg_delegate and bg_result public surface', { concurrency: false }, () => {
+  void it('restores every mutated env key and argv after normal and failed setup', async () => {
+    const original = {
+      PATH: process.env['PATH'],
+      PI_BG_DELEGATE_FAKE_SCENARIO: process.env['PI_BG_DELEGATE_FAKE_SCENARIO'],
+      PI_OFFLINE: process.env['PI_OFFLINE'],
+      PI_SKIP_VERSION_CHECK: process.env['PI_SKIP_VERSION_CHECK'],
+      PI_TELEMETRY: process.env['PI_TELEMETRY'],
+      CI: process.env['CI'],
+      argv1: process.argv[1],
+    };
+    const sentinels = {
+      PATH: '/fixture/original/path',
+      PI_BG_DELEGATE_FAKE_SCENARIO: 'fixture-original-scenario',
+      PI_OFFLINE: 'fixture-original-offline',
+      PI_SKIP_VERSION_CHECK: 'fixture-original-version-check',
+      PI_TELEMETRY: 'fixture-original-telemetry',
+      CI: 'fixture-original-ci',
+      argv1: '/fixture/original-host.js',
+    } as const;
+    const observe = () => ({
+      PATH: process.env['PATH'],
+      PI_BG_DELEGATE_FAKE_SCENARIO: process.env['PI_BG_DELEGATE_FAKE_SCENARIO'],
+      PI_OFFLINE: process.env['PI_OFFLINE'],
+      PI_SKIP_VERSION_CHECK: process.env['PI_SKIP_VERSION_CHECK'],
+      PI_TELEMETRY: process.env['PI_TELEMETRY'],
+      CI: process.env['CI'],
+      argv1: process.argv[1],
+    });
+    const installSentinels = () => {
+      Object.assign(process.env, {
+        PATH: sentinels.PATH,
+        PI_BG_DELEGATE_FAKE_SCENARIO: sentinels.PI_BG_DELEGATE_FAKE_SCENARIO,
+        PI_OFFLINE: sentinels.PI_OFFLINE,
+        PI_SKIP_VERSION_CHECK: sentinels.PI_SKIP_VERSION_CHECK,
+        PI_TELEMETRY: sentinels.PI_TELEMETRY,
+        CI: sentinels.CI,
+      });
+      process.argv[1] = sentinels.argv1;
+    };
+
+    try {
+      installSentinels();
+      const h = await harness();
+      await dispose(h);
+      const afterNormalDispose = observe();
+
+      installSentinels();
+      await assert.rejects(
+        () => harness('commit', { failAfterMutation: true }),
+        /fixture setup failure after global mutation/,
+      );
+      const afterSetupFailure = observe();
+
+      assert.deepEqual(afterNormalDispose, sentinels);
+      assert.deepEqual(afterSetupFailure, sentinels);
+    } finally {
+      for (const key of [
+        'PATH',
+        'PI_BG_DELEGATE_FAKE_SCENARIO',
+        'PI_OFFLINE',
+        'PI_SKIP_VERSION_CHECK',
+        'PI_TELEMETRY',
+        'CI',
+      ] as const) {
+        restoreEnvValue(key, original[key]);
+      }
+      if (original.argv1 === undefined) process.argv.splice(1, 1);
+      else process.argv[1] = original.argv1;
+    }
+  });
+
   void it('registers both tools at load', async () => {
     const h = await harness();
     try {
@@ -446,6 +574,11 @@ void describe('bg_delegate and bg_result public surface', { concurrency: false }
         ) as Record<string, unknown>;
         assert.equal(env['PI_SESSION_ID'], null);
         assert.equal(env['PI_SESSION_FILE'], null);
+        assert.equal(
+          env['PI_CHILD_ENTRY'],
+          h.hostCliPath,
+          'the SDK child must launch the named host package bin rather than a PATH shim',
+        );
       } finally {
         await dispose(h);
       }

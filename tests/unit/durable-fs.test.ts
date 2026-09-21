@@ -50,6 +50,35 @@ interface RecordingOptions {
   readonly temporaryPath?: string;
 }
 
+interface OperationBlocker {
+  readonly entered: Promise<void>;
+  release(): void;
+}
+
+function operationBlocker(): {
+  readonly blocker: OperationBlocker;
+  enter(): Promise<void>;
+} {
+  let markEntered: (() => void) | undefined;
+  let release: (() => void) | undefined;
+  const entered = new Promise<void>((resolve) => {
+    markEntered = resolve;
+  });
+  const released = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  return {
+    blocker: {
+      entered,
+      release: () => release?.(),
+    },
+    async enter() {
+      markEntered?.();
+      await released;
+    },
+  };
+}
+
 function codedError(message: string, code: string): Error {
   const error = new Error(message);
   Object.defineProperty(error, 'code', { value: code, enumerable: true });
@@ -61,6 +90,7 @@ class RecordingDurableFileOperations implements DurableFileOperations {
   readonly calls: RecordedCall[] = [];
   private readonly failures = new Map<DurableOperation, Error>();
   private readonly existingPaths = new Set<string>();
+  private readonly blockers = new Map<DurableOperation, () => Promise<void>>();
   private readonly tempPath: string;
 
   constructor(options: RecordingOptions = {}) {
@@ -75,6 +105,16 @@ class RecordingDurableFileOperations implements DurableFileOperations {
 
   failureFor(operation: DurableOperation): Error | undefined {
     return this.failures.get(operation);
+  }
+
+  block(operation: DurableOperation): OperationBlocker {
+    const control = operationBlocker();
+    this.blockers.set(operation, control.enter);
+    return control.blocker;
+  }
+
+  async waitAt(operation: DurableOperation): Promise<void> {
+    await this.blockers.get(operation)?.();
   }
 
   addExisting(path: string): void {
@@ -107,6 +147,7 @@ class RecordingDurableFileOperations implements DurableFileOperations {
 
   async rename(source: string, target: string): Promise<void> {
     this.calls.push({ kind: 'rename', source, target });
+    await this.waitAt('rename_file');
     const configured = this.failureFor('rename_file');
     if (configured !== undefined) throw configured;
     if (this.existingPaths.has(source)) {
@@ -135,18 +176,21 @@ class RecordingWritableHandle implements DurableWritableHandle {
 
   async writeFile(data: DurableData): Promise<void> {
     this.operations.calls.push({ kind: 'writeFile', path: this.path, data });
+    await this.operations.waitAt('write_file');
     const configured = this.operations.failureFor('write_file');
     if (configured !== undefined) throw configured;
   }
 
   async sync(): Promise<void> {
     this.operations.calls.push({ kind: 'syncFile', path: this.path });
+    await this.operations.waitAt('sync_file');
     const configured = this.operations.failureFor('sync_file');
     if (configured !== undefined) throw configured;
   }
 
   async close(): Promise<void> {
     this.operations.calls.push({ kind: 'closeFile', path: this.path });
+    await this.operations.waitAt('close_file');
     const configured = this.operations.failureFor('close_file');
     if (configured !== undefined) throw configured;
   }
@@ -504,6 +548,86 @@ void describe('durable file writer operation sequencing', () => {
     const error = await durableRejects(writer.write('/virtual/data.txt', 'data'));
 
     assert.equal(error.operation, 'sync_file');
+  });
+
+  void it('settles an in-flight direct write and closes its handle before surfacing cancellation', async () => {
+    const ops = new RecordingDurableFileOperations();
+    const blockedWrite = ops.block('write_file');
+    const writer = createDurableFileWriter(ops);
+    const controller = new AbortController();
+    const reason = new Error('admission deadline');
+
+    const write = writer.write('/virtual/data.txt', 'data', { signal: controller.signal });
+    await blockedWrite.entered;
+    controller.abort(reason);
+    blockedWrite.release();
+    await assert.rejects(write, /admission deadline/);
+
+    assert.deepEqual(callKinds(ops.calls), ['openWritable', 'writeFile', 'closeFile']);
+  });
+
+  void it('closes and removes an owned atomic temp before surfacing pre-rename cancellation', async () => {
+    const temp = '/virtual/.cancelled-target.tmp';
+    const ops = new RecordingDurableFileOperations({ temporaryPath: temp });
+    const blockedWrite = ops.block('write_file');
+    const writer = createDurableFileWriter(ops);
+    const controller = new AbortController();
+
+    const replace = writer.replace('/virtual/target.txt', 'new', {
+      signal: controller.signal,
+    });
+    await blockedWrite.entered;
+    controller.abort(new Error('registry shutdown'));
+    blockedWrite.release();
+    await assert.rejects(replace, /registry shutdown/);
+
+    assert.deepEqual(callKinds(ops.calls), [
+      'openWritable',
+      'writeFile',
+      'closeFile',
+      'remove',
+    ]);
+    assert.equal(ops.hasPath(temp), false);
+    assert.equal(callsNamed(ops.calls, 'rename').length, 0);
+  });
+
+  void it('finishes directory durability when cancellation overlaps the rename commit point', async () => {
+    const temp = '/virtual/.committing-target.tmp';
+    const target = '/virtual/target.txt';
+    const ops = new RecordingDurableFileOperations({ temporaryPath: temp });
+    const blockedRename = ops.block('rename_file');
+    const writer = createDurableFileWriter(ops);
+    const controller = new AbortController();
+
+    const replace = writer.replace(target, 'new', { signal: controller.signal });
+    await blockedRename.entered;
+    controller.abort(new Error('deadline at rename'));
+    blockedRename.release();
+    let cancellationError: unknown;
+    try {
+      await replace;
+      assert.fail('rename-overlap cancellation must reject');
+    } catch (error) {
+      cancellationError = error;
+    }
+    assert.match(
+      cancellationError instanceof Error ? cancellationError.message : String(cancellationError),
+      /deadline at rename/,
+    );
+    assert.ok(typeof cancellationError === 'object' && cancellationError !== null);
+    assert.equal(Reflect.get(cancellationError, 'renameCompleted'), true);
+    assert.deepEqual(callKinds(ops.calls), [
+      'openWritable',
+      'writeFile',
+      'syncFile',
+      'closeFile',
+      'rename',
+      'openDirectory',
+      'syncDirectory',
+      'closeDirectory',
+    ]);
+    assert.equal(ops.hasPath(target), true);
+    assert.equal(ops.hasPath(temp), false);
   });
 });
 

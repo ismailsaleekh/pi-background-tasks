@@ -1,6 +1,6 @@
 {
   "name": "pi-background-tasks",
-  "version": "2.5.0",
+  "version": "2.6.2",
   "description": "Pi extension for durable background shell tasks, read-only delegated agents, local attested Pi runs, and fixed-purpose Fusion workflows through child Pi processes.",
   "type": "module",
   "license": "ISC",
@@ -35,6 +35,7 @@
     "url": "https://github.com/ismailsaleekh/pi-background-tasks/issues"
   },
   "files": [
+    "dist/",
     "extensions/",
     "src/",
     "README.md",
@@ -48,25 +49,26 @@
     "logo.png"
   ],
   "scripts": {
+    "build:runtime": "node scripts/build-runtime.mjs",
     "typecheck": "tsc --noEmit",
     "test:type-safety": "tsx --test tests/package/type-safety.test.ts",
     "test:unit": "tsx --test tests/unit/**/*.test.ts",
-    "test:sdk": "tsx --test --test-concurrency=1 tests/sdk/**/*.test.ts",
+    "test:sdk": "npm run build:runtime && tsx --test --test-concurrency=1 tests/sdk/**/*.test.ts",
     "test:rpc": "tsx --test tests/rpc/**/*.test.ts",
     "test:component": "tsx --test tests/component/**/*.test.ts",
-    "test:package": "tsx --test tests/package/**/*.test.ts",
+    "test:package": "npm run build:runtime && tsx --test tests/package/**/*.test.ts",
     "test": "npm run typecheck && npm run test:type-safety && npm run test:unit && npm run test:sdk && npm run test:rpc && npm run test:component && npm run test:package && npm run test:hook-contract",
     "test:pty": "tsx --test tests/pty/**/*.test.ts",
     "test:windows": "tsx --test tests/windows/**/*.test.ts",
     "test:agent-loop": "tsx --test --test-concurrency=1 tests/scripted-provider/**/*.test.ts",
     "test:full": "npm run test && npm run test:pty && npm run test:agent-loop",
-    "smoke": "tsx scripts/smoke.ts",
+    "smoke": "npm run build:runtime && tsx scripts/smoke.ts",
     "smoke:large-context": "tsx scripts/large-context-smoke.ts",
     "pack:dry-run": "npm pack --dry-run",
     "lint": "cd ../.. && npm run quality:ts:lint",
     "format:check": "cd ../.. && npm run quality:ts:format",
-    "test:compat": "tsx scripts/test-compat.ts",
-    "test:pnpm-pack": "node scripts/test-pnpm-pack-install.mjs",
+    "test:compat": "npm run build:runtime && tsx scripts/test-compat.ts",
+    "test:pnpm-pack": "npm run build:runtime && node scripts/test-pnpm-pack-install.mjs",
     "test:hook-contract": "tsx --test --test-concurrency=1 tests/scripted-provider/pi-hook-contract.test.ts",
     "docs:generate": "node scripts/docs/generate.mjs",
     "docs:verify": "node scripts/docs/verify.mjs",
@@ -74,18 +76,19 @@
     "docs:attest/record": "node scripts/docs/attest.mjs",
     "docs:attest": "npm run docs:attest/record",
     "test:docs": "tsx --test tests/unit/docs-gate.test.ts tests/package/docs-contract.test.ts",
-    "payload:check": "node scripts/check-package-payload.mjs",
+    "payload:check": "npm run build:runtime && node scripts/check-package-payload.mjs",
     "release:check-version": "node scripts/check-release-version.mjs",
-    "prepack": "npm run docs:verify && npm run payload:check"
+    "prepack": "npm run build:runtime && npm run docs:verify && node scripts/check-package-payload.mjs"
   },
   "pi": {
     "image": "https://raw.githubusercontent.com/ismailsaleekh/pi-background-tasks/main/logo.png",
     "extensions": [
-      "./extensions/anthropic-attribution.ts",
-      "./extensions/background-tasks.ts"
+      "./dist/extensions/anthropic-attribution.js",
+      "./dist/extensions/background-tasks.js"
     ]
   },
   "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
     "@earendil-works/pi-coding-agent": "^0.81.1 || ^0.82.1 || ^0.83.0 || ^0.84.0 || ^0.85.0 || ^0.86.0",
     "@earendil-works/pi-tui": "^0.81.1 || ^0.82.1 || ^0.83.0 || ^0.84.0 || ^0.85.0 || ^0.86.0",
     "typebox": "*"

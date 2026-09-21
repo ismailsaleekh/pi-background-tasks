@@ -1,0 +1,284 @@
+▶ Anthropic attribution lineage recovery (#14)
+  ✔ chains unchanged append-only requests and replays exact signed thinking (11.065958ms)
+  ✖ resets system prompt, reanchors, and never resurrects old signatures (5.326166ms)
+  ✖ resets tool schema, reanchors, and never resurrects old signatures (2.583209ms)
+  ✖ resets thinking effort, reanchors, and never resurrects old signatures (1.495084ms)
+  ✖ resets tool choice, reanchors, and never resurrects old signatures (2.772625ms)
+  ✖ resets rewritten user history, reanchors, and never resurrects old signatures (2.141167ms)
+  ✖ resets shortened history, reanchors, and never resurrects old signatures (1.625417ms)
+  ✖ resets cache retention, reanchors, and never resurrects old signatures (2.032291ms)
+  ✖ resets disabled caching, reanchors, and never resurrects old signatures (1.065667ms)
+  ✖ recovers a reload that drops earlier thinking while retaining stale lineage (1.499125ms)
+  ✖ recovers again after a failed reset attempt without persisting a false anchor (0.610417ms)
+  ✖ opens another epoch for history drift under a retained compaction marker (1.204083ms)
+  ✖ still rejects middleware messages mutations after a reset, before fetch (0.763833ms)
+  ✖ still rejects middleware thinking mutations after a reset, before fetch (0.641584ms)
+  ✖ still rejects middleware diagnostics mutations after a reset, before fetch (0.734417ms)
+  ✖ still rejects middleware cache_control mutations after a reset, before fetch (0.69525ms)
+  ✔ retains the in-flight guard and releases it after completion (0.77875ms)
+✖ Anthropic attribution lineage recovery (#14) (38.4325ms)
+ℹ tests 17
+ℹ suites 1
+ℹ pass 2
+ℹ fail 15
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1073.018833
+
+✖ failing tests:
+
+test at tests/unit/anthropic-attribution-lineage.test.ts:4:3345
+✖ resets system prompt, reanchors, and never resurrects old signatures (5.326166ms)
+  AssertionError [ERR_ASSERTION]: Anthropic cache lineage diverged before transport: message history is not append-only
+  
+  'error' !== 'stop'
+  
+      at TestContext.<anonymous> (<REVIEW_ROOT>/red17/tests/unit/anthropic-attribution-lineage.test.ts:211:14)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'error',
+    expected: 'stop',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/unit/anthropic-attribution-lineage.test.ts:4:3345
+✖ resets tool schema, reanchors, and never resurrects old signatures (2.583209ms)
+  AssertionError [ERR_ASSERTION]: Anthropic cache lineage diverged before transport: message history is not append-only
+  
+  'error' !== 'stop'
+  
+      at TestContext.<anonymous> (<REVIEW_ROOT>/red17/tests/unit/anthropic-attribution-lineage.test.ts:211:14)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'error',
+    expected: 'stop',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/unit/anthropic-attribution-lineage.test.ts:4:3345
+✖ resets thinking effort, reanchors, and never resurrects old signatures (1.495084ms)
+  AssertionError [ERR_ASSERTION]: Anthropic cache lineage diverged before transport: model/system/tools/thinking/beta profile changed
+  
+  'error' !== 'stop'
+  
+      at TestContext.<anonymous> (<REVIEW_ROOT>/red17/tests/unit/anthropic-attribution-lineage.test.ts:211:14)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'error',
+    expected: 'stop',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/unit/anthropic-attribution-lineage.test.ts:4:3345
+✖ resets tool choice, reanchors, and never resurrects old signatures (2.772625ms)
+  AssertionError [ERR_ASSERTION]: Anthropic cache lineage diverged before transport: model/system/tools/thinking/beta profile changed
+  
+  'error' !== 'stop'
+  
+      at TestContext.<anonymous> (<REVIEW_ROOT>/red17/tests/unit/anthropic-attribution-lineage.test.ts:211:14)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'error',
+    expected: 'stop',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/unit/anthropic-attribution-lineage.test.ts:4:3345
+✖ resets rewritten user history, reanchors, and never resurrects old signatures (2.141167ms)
+  AssertionError [ERR_ASSERTION]: Anthropic cache lineage diverged before transport: message history is not append-only
+  
+  'error' !== 'stop'
+  
+      at TestContext.<anonymous> (<REVIEW_ROOT>/red17/tests/unit/anthropic-attribution-lineage.test.ts:211:14)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'error',
+    expected: 'stop',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/unit/anthropic-attribution-lineage.test.ts:4:3345
+✖ resets shortened history, reanchors, and never resurrects old signatures (1.625417ms)
+  AssertionError [ERR_ASSERTION]: Anthropic cache lineage diverged before transport: message history is not append-only
+  
+  'error' !== 'stop'
+  
+      at TestContext.<anonymous> (<REVIEW_ROOT>/red17/tests/unit/anthropic-attribution-lineage.test.ts:211:14)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'error',
+    expected: 'stop',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/unit/anthropic-attribution-lineage.test.ts:4:3345
+✖ resets cache retention, reanchors, and never resurrects old signatures (2.032291ms)
+  AssertionError [ERR_ASSERTION]: Anthropic cache lineage diverged before transport: message history is not append-only
+  
+  'error' !== 'stop'
+  
+      at TestContext.<anonymous> (<REVIEW_ROOT>/red17/tests/unit/anthropic-attribution-lineage.test.ts:211:14)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'error',
+    expected: 'stop',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/unit/anthropic-attribution-lineage.test.ts:4:3345
+✖ resets disabled caching, reanchors, and never resurrects old signatures (1.065667ms)
+  AssertionError [ERR_ASSERTION]: Anthropic cache lineage diverged before transport: message history is not append-only
+  
+  'error' !== 'stop'
+  
+      at TestContext.<anonymous> (<REVIEW_ROOT>/red17/tests/unit/anthropic-attribution-lineage.test.ts:211:14)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'error',
+    expected: 'stop',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/unit/anthropic-attribution-lineage.test.ts:4:5544
+✖ recovers a reload that drops earlier thinking while retaining stale lineage (1.499125ms)
+  AssertionError [ERR_ASSERTION]: Anthropic cache lineage diverged before transport: message history is not append-only
+  
+  'error' !== 'stop'
+  
+      at TestContext.<anonymous> (<REVIEW_ROOT>/red17/tests/unit/anthropic-attribution-lineage.test.ts:283:12)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'error',
+    expected: 'stop',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/unit/anthropic-attribution-lineage.test.ts:4:6422
+✖ recovers again after a failed reset attempt without persisting a false anchor (0.610417ms)
+  AssertionError [ERR_ASSERTION]: Anthropic cache lineage diverged before transport: model/system/tools/thinking/beta profile changed
+  
+  'error' !== 'stop'
+  
+      at TestContext.<anonymous> (<REVIEW_ROOT>/red17/tests/unit/anthropic-attribution-lineage.test.ts:319:12)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'error',
+    expected: 'stop',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/unit/anthropic-attribution-lineage.test.ts:4:7577
+✖ opens another epoch for history drift under a retained compaction marker (1.204083ms)
+  AssertionError [ERR_ASSERTION]: Anthropic cache lineage diverged before transport: message history is not append-only
+  
+  'error' !== 'stop'
+  
+      at TestContext.<anonymous> (<REVIEW_ROOT>/red17/tests/unit/anthropic-attribution-lineage.test.ts:353:12)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'error',
+    expected: 'stop',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/unit/anthropic-attribution-lineage.test.ts:4:8980
+✖ still rejects middleware messages mutations after a reset, before fetch (0.763833ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (<REVIEW_ROOT>/red17/tests/unit/anthropic-attribution-lineage.test.ts:396:14)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/unit/anthropic-attribution-lineage.test.ts:4:8980
+✖ still rejects middleware thinking mutations after a reset, before fetch (0.641584ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (<REVIEW_ROOT>/red17/tests/unit/anthropic-attribution-lineage.test.ts:396:14)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/unit/anthropic-attribution-lineage.test.ts:4:8980
+✖ still rejects middleware diagnostics mutations after a reset, before fetch (0.734417ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (<REVIEW_ROOT>/red17/tests/unit/anthropic-attribution-lineage.test.ts:396:14)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/unit/anthropic-attribution-lineage.test.ts:4:8980
+✖ still rejects middleware cache_control mutations after a reset, before fetch (0.69525ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (<REVIEW_ROOT>/red17/tests/unit/anthropic-attribution-lineage.test.ts:396:14)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

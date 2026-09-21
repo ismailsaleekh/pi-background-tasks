@@ -9,6 +9,8 @@ covers_sources: []
 ---
 # Choose a workflow
 
+The complete table is available by default. Operators can remove advanced registrations with strict `PI_BG_FEATURES`; a workflow whose capability is disabled is absent rather than executable under a hidden/stale name. See [Configuration](operations/configuration.md). `bg_result` appears only when delegate or Fusion is enabled.
+
 ## Quick decision tree
 
 1. **Is the work short and interactive?** Use ordinary foreground Pi work.

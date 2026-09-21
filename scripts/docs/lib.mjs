@@ -40,6 +40,13 @@ const ALLOWED_MODE = ['generated', 'authored', 'mixed'];
 const ALLOWED_REVIEW = ['contract', 'behavioral'];
 const ALLOWED_STABILITY = ['stable', 'evolving', 'frozen'];
 const PUBLIC_KINDS = ['command', 'tool', 'shortcut', 'renderer', 'eventbus', 'workflow'];
+const DOCS_FEATURE_VALUES = ['process', 'delegate', 'fusion', 'attested', 'attribution'];
+const DOCS_DEFAULT_FEATURES = ['process', 'delegate', 'fusion', 'attested', 'attribution'];
+const DOCS_DOCK_SHORTCUT_VALUES = ['shift+down', 'ctrl+alt+b', 'off'];
+const DOCS_DEFAULT_DOCK_SHORTCUT = 'shift+down';
+const ALWAYS_AVAILABLE = 'always';
+const ANTHROPIC_ATTRIBUTION_CLAIM_CHANNEL = 'pi-anthropic-attribution:claim:v1';
+const ANTHROPIC_ATTRIBUTION_CLAIM_SCHEMA = 'pi-anthropic-attribution.claim.v1';
 const EXCLUDED_PARENT_TOOL_NAMES = new Set(['delegate_read_artifact', 'fusion_web_fetch']);
 const ROOT_MARKDOWN_RELS = [
   'README.md',
@@ -237,6 +244,36 @@ function moduleInfo(ts, root, rel, cache) {
       }
     }
   }
+  const unwrapDynamicImport = (initializer) => {
+    let current = initializer;
+    while (ts.isAwaitExpression(current) || ts.isParenthesizedExpression(current) || ts.isAsExpression(current) || ts.isTypeAssertionExpression(current) || ts.isSatisfiesExpression?.(current)) current = current.expression;
+    if (!ts.isCallExpression(current) || current.expression.kind !== ts.SyntaxKind.ImportKeyword || current.arguments.length !== 1 || !ts.isStringLiteral(current.arguments[0])) return undefined;
+    return current.arguments[0].text;
+  };
+  const scanDynamicImports = (node) => {
+    if (ts.isVariableDeclaration(node) && ts.isObjectBindingPattern(node.name) && node.initializer) {
+      const specifier = unwrapDynamicImport(node.initializer);
+      if (specifier !== undefined) {
+        const target = resolveTsModule(root, rel, specifier);
+        if (target === null) throw new DocsGateError(`${lineOf(sf, node, ts)} registration-bearing dynamic import must target package source`);
+        for (const element of node.name.elements) {
+          if (element.dotDotDotToken || !ts.isIdentifier(element.name)) throw new DocsGateError(`${lineOf(sf, element, ts)} dynamic registration import must use explicit identifier bindings`);
+          const exported = element.propertyName
+            ? ts.isIdentifier(element.propertyName) || ts.isStringLiteral(element.propertyName)
+              ? element.propertyName.text
+              : undefined
+            : element.name.text;
+          if (exported === undefined) throw new DocsGateError(`${lineOf(sf, element, ts)} dynamic registration import has an unsupported property name`);
+          const existing = imports.get(element.name.text);
+          if (existing !== undefined && (existing.rel !== target || existing.exported !== exported)) throw new DocsGateError(`${lineOf(sf, element, ts)} dynamic registration import shadows ${element.name.text}`);
+          imports.set(element.name.text, { rel: target, exported });
+        }
+      }
+    }
+    ts.forEachChild(node, scanDynamicImports);
+  };
+  scanDynamicImports(sf);
+
   const info = { rel, text, sf, imports, externalImports, exportedFunctions, localFunctions, defaultFunction, constDecls };
   cache.set(rel, info);
   return info;
@@ -344,6 +381,201 @@ function resolveIdentifierValue(ts, root, rel, name, cache, stack = []) {
   const external = info.externalImports.get(name);
   if (external) return externalValue(external.specifier, external.exported);
   throw new DocsGateError(`${rel} references unsupported or non-literal identifier ${name}`);
+}
+
+function frozenObjectLiteral(ts, info, expression, context) {
+  const value = stripAsConst(ts, expression);
+  if (
+    !ts.isCallExpression(value) ||
+    value.arguments.length !== 1 ||
+    !ts.isPropertyAccessExpression(value.expression) ||
+    value.expression.expression.getText(info.sf) !== 'Object' ||
+    value.expression.name.text !== 'freeze'
+  ) {
+    throw new DocsGateError(`${context} must return an Object.freeze(...) value`);
+  }
+  const object = stripAsConst(ts, value.arguments[0]);
+  if (!ts.isObjectLiteralExpression(object)) {
+    throw new DocsGateError(`${context} Object.freeze argument must be an object literal`);
+  }
+  return object;
+}
+
+function topLevelConstInitializers(ts, fn) {
+  const declarations = new Map();
+  for (const statement of fn.body?.statements ?? []) {
+    if (
+      !ts.isVariableStatement(statement) ||
+      (statement.declarationList.flags & ts.NodeFlags.Const) === 0
+    ) {
+      continue;
+    }
+    for (const declaration of statement.declarationList.declarations) {
+      if (ts.isIdentifier(declaration.name) && declaration.initializer) {
+        declarations.set(declaration.name.text, declaration.initializer);
+      }
+    }
+  }
+  return declarations;
+}
+
+function soleDirectReturn(ts, info, fn, context) {
+  const returns = [];
+  const scan = (node) => {
+    if (node !== fn && ts.isFunctionLike(node)) return;
+    if (ts.isReturnStatement(node)) returns.push(node);
+    ts.forEachChild(node, scan);
+  };
+  scan(fn.body);
+  const returned = returns[0];
+  if (
+    returns.length !== 1 ||
+    returned?.expression === undefined ||
+    returned.parent !== fn.body ||
+    fn.body.statements.at(-1) !== returned
+  ) {
+    throw new DocsGateError(
+      `${lineOf(info.sf, fn, ts)} ${context} must have exactly one reachable direct immutable return as its final statement`,
+    );
+  }
+  return returned;
+}
+
+function assertImmutableVariantParser(ts, root, rel, cache) {
+  const info = moduleInfo(ts, root, rel, cache);
+  const parser = findExportedFunction(
+    ts,
+    root,
+    rel,
+    'parseBackgroundTasksConfig',
+    cache,
+  );
+  if (parser.rel !== rel || !parser.node.body) {
+    throw new DocsGateError(`${rel} variant parser must be a local function with a block body`);
+  }
+  const parserReturn = soleDirectReturn(ts, info, parser.node, 'variant parser');
+  const returnedConfig = frozenObjectLiteral(
+    ts,
+    info,
+    parserReturn.expression,
+    `${rel} parseBackgroundTasksConfig`,
+  );
+  const returnedKeys = [];
+  for (const property of returnedConfig.properties) {
+    if (!ts.isShorthandPropertyAssignment(property)) {
+      throw new DocsGateError(
+        `${lineOf(info.sf, property, ts)} variant parser return fields must be immutable shorthand bindings`,
+      );
+    }
+    returnedKeys.push(property.name.text);
+  }
+  if (JSON.stringify(returnedKeys) !== JSON.stringify(['features', 'dockShortcut'])) {
+    throw new DocsGateError(
+      `${rel} variant parser must freeze exactly the features and dockShortcut bindings`,
+    );
+  }
+
+  const parserBindings = topLevelConstInitializers(ts, parser.node);
+  const featuresInitializer = stripAsConst(ts, parserBindings.get('features'));
+  if (
+    !featuresInitializer ||
+    !ts.isCallExpression(featuresInitializer) ||
+    !ts.isIdentifier(stripAsConst(ts, featuresInitializer.expression))
+  ) {
+    throw new DocsGateError(`${rel} variant parser features binding must call a local parser`);
+  }
+  const featuresParserName = stripAsConst(ts, featuresInitializer.expression).text;
+  const featuresParser = info.localFunctions.get(featuresParserName);
+  if (!featuresParser?.body || !parserBindings.has('dockShortcut')) {
+    throw new DocsGateError(`${rel} variant parser must bind local feature and dock parsers`);
+  }
+  const featureReturn = soleDirectReturn(ts, info, featuresParser, 'feature parser');
+  const returnedFeatures = frozenObjectLiteral(
+    ts,
+    info,
+    featureReturn.expression,
+    `${rel} ${featuresParserName}`,
+  );
+  const featureProperties = new Map();
+  for (const property of returnedFeatures.properties) {
+    if (!ts.isPropertyAssignment(property) || !ts.isIdentifier(property.name)) {
+      throw new DocsGateError(
+        `${lineOf(info.sf, property, ts)} feature parser fields must be explicit assignments`,
+      );
+    }
+    featureProperties.set(property.name.text, stripAsConst(ts, property.initializer));
+  }
+  if (
+    JSON.stringify([...featureProperties.keys()]) !== JSON.stringify(DOCS_FEATURE_VALUES) ||
+    featureProperties.get('process')?.kind !== ts.SyntaxKind.TrueKeyword
+  ) {
+    throw new DocsGateError(`${rel} feature parser must freeze the exact finite feature record`);
+  }
+  let selectedBinding;
+  for (const feature of DOCS_FEATURE_VALUES.slice(1)) {
+    const initializer = featureProperties.get(feature);
+    if (
+      !initializer ||
+      !ts.isCallExpression(initializer) ||
+      initializer.arguments.length !== 1 ||
+      !ts.isPropertyAccessExpression(initializer.expression) ||
+      initializer.expression.name.text !== 'has' ||
+      !ts.isIdentifier(stripAsConst(ts, initializer.expression.expression)) ||
+      !ts.isStringLiteral(initializer.arguments[0]) ||
+      initializer.arguments[0].text !== feature
+    ) {
+      throw new DocsGateError(`${rel} feature parser field ${feature} is not structurally validated`);
+    }
+    const binding = stripAsConst(ts, initializer.expression.expression).text;
+    selectedBinding ??= binding;
+    if (binding !== selectedBinding) {
+      throw new DocsGateError(`${rel} feature parser fields must read one validated selection set`);
+    }
+  }
+}
+
+function variantContractFromModule(ts, root, rel, cache) {
+  assertImmutableVariantParser(ts, root, rel, cache);
+  const read = (name) => resolveIdentifierValue(ts, root, rel, name, cache);
+  const featureValues = read('PI_BG_FEATURE_VALUES');
+  const defaultFeatures = read('PI_BG_DEFAULT_FEATURES');
+  const dockShortcutValues = read('PI_BG_DOCK_SHORTCUT_VALUES');
+  const defaultDockShortcut = read('PI_BG_DEFAULT_DOCK_SHORTCUT');
+  const assertExact = (label, actual, expected) => {
+    if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+      throw new DocsGateError(
+        `${rel} runtime/docs variant enum drift for ${label}: expected ${JSON.stringify(expected)}, received ${JSON.stringify(actual)}`,
+      );
+    }
+  };
+  assertExact('PI_BG_FEATURE_VALUES', featureValues, DOCS_FEATURE_VALUES);
+  assertExact('PI_BG_DEFAULT_FEATURES', defaultFeatures, DOCS_DEFAULT_FEATURES);
+  assertExact('PI_BG_DOCK_SHORTCUT_VALUES', dockShortcutValues, DOCS_DOCK_SHORTCUT_VALUES);
+  assertExact('PI_BG_DEFAULT_DOCK_SHORTCUT', defaultDockShortcut, DOCS_DEFAULT_DOCK_SHORTCUT);
+  return {
+    feature_values: [...featureValues],
+    default_features: [...defaultFeatures],
+    dock_shortcut_values: [...dockShortcutValues],
+    default_dock_shortcut: defaultDockShortcut,
+    source: rel,
+  };
+}
+
+function isDefaultAvailability(availability, variants) {
+  if (availability === ALWAYS_AVAILABLE) return true;
+  if (availability.startsWith('feature:')) {
+    return variants.default_features.includes(availability.slice('feature:'.length));
+  }
+  if (availability === 'any(feature:delegate,feature:fusion)') {
+    return (
+      variants.default_features.includes('delegate') ||
+      variants.default_features.includes('fusion')
+    );
+  }
+  if (availability.startsWith('dock:')) {
+    return variants.default_dock_shortcut === availability.slice('dock:'.length);
+  }
+  throw new DocsGateError(`unsupported normalized availability expression ${availability}`);
 }
 
 function resolveIdentifierExpr(ts, root, rel, name, cache, stack = []) {
@@ -578,7 +810,18 @@ const PUBLIC_REGISTRATION_METHODS = new Set([
 ]);
 const NON_PUBLIC_REGISTRATION_METHODS = new Set(['registerProvider']);
 
-function collectRegistrationsInFunction(ts, root, rel, fn, piParamName, cache, regs, visitedFns) {
+function collectRegistrationsInFunction(
+  ts,
+  root,
+  rel,
+  fn,
+  piParamName,
+  cache,
+  regs,
+  visitedFns,
+  inheritedAvailability = ALWAYS_AVAILABLE,
+  inheritedConfigBindings = new Map(),
+) {
   const info = moduleInfo(ts, root, rel, cache);
   const localWrapperNames = new Set();
   const wrapperPublicKeys = [
@@ -618,6 +861,248 @@ function collectRegistrationsInFunction(ts, root, rel, fn, piParamName, cache, r
     if (!isPiHostExpression(unwrapped.expression)) return undefined;
     return unwrapped;
   };
+  const bindingNames = (name, out = new Set()) => {
+    if (ts.isIdentifier(name)) {
+      out.add(name.text);
+      return out;
+    }
+    if (ts.isObjectBindingPattern(name) || ts.isArrayBindingPattern(name)) {
+      for (const element of name.elements) {
+        if (ts.isBindingElement(element)) bindingNames(element.name, out);
+      }
+    }
+    return out;
+  };
+  const destructuredRegistrationBinding = (name) => {
+    if (ts.isIdentifier(name)) return name.text.startsWith('register') ? name.text : undefined;
+    if (ts.isObjectBindingPattern(name) || ts.isArrayBindingPattern(name)) {
+      for (const element of name.elements) {
+        if (!ts.isBindingElement(element)) continue;
+        const property = element.propertyName;
+        if (
+          property &&
+          (ts.isIdentifier(property) || ts.isStringLiteral(property)) &&
+          property.text.startsWith('register')
+        ) {
+          return property.text;
+        }
+        if (property && ts.isComputedPropertyName(property)) {
+          let computed;
+          try {
+            computed = literalValue(ts, root, rel, property.expression, cache);
+          } catch {
+            computed = undefined;
+          }
+          if (typeof computed === 'string' && computed.startsWith('register')) return computed;
+        }
+        const nested = destructuredRegistrationBinding(element.name);
+        if (nested !== undefined) return nested;
+      }
+    }
+    return undefined;
+  };
+  const isLiteralDynamicRegistrationBinding = (element) => {
+    if (!ts.isBindingElement(element) || !ts.isIdentifier(element.name)) return false;
+    const pattern = element.parent;
+    if (!ts.isObjectBindingPattern(pattern)) return false;
+    const declaration = pattern.parent;
+    if (!ts.isVariableDeclaration(declaration) || !declaration.initializer) return false;
+    let initializer = declaration.initializer;
+    while (ts.isAwaitExpression(initializer) || ts.isParenthesizedExpression(initializer) || ts.isAsExpression(initializer) || ts.isTypeAssertionExpression(initializer) || ts.isSatisfiesExpression(initializer)) initializer = initializer.expression;
+    if (!ts.isCallExpression(initializer) || initializer.expression.kind !== ts.SyntaxKind.ImportKeyword || initializer.arguments.length !== 1 || !ts.isStringLiteral(initializer.arguments[0])) return false;
+    const target = resolveTsModule(root, rel, initializer.arguments[0].text);
+    const imported = info.imports.get(element.name.text);
+    return target !== null && imported?.rel === target;
+  };
+  const localBindingNames = new Set();
+  for (const parameter of fn.parameters ?? []) bindingNames(parameter.name, localBindingNames);
+  const collectLocalBindings = (node) => {
+    if (node !== fn.body && ts.isFunctionLike(node)) {
+      if (ts.isFunctionDeclaration(node) && node.name) localBindingNames.add(node.name.text);
+      return;
+    }
+    if (ts.isVariableDeclaration(node)) bindingNames(node.name, localBindingNames);
+    if (ts.isClassDeclaration(node) && node.name) localBindingNames.add(node.name.text);
+    if (ts.isCatchClause(node) && node.variableDeclaration) {
+      bindingNames(node.variableDeclaration.name, localBindingNames);
+    }
+    ts.forEachChild(node, collectLocalBindings);
+  };
+  if (fn.body) collectLocalBindings(fn.body);
+
+  const configBindings = new Map(inheritedConfigBindings);
+  for (const name of inheritedConfigBindings.keys()) {
+    if (localBindingNames.has(name)) {
+      throw new DocsGateError(
+        `${lineOf(info.sf, fn, ts)} registration-owning nested scope shadows inherited finite config authority ${name}`,
+      );
+    }
+  }
+  if (fn.body && ts.isBlock(fn.body)) {
+    for (const statement of fn.body.statements) {
+      if (!ts.isVariableStatement(statement)) continue;
+      if ((statement.declarationList.flags & ts.NodeFlags.Const) === 0) continue;
+      for (const declaration of statement.declarationList.declarations) {
+        if (!ts.isIdentifier(declaration.name) || !declaration.initializer) continue;
+        const initializer = unwrapExpression(declaration.initializer);
+        if (!ts.isCallExpression(initializer) || initializer.arguments.length !== 0) continue;
+        const callee = calleeIdentifier(initializer.expression);
+        if (!callee) continue;
+        const imported = info.imports.get(callee.text);
+        if (!imported || imported.exported !== 'parseBackgroundTasksConfig') continue;
+        if (
+          localBindingNames.has(callee.text) ||
+          info.constDecls.has(callee.text) ||
+          info.localFunctions.has(callee.text)
+        ) {
+          throw new DocsGateError(
+            `${lineOf(info.sf, initializer, ts)} config parser call must resolve to the unshadowed imported parseBackgroundTasksConfig binding`,
+          );
+        }
+        configBindings.set(
+          declaration.name.text,
+          variantContractFromModule(ts, root, imported.rel, cache),
+        );
+      }
+    }
+  }
+  const featureAvailabilityAtom = (condition) => {
+    const expression = unwrapExpression(condition);
+    if (!ts.isPropertyAccessExpression(expression)) return undefined;
+    const feature = expression.name.text;
+    const featuresAccess = unwrapExpression(expression.expression);
+    if (
+      !ts.isPropertyAccessExpression(featuresAccess) ||
+      featuresAccess.name.text !== 'features'
+    ) {
+      return undefined;
+    }
+    const binding = unwrapExpression(featuresAccess.expression);
+    if (!ts.isIdentifier(binding) || !configBindings.has(binding.text)) return undefined;
+    if (!['delegate', 'fusion', 'attested', 'attribution'].includes(feature)) {
+      throw new DocsGateError(
+        `${lineOf(info.sf, condition, ts)} unsupported feature availability condition ${feature}`,
+      );
+    }
+    return `feature:${feature}`;
+  };
+  const dockAvailabilityAtom = (condition) => {
+    const expression = unwrapExpression(condition);
+    if (
+      !ts.isBinaryExpression(expression) ||
+      expression.operatorToken.kind !== ts.SyntaxKind.EqualsEqualsEqualsToken
+    ) {
+      return undefined;
+    }
+    const left = unwrapExpression(expression.left);
+    const right = unwrapExpression(expression.right);
+    if (!ts.isPropertyAccessExpression(left) || left.name.text !== 'dockShortcut') {
+      return undefined;
+    }
+    const binding = unwrapExpression(left.expression);
+    if (!ts.isIdentifier(binding) || !configBindings.has(binding.text)) return undefined;
+    if (!ts.isStringLiteral(right) && !ts.isNoSubstitutionTemplateLiteral(right)) {
+      throw new DocsGateError(
+        `${lineOf(info.sf, condition, ts)} dock availability must compare with one literal shortcut`,
+      );
+    }
+    if (!['shift+down', 'ctrl+alt+b'].includes(right.text)) {
+      throw new DocsGateError(
+        `${lineOf(info.sf, condition, ts)} dock availability ${right.text} cannot register a shortcut; off registers nothing`,
+      );
+    }
+    return `dock:${right.text}`;
+  };
+  const finiteAvailability = (condition) => {
+    const feature = featureAvailabilityAtom(condition);
+    if (feature !== undefined) return feature;
+    const dock = dockAvailabilityAtom(condition);
+    if (dock !== undefined) return dock;
+    const expression = unwrapExpression(condition);
+    if (
+      ts.isBinaryExpression(expression) &&
+      expression.operatorToken.kind === ts.SyntaxKind.BarBarToken
+    ) {
+      const left = featureAvailabilityAtom(expression.left);
+      const right = featureAvailabilityAtom(expression.right);
+      if (
+        left !== undefined &&
+        right !== undefined &&
+        new Set([left, right]).size === 2 &&
+        [left, right].every((value) =>
+          ['feature:delegate', 'feature:fusion'].includes(value),
+        )
+      ) {
+        return 'any(feature:delegate,feature:fusion)';
+      }
+      throw new DocsGateError(
+        `${lineOf(info.sf, condition, ts)} unsupported derived availability expression`,
+      );
+    }
+    throw new DocsGateError(
+      `${lineOf(info.sf, condition, ts)} unrecognized finite variant condition`,
+    );
+  };
+  const isAllowedConfigBindingUse = (node) => {
+    if (
+      ts.isVariableDeclaration(node.parent) &&
+      node.parent.name === node &&
+      configBindings.has(node.text)
+    ) {
+      return true;
+    }
+    const directAccess = node.parent;
+    if (
+      ts.isPropertyAccessExpression(directAccess) &&
+      directAccess.expression === node &&
+      directAccess.name.text === 'dockShortcut' &&
+      ts.isCallExpression(directAccess.parent) &&
+      directAccess.parent.arguments.length === 1 &&
+      directAccess.parent.arguments[0] === directAccess
+    ) {
+      const callee = calleeIdentifier(directAccess.parent.expression);
+      const imported = callee && info.imports.get(callee.text);
+      const parserImport = [...info.imports.values()].find(
+        (candidate) => candidate.exported === 'parseBackgroundTasksConfig',
+      );
+      if (
+        imported?.exported === 'dockShortcutFooterHint' &&
+        parserImport?.rel === imported.rel
+      ) {
+        return true;
+      }
+    }
+    let current = node;
+    while (current.parent && current.parent !== fn) {
+      const parent = current.parent;
+      if (ts.isIfStatement(parent) && parent.expression === current) {
+        if (
+          !ts.isBlock(fn.body) ||
+          parent.parent !== fn.body ||
+          !ts.isBlock(parent.thenStatement) ||
+          parent.elseStatement !== undefined
+        ) {
+          return false;
+        }
+        finiteAvailability(parent.expression);
+        return true;
+      }
+      if (
+        ts.isPropertyAccessExpression(parent) ||
+        ts.isParenthesizedExpression(parent) ||
+        ts.isAsExpression(parent) ||
+        ts.isTypeAssertionExpression(parent) ||
+        ts.isNonNullExpression(parent) ||
+        ts.isSatisfiesExpression(parent) ||
+        ts.isBinaryExpression(parent)
+      ) {
+        current = parent;
+        continue;
+      }
+      return false;
+    }
+    return false;
+  };
   const isDirectCallTarget = (node) => {
     let current = node;
     while (
@@ -640,23 +1125,57 @@ function collectRegistrationsInFunction(ts, root, rel, fn, piParamName, cache, r
     ts.isBinaryExpression(node) &&
     node.operatorToken.kind >= ts.SyntaxKind.FirstAssignment &&
     node.operatorToken.kind <= ts.SyntaxKind.LastAssignment;
-  const assertImmediateRegistrationCall = (call, body, context) => {
-    if (
-      !body ||
-      !ts.isBlock(body) ||
-      !ts.isExpressionStatement(call.parent) ||
-      call.parent.parent !== body
-    ) {
+  const registrationAvailability = (call, body, context, allowVariant = true) => {
+    if (!body || !ts.isBlock(body) || !ts.isExpressionStatement(call.parent)) {
       throw new DocsGateError(
         `${lineOf(info.sf, call, ts)} ${context} must be an immediate top-level statement`,
       );
     }
+    if (call.parent.parent === body) return inheritedAvailability;
+    const block = call.parent.parent;
+    const branch = block.parent;
+    if (
+      allowVariant &&
+      ts.isBlock(block) &&
+      ts.isIfStatement(branch) &&
+      branch.thenStatement === block &&
+      branch.elseStatement === undefined &&
+      branch.parent === body
+    ) {
+      if (inheritedAvailability !== ALWAYS_AVAILABLE) {
+        throw new DocsGateError(
+          `${lineOf(info.sf, call, ts)} nested availability expressions are unsupported`,
+        );
+      }
+      if (configBindings.size === 0) {
+        throw new DocsGateError(
+          `${lineOf(info.sf, call, ts)} ${context} must be an immediate top-level statement`,
+        );
+      }
+      return finiteAvailability(branch.expression);
+    }
+    throw new DocsGateError(
+      `${lineOf(info.sf, call, ts)} ${context} must be an immediate top-level statement`,
+    );
   };
   const expressionContainsLocalWrapper = (rootNode) => {
     let found = false;
     const scan = (node) => {
       if (found) return;
       if (ts.isIdentifier(node) && localWrapperNames.has(node.text)) {
+        found = true;
+        return;
+      }
+      ts.forEachChild(node, scan);
+    };
+    scan(rootNode);
+    return found;
+  };
+  const expressionContainsConfigAuthority = (rootNode) => {
+    let found = false;
+    const scan = (node) => {
+      if (found) return;
+      if (ts.isIdentifier(node) && configBindings.has(node.text)) {
         found = true;
         return;
       }
@@ -753,6 +1272,67 @@ function collectRegistrationsInFunction(ts, root, rel, fn, piParamName, cache, r
     return unsafe;
   };
 
+  const computedRegistrationMethod = (node) => {
+    if (!ts.isElementAccessExpression(node) || !node.argumentExpression) return undefined;
+    try {
+      const value = literalValue(ts, root, rel, node.argumentExpression, cache);
+      return typeof value === 'string' && value.startsWith('register') ? value : undefined;
+    } catch {
+      return undefined;
+    }
+  };
+
+  for (const parameter of fn.parameters ?? []) {
+    if (!ts.isIdentifier(parameter.name)) {
+      const registrationBinding = destructuredRegistrationBinding(parameter.name);
+      if (registrationBinding !== undefined) {
+        throw new DocsGateError(
+          `${lineOf(info.sf, parameter, ts)} destructured registration binding ${registrationBinding} is unsupported`,
+        );
+      }
+    }
+    if (!parameter.initializer) continue;
+    let hasRegistrationAccess = false;
+    let hasInitializerControlFlow = false;
+    const scanInitializer = (node) => {
+      if (
+        ts.isPropertyAccessExpression(node) &&
+        (node.name.text.startsWith('register') || node.name.text === 'events')
+      ) {
+        hasRegistrationAccess = true;
+      }
+      if (computedRegistrationMethod(node) !== undefined) hasRegistrationAccess = true;
+      if (
+        ts.isCallExpression(node) ||
+        ts.isNewExpression(node) ||
+        ts.isFunctionLike(node) ||
+        ts.isReturnStatement(node) ||
+        ts.isThrowStatement(node) ||
+        ts.isConditionalExpression(node) ||
+        ts.isAwaitExpression(node) ||
+        ts.isYieldExpression(node)
+      ) {
+        hasInitializerControlFlow = true;
+      }
+      ts.forEachChild(node, scanInitializer);
+    };
+    scanInitializer(parameter.initializer);
+    if (hasInitializerControlFlow) {
+      throw new DocsGateError(
+        `${lineOf(info.sf, parameter, ts)} registration-owning parameter initializer contains unsupported throw or control flow`,
+      );
+    }
+    if (
+      (ts.isIdentifier(parameter.name) && parameter.name.text === piParamName) ||
+      expressionContainsUnsafePiUse(parameter.initializer) ||
+      hasRegistrationAccess
+    ) {
+      throw new DocsGateError(
+        `${lineOf(info.sf, parameter, ts)} registration-owning parameter initializer must not alias or derive the Pi registration host`,
+      );
+    }
+  }
+
   const validateToolWrapper = (node) => {
     if (!node.name || !node.body || node.parameters.length !== 1) {
       throw new DocsGateError(
@@ -845,10 +1425,11 @@ function collectRegistrationsInFunction(ts, root, rel, fn, piParamName, cache, r
       );
     }
     const registration = calls[0].call;
-    assertImmediateRegistrationCall(
+    registrationAvailability(
       registration,
       node.body,
       'tool wrapper registerTool call',
+      false,
     );
     const options = registration.arguments[0];
     if (!options) {
@@ -916,7 +1497,9 @@ function collectRegistrationsInFunction(ts, root, rel, fn, piParamName, cache, r
 
   const containsUnsupportedNestedRegistration = (rootNode) => {
     let found =
-      expressionContainsUnsafePiUse(rootNode) || expressionContainsLocalWrapper(rootNode);
+      expressionContainsUnsafePiUse(rootNode) ||
+      expressionContainsLocalWrapper(rootNode) ||
+      expressionContainsConfigAuthority(rootNode);
     const scan = (node) => {
       if (found) return;
       if (
@@ -935,13 +1518,24 @@ function collectRegistrationsInFunction(ts, root, rel, fn, piParamName, cache, r
         found = true;
         return;
       }
-      if (ts.isElementAccessExpression(node) && isPiHostExpression(node.expression)) {
+      if (
+        ts.isBindingElement(node) &&
+        destructuredRegistrationBinding(node.parent) !== undefined
+      ) {
+        found = true;
+        return;
+      }
+      if (
+        ts.isElementAccessExpression(node) &&
+        (isPiHostExpression(node.expression) ||
+          computedRegistrationMethod(node) !== undefined ||
+          isDirectCallTarget(node))
+      ) {
         found = true;
         return;
       }
       if (
         ts.isPropertyAccessExpression(node) &&
-        isPiHostExpression(node.expression) &&
         node.name.text.startsWith('register')
       ) {
         found = true;
@@ -965,6 +1559,245 @@ function collectRegistrationsInFunction(ts, root, rel, fn, piParamName, cache, r
     return found;
   };
 
+  const allowedClaimGuardReturns = new Set();
+  if (fn.body && ts.isBlock(fn.body)) {
+    const constInitializers = topLevelConstInitializers(ts, fn);
+    const directPiEventCall = (node, method) => {
+      const call = unwrapExpression(node);
+      if (!ts.isCallExpression(call)) return undefined;
+      const access = unwrapExpression(call.expression);
+      if (!ts.isPropertyAccessExpression(access) || access.name.text !== method) return undefined;
+      const eventsAccess = unwrapExpression(access.expression);
+      if (
+        !ts.isPropertyAccessExpression(eventsAccess) ||
+        eventsAccess.name.text !== 'events' ||
+        !isPiHostExpression(eventsAccess.expression)
+      ) {
+        return undefined;
+      }
+      return call;
+    };
+    const claimChannelValue = (expression, location) => {
+      let value;
+      try {
+        value = literalValue(ts, root, rel, expression, cache);
+      } catch {
+        value = undefined;
+      }
+      if (value !== ANTHROPIC_ATTRIBUTION_CLAIM_CHANNEL) {
+        throw new DocsGateError(
+          `${lineOf(info.sf, location, ts)} duplicate-owner claim guard must emit exact channel ${ANTHROPIC_ATTRIBUTION_CLAIM_CHANNEL}`,
+        );
+      }
+    };
+
+    for (const [statementIndex, statement] of fn.body.statements.entries()) {
+      if (!ts.isIfStatement(statement) || statement.elseStatement !== undefined) continue;
+      const condition = unwrapExpression(statement.expression);
+      if (
+        !ts.isBinaryExpression(condition) ||
+        condition.operatorToken.kind !== ts.SyntaxKind.GreaterThanToken ||
+        !ts.isNumericLiteral(unwrapExpression(condition.right)) ||
+        Number(unwrapExpression(condition.right).text) !== 0
+      ) {
+        continue;
+      }
+      const lengthAccess = unwrapExpression(condition.left);
+      if (
+        !ts.isPropertyAccessExpression(lengthAccess) ||
+        lengthAccess.name.text !== 'length' ||
+        !ts.isIdentifier(unwrapExpression(lengthAccess.expression))
+      ) {
+        continue;
+      }
+      const acknowledgements = unwrapExpression(lengthAccess.expression).text;
+      const acknowledgementInitializer = constInitializers.get(acknowledgements);
+      const acknowledgementArray =
+        acknowledgementInitializer && unwrapExpression(acknowledgementInitializer);
+      if (
+        !acknowledgementArray ||
+        !ts.isArrayLiteralExpression(acknowledgementArray) ||
+        acknowledgementArray.elements.length !== 0
+      ) {
+        continue;
+      }
+
+      const guardedReturn = ts.isReturnStatement(statement.thenStatement)
+        ? statement.thenStatement
+        : ts.isBlock(statement.thenStatement) && statement.thenStatement.statements.length === 1 &&
+            ts.isReturnStatement(statement.thenStatement.statements[0])
+          ? statement.thenStatement.statements[0]
+          : undefined;
+      if (!guardedReturn || guardedReturn.expression !== undefined) continue;
+
+      const candidate = fn.body.statements[statementIndex - 1];
+      if (!candidate || !ts.isExpressionStatement(candidate)) continue;
+      const emit = directPiEventCall(candidate.expression, 'emit');
+      if (!emit || emit.arguments.length !== 2) continue;
+      claimChannelValue(emit.arguments[0], emit);
+
+      for (const preceding of fn.body.statements.slice(0, statementIndex - 1)) {
+        if (!ts.isExpressionStatement(preceding)) continue;
+        const listener = directPiEventCall(preceding.expression, 'on');
+        if (!listener || listener.arguments.length < 1) continue;
+        let listenerChannel;
+        try {
+          listenerChannel = literalValue(ts, root, rel, listener.arguments[0], cache);
+        } catch {
+          listenerChannel = undefined;
+        }
+        if (listenerChannel === ANTHROPIC_ATTRIBUTION_CLAIM_CHANNEL) {
+          throw new DocsGateError(
+            `${lineOf(info.sf, listener, ts)} duplicate-owner claim guard must not install a local claim listener before its probe`,
+          );
+        }
+      }
+
+      const probeArgument = unwrapExpression(emit.arguments[1]);
+      if (!ts.isIdentifier(probeArgument)) {
+        throw new DocsGateError(
+          `${lineOf(info.sf, emit, ts)} duplicate-owner claim guard must emit one validated probe binding`,
+        );
+      }
+      const probeInitializer = constInitializers.get(probeArgument.text);
+      const probeObject = probeInitializer && unwrapExpression(probeInitializer);
+      if (!probeObject || !ts.isObjectLiteralExpression(probeObject)) {
+        throw new DocsGateError(
+          `${lineOf(info.sf, emit, ts)} duplicate-owner claim guard probe must be a top-level const object`,
+        );
+      }
+      const probeProperties = new Map();
+      for (const property of probeObject.properties) {
+        if (
+          !ts.isPropertyAssignment(property) ||
+          (!ts.isIdentifier(property.name) && !ts.isStringLiteral(property.name))
+        ) {
+          throw new DocsGateError(
+            `${lineOf(info.sf, property, ts)} duplicate-owner claim guard probe must use exact explicit fields`,
+          );
+        }
+        probeProperties.set(property.name.text, property);
+      }
+      if (
+        probeProperties.size !== 2 ||
+        !probeProperties.has('schema_version') ||
+        !probeProperties.has('acknowledge')
+      ) {
+        throw new DocsGateError(
+          `${lineOf(info.sf, probeObject, ts)} duplicate-owner claim guard probe must contain exactly schema_version and acknowledge`,
+        );
+      }
+      const schemaProperty = probeProperties.get('schema_version');
+      let schemaValue;
+      try {
+        schemaValue = literalValue(ts, root, rel, schemaProperty.initializer, cache);
+      } catch {
+        schemaValue = undefined;
+      }
+      if (schemaValue !== ANTHROPIC_ATTRIBUTION_CLAIM_SCHEMA) {
+        throw new DocsGateError(
+          `${lineOf(info.sf, schemaProperty, ts)} duplicate-owner claim guard must use exact schema ${ANTHROPIC_ATTRIBUTION_CLAIM_SCHEMA}`,
+        );
+      }
+
+      const acknowledgeProperty = probeProperties.get('acknowledge');
+      const callback = unwrapExpression(acknowledgeProperty.initializer);
+      if (
+        (!ts.isArrowFunction(callback) && !ts.isFunctionExpression(callback)) ||
+        callback.parameters.length !== 0
+      ) {
+        throw new DocsGateError(
+          `${lineOf(info.sf, acknowledgeProperty, ts)} duplicate-owner claim guard acknowledge field must be a zero-argument callback`,
+        );
+      }
+      const callbackStatement = ts.isBlock(callback.body)
+        ? callback.body.statements.length === 1
+          ? callback.body.statements[0]
+          : undefined
+        : undefined;
+      const appendExpression = callbackStatement && ts.isExpressionStatement(callbackStatement)
+        ? unwrapExpression(callbackStatement.expression)
+        : !ts.isBlock(callback.body)
+          ? unwrapExpression(callback.body)
+          : undefined;
+      if (
+        !appendExpression ||
+        !ts.isCallExpression(appendExpression) ||
+        appendExpression.arguments.length !== 1 ||
+        appendExpression.arguments[0].kind !== ts.SyntaxKind.TrueKeyword ||
+        !ts.isPropertyAccessExpression(unwrapExpression(appendExpression.expression)) ||
+        unwrapExpression(appendExpression.expression).name.text !== 'push' ||
+        !ts.isIdentifier(
+          unwrapExpression(unwrapExpression(appendExpression.expression).expression),
+        ) ||
+        unwrapExpression(unwrapExpression(appendExpression.expression).expression).text !==
+          acknowledgements
+      ) {
+        throw new DocsGateError(
+          `${lineOf(info.sf, acknowledgeProperty, ts)} duplicate-owner claim guard acknowledge callback must append true to its acknowledgement array`,
+        );
+      }
+      let acknowledgementUses = 0;
+      let probeUses = 0;
+      const countGuardBindings = (node) => {
+        if (ts.isIdentifier(node) && node.text === acknowledgements) acknowledgementUses += 1;
+        if (ts.isIdentifier(node) && node.text === probeArgument.text) probeUses += 1;
+        ts.forEachChild(node, countGuardBindings);
+      };
+      countGuardBindings(fn.body);
+      if (acknowledgementUses === 3 && probeUses === 2) {
+        allowedClaimGuardReturns.add(guardedReturn);
+      }
+    }
+  }
+
+  const sessionStartRegistrationCallback = (node) => {
+    const call = node.parent;
+    if (!ts.isCallExpression(call) || call.arguments[1] !== node) return undefined;
+    const access = directRegistrationAccess(call.expression);
+    if (access?.name.text !== 'on') return undefined;
+    const eventName = call.arguments[0] && unwrapExpression(call.arguments[0]);
+    if (
+      !eventName ||
+      (!ts.isStringLiteral(eventName) && !ts.isNoSubstitutionTemplateLiteral(eventName)) ||
+      eventName.text !== 'session_start'
+    ) {
+      return undefined;
+    }
+    let ownsRegistrations = false;
+    const scan = (child) => {
+      if (ownsRegistrations) return;
+      if (child !== node && ts.isFunctionLike(child)) return;
+      if (
+        ts.isPropertyAccessExpression(child) &&
+        child.name.text.startsWith('register')
+      ) {
+        ownsRegistrations = true;
+        return;
+      }
+      if (ts.isCallExpression(child)) {
+        const callee = calleeIdentifier(child.expression);
+        if (
+          callee &&
+          info.imports.has(callee.text) &&
+          isPiHostExpression(child.arguments[0])
+        ) {
+          ownsRegistrations = true;
+          return;
+        }
+      }
+      ts.forEachChild(child, scan);
+    };
+    scan(node.body);
+    if (!ownsRegistrations) return undefined;
+    if (!ts.isBlock(node.body)) {
+      throw new DocsGateError(
+        `${lineOf(info.sf, node, ts)} registration-owning session_start callback must have a block body`,
+      );
+    }
+    return registrationAvailability(call, fn.body, 'registration-owning session_start callback');
+  };
+
   function visit(node) {
     if (node !== fn && ts.isFunctionLike(node)) {
       if (
@@ -974,12 +1807,50 @@ function collectRegistrationsInFunction(ts, root, rel, fn, piParamName, cache, r
       ) {
         return;
       }
+      const callbackAvailability = sessionStartRegistrationCallback(node);
+      if (callbackAvailability !== undefined) {
+        collectRegistrationsInFunction(
+          ts,
+          root,
+          rel,
+          node,
+          piParamName,
+          cache,
+          regs,
+          visitedFns,
+          callbackAvailability,
+          configBindings,
+        );
+        return;
+      }
       if (containsUnsupportedNestedRegistration(node)) {
         throw new DocsGateError(
           `${lineOf(info.sf, node, ts)} unsupported nested registration helper or invocation`,
         );
       }
       return;
+    }
+    if (
+      ts.isReturnStatement(node) &&
+      !allowedClaimGuardReturns.has(node)
+    ) {
+      throw new DocsGateError(
+        `${lineOf(info.sf, node, ts)} registration-owning scope contains unsupported early return control flow`,
+      );
+    }
+    if (ts.isThrowStatement(node)) {
+      throw new DocsGateError(
+        `${lineOf(info.sf, node, ts)} registration-owning scope contains unsupported throw control flow`,
+      );
+    }
+    if (
+      ts.isIdentifier(node) &&
+      configBindings.has(node.text) &&
+      !isAllowedConfigBindingUse(node)
+    ) {
+      throw new DocsGateError(
+        `${lineOf(info.sf, node, ts)} finite config binding ${node.text} escapes its validated availability condition`,
+      );
     }
     if (
       ts.isIdentifier(node) &&
@@ -1017,9 +1888,41 @@ function collectRegistrationsInFunction(ts, root, rel, fn, piParamName, cache, r
         `${lineOf(info.sf, node, ts)} assigning a Pi registration host or registration wrapper alias is unsupported`,
       );
     }
+    if (ts.isBindingElement(node)) {
+      const registrationBinding = destructuredRegistrationBinding(node.parent);
+      if (registrationBinding !== undefined && !isLiteralDynamicRegistrationBinding(node)) {
+        throw new DocsGateError(
+          `${lineOf(info.sf, node, ts)} destructured registration binding ${registrationBinding} is unsupported`,
+        );
+      }
+    }
     if (ts.isElementAccessExpression(node) && isPiHostExpression(node.expression)) {
       throw new DocsGateError(
         `${lineOf(info.sf, node, ts)} element access on the Pi registration host is unsupported`,
+      );
+    }
+    const computedMethod = computedRegistrationMethod(node);
+    if (
+      ts.isElementAccessExpression(node) &&
+      !isPiHostExpression(node.expression) &&
+      isDirectCallTarget(node)
+    ) {
+      if (computedMethod !== undefined) {
+        throw new DocsGateError(
+          `${lineOf(info.sf, node, ts)} computed registration method ${computedMethod} uses an unsupported registration host`,
+        );
+      }
+      throw new DocsGateError(
+        `${lineOf(info.sf, node, ts)} computed invocation on an unknown host is unsupported in a registration-owning scope`,
+      );
+    }
+    if (
+      ts.isPropertyAccessExpression(node) &&
+      node.name.text.startsWith('register') &&
+      !isPiHostExpression(node.expression)
+    ) {
+      throw new DocsGateError(
+        `${lineOf(info.sf, node, ts)} registration method ${node.name.text} uses an unsupported registration host binding`,
       );
     }
     if (ts.isPropertyAccessExpression(node) && isPiHostExpression(node.expression)) {
@@ -1045,31 +1948,51 @@ function collectRegistrationsInFunction(ts, root, rel, fn, piParamName, cache, r
       }
       const registration = directRegistrationAccess(node.expression);
       if (registration) {
-        assertImmediateRegistrationCall(node, fn.body, 'public registration call');
+        const availability = registrationAvailability(
+          node,
+          fn.body,
+          'public registration call',
+        );
         const method = registration.name.text;
         if (method === 'registerCommand') {
           const name = firstArgString(ts, root, rel, node, cache);
-          addSurface(regs, 'command', name, lineOf(info.sf, node, ts), commandDetails(ts, root, rel, name, node, cache));
+          addSurface(regs, 'command', name, lineOf(info.sf, node, ts), {
+            ...commandDetails(ts, root, rel, name, node, cache),
+            availability,
+          });
         } else if (method === 'registerShortcut') {
           const name = firstArgString(ts, root, rel, node, cache);
           const details = commandDetails(ts, root, rel, name, node, cache);
-          addSurface(regs, 'shortcut', name, lineOf(info.sf, node, ts), { description: details.description });
+          addSurface(regs, 'shortcut', name, lineOf(info.sf, node, ts), {
+            description: details.description,
+            availability,
+          });
         } else if (method === 'registerMessageRenderer') {
-          addSurface(regs, 'renderer', firstArgString(ts, root, rel, node, cache), lineOf(info.sf, node, ts));
+          addSurface(
+            regs,
+            'renderer',
+            firstArgString(ts, root, rel, node, cache),
+            lineOf(info.sf, node, ts),
+            { availability },
+          );
         } else if (method === 'registerTool') {
           const first = node.arguments[0];
           if (!first) throw new DocsGateError(`${lineOf(info.sf, node, ts)} registerTool has no options object`);
           const details = toolDetailsFromObject(ts, root, rel, first, cache, lineOf(info.sf, node, ts));
-          addSurface(regs, 'tool', details.name, details.source, details);
+          addSurface(regs, 'tool', details.name, details.source, { ...details, availability });
         }
       } else {
         const callee = calleeIdentifier(node.expression);
         if (callee && localWrapperNames.has(callee.text)) {
-          assertImmediateRegistrationCall(node, fn.body, 'local registration-wrapper call');
+          const availability = registrationAvailability(
+            node,
+            fn.body,
+            'local registration-wrapper call',
+          );
           const first = node.arguments[0];
           if (!first) throw new DocsGateError(`${lineOf(info.sf, node, ts)} local registration wrapper has no options object`);
           const details = toolDetailsFromObject(ts, root, rel, first, cache, lineOf(info.sf, node, ts));
-          addSurface(regs, 'tool', details.name, details.source, details);
+          addSurface(regs, 'tool', details.name, details.source, { ...details, availability });
         } else if (expressionContainsLocalWrapper(node.expression)) {
           throw new DocsGateError(
             `${lineOf(info.sf, node, ts)} unsupported derived registration-wrapper invocation`,
@@ -1082,7 +2005,11 @@ function collectRegistrationsInFunction(ts, root, rel, fn, piParamName, cache, r
           const imported = info.imports.get(callee.text);
           const first = node.arguments[0];
           if (imported && isPiHostExpression(first)) {
-            assertImmediateRegistrationCall(node, fn.body, 'imported registration-helper call');
+            const availability = registrationAvailability(
+              node,
+              fn.body,
+              'imported registration-helper call',
+            );
             const next = findExportedFunction(ts, root, imported.rel, imported.exported, cache);
             const nextKey = `${next.rel}:${imported.exported}`;
             if (visitedFns.has(nextKey)) {
@@ -1106,6 +2033,7 @@ function collectRegistrationsInFunction(ts, root, rel, fn, piParamName, cache, r
               cache,
               regs,
               visitedFns,
+              availability,
             );
           } else if (node.arguments.some((argument) => expressionContainsUnsafePiUse(argument))) {
             throw new DocsGateError(
@@ -1158,12 +2086,15 @@ function uniqueRegistrations(regs) {
 
 function extractEntrypoint(root, pkg, ts, cache) {
   const entries = pkg.pi?.extensions;
-  if (!Array.isArray(entries) || entries.length === 0 || entries.some((entry) => typeof entry !== 'string' || entry.trim().length === 0)) throw new DocsGateError('package.json pi.extensions must contain at least one non-blank TypeScript entrypoint');
+  if (!Array.isArray(entries) || entries.length === 0 || entries.some((entry) => typeof entry !== 'string' || entry.trim().length === 0)) throw new DocsGateError('package.json pi.extensions must contain at least one non-blank extension entrypoint');
   const regs = [];
   for (const declaredEntry of entries) {
     const entry = declaredEntry.replace(/^\.\//u, '');
-    const entryRel = entry.endsWith('.ts') ? entry : `${entry}.ts`;
-    if (!existsSync(packagePath(root, entryRel))) throw new DocsGateError(`package.json pi extension ${entry} does not exist`);
+    const compiledSource = entry.startsWith('dist/') && entry.endsWith('.js')
+      ? `${entry.slice('dist/'.length, -'.js'.length)}.ts`
+      : undefined;
+    const entryRel = compiledSource ?? (entry.endsWith('.ts') ? entry : `${entry}.ts`);
+    if (!existsSync(packagePath(root, entryRel))) throw new DocsGateError(`package.json Pi extension ${entry} has no authoritative TypeScript source ${entryRel}`);
     const target = findExportedFunction(ts, root, entryRel, 'default', cache);
     moduleInfo(ts, root, target.rel, cache);
     const piParameter = target.node.parameters[0]?.name;
@@ -1455,12 +2386,25 @@ export function buildCodeFacts(options = {}) {
   const cache = new Map();
   const tsSources = [...walkFiles(root, 'src', (f) => f.endsWith('.ts')), ...walkFiles(root, 'extensions', (f) => f.endsWith('.ts'))].sort();
   const governedSources = [...walkFiles(root, 'src', () => true), ...walkFiles(root, 'extensions', () => true)].sort();
-  const registrations = extractEntrypoint(root, pkg, ts, cache);
+  const configurationVariants = variantContractFromModule(
+    ts,
+    root,
+    'src/core/config.ts',
+    cache,
+  );
+  const registrations = extractEntrypoint(root, pkg, ts, cache).map((registration) => ({
+    ...registration,
+    availability: registration.availability ?? ALWAYS_AVAILABLE,
+    default_available: isDefaultAvailability(
+      registration.availability ?? ALWAYS_AVAILABLE,
+      configurationVariants,
+    ),
+  }));
   const eventBus = extractEventBus(ts, root, cache);
   const workflows = extractFusionWorkflows(ts, root, cache);
   const synthetic = [
-    { kind: 'eventbus', name: eventBus.id, id: `eventbus:${eventBus.id}`, source: eventBus.source, channels: eventBus.channels, operations: eventBus.operations },
-    ...workflows.map((workflow) => ({ kind: 'workflow', name: workflow.id, id: `workflow:${workflow.id}`, source: workflow.source, toolName: workflow.toolName, contextKind: workflow.contextKind })),
+    { kind: 'eventbus', name: eventBus.id, id: `eventbus:${eventBus.id}`, source: eventBus.source, channels: eventBus.channels, operations: eventBus.operations, availability: ALWAYS_AVAILABLE, default_available: true },
+    ...workflows.map((workflow) => ({ kind: 'workflow', name: workflow.id, id: `workflow:${workflow.id}`, source: workflow.source, toolName: workflow.toolName, contextKind: workflow.contextKind, availability: 'feature:fusion', default_available: isDefaultAvailability('feature:fusion', configurationVariants) })),
   ];
   const allSurfaces = uniqueRegistrations([...registrations, ...synthetic]);
   const byKind = Object.fromEntries(PUBLIC_KINDS.map((kind) => [kind, allSurfaces.filter((r) => r.kind === kind).map((r) => sortDeep(r))]));
@@ -1497,8 +2441,10 @@ export function buildCodeFacts(options = {}) {
   return sortDeep({
     package: packageFacts,
     lock: { name: lock.name, version: lock.version, rootVersion: lock.packages?.['']?.version ?? null },
+    configuration_variants: configurationVariants,
     public_surfaces: byKind,
     public_surface_ids: allSurfaces.map((r) => r.id).sort(),
+    default_public_surface_ids: allSurfaces.filter((r) => r.default_available).map((r) => r.id).sort(),
     tool_contracts: registrations.filter((r) => r.kind === 'tool').map((r) => sortDeep(r)).sort((a, b) => a.name.localeCompare(b.name)),
     command_contracts: registrations.filter((r) => r.kind === 'command').map((r) => sortDeep(r)).sort((a, b) => a.name.localeCompare(b.name)),
     shortcut_contracts: registrations.filter((r) => r.kind === 'shortcut').map((r) => sortDeep(r)).sort((a, b) => a.name.localeCompare(b.name)),
@@ -2040,7 +2986,9 @@ export function manifestObject(root, codeFacts, docsModel, coverage, regions, at
     generator: MARKER_GENERATOR,
     package: codeFacts.package,
     docs,
+    configuration_variants: codeFacts.configuration_variants,
     public_surface_ids: codeFacts.public_surface_ids,
+    default_public_surface_ids: codeFacts.default_public_surface_ids,
     public_surfaces: codeFacts.public_surfaces,
     surface_to_docs: coverage.surface_to_docs,
     source_to_docs: coverage.source_to_docs,
@@ -2079,9 +3027,24 @@ function replaceOrInsertRegion(body, name, regionBody, insertAfterHeading = true
   return `${region}\n${body}`;
 }
 
+function defaultAvailabilityLabel(item) {
+  return item.default_available ? 'yes' : 'no';
+}
+
 function surfaceRows(codeFacts) {
   const rows = [];
-  for (const kind of PUBLIC_KINDS) for (const item of codeFacts.public_surfaces[kind] ?? []) rows.push([kind, `\`${item.name}\``, `\`${item.id}\``, `\`${item.source}\``]);
+  for (const kind of PUBLIC_KINDS) {
+    for (const item of codeFacts.public_surfaces[kind] ?? []) {
+      rows.push([
+        kind,
+        `\`${item.name}\``,
+        `\`${item.id}\``,
+        `\`${item.availability}\``,
+        defaultAvailabilityLabel(item),
+        `\`${item.source}\``,
+      ]);
+    }
+  }
   return rows;
 }
 
@@ -2099,10 +3062,26 @@ function buildReadmePackageFacts(codeFacts) {
 }
 
 function buildReadmeSurfaceSummary(codeFacts) {
-  const counts = PUBLIC_KINDS.map((kind) => [kind, String((codeFacts.public_surfaces[kind] ?? []).length)]);
+  const counts = PUBLIC_KINDS.map((kind) => {
+    const surfaces = codeFacts.public_surfaces[kind] ?? [];
+    return [
+      kind,
+      String(surfaces.length),
+      String(surfaces.filter((surface) => surface.default_available).length),
+    ];
+  });
   const commandNames = codeFacts.public_surfaces.command.map((x) => `\`/${x.name}\``).join(', ');
   const toolNames = codeFacts.public_surfaces.tool.map((x) => `\`${x.name}\``).join(', ');
-  return `${mdTable(['Surface kind', 'Count'], counts)}\n\nPublic commands: ${commandNames}.\n\nPublic tools: ${toolNames}.\n\nFull owner map and generated contracts live in [docs/INDEX.md](docs/INDEX.md).`;
+  const variants = PUBLIC_KINDS.flatMap((kind) =>
+    (codeFacts.public_surfaces[kind] ?? [])
+      .filter((surface) => surface.availability !== ALWAYS_AVAILABLE)
+      .map((surface) => [
+        `\`${surface.id}\``,
+        `\`${surface.availability}\``,
+        defaultAvailabilityLabel(surface),
+      ]),
+  );
+  return `${mdTable(['Surface kind', 'Configured variants', 'Available by default'], counts)}\n\nPublic commands: ${commandNames}.\n\nPublic tools: ${toolNames}.\n\n### Configuration-dependent surfaces\n\n${mdTable(['Surface', 'Availability', 'Default'], variants)}\n\nFull owner map and generated contracts live in [docs/INDEX.md](docs/INDEX.md).`;
 }
 
 function buildIndexBody(codeFacts, docsModel, coverage) {
@@ -2123,7 +3102,7 @@ function buildIndexBody(codeFacts, docsModel, coverage) {
   }
   const categorySections = [...categories.keys()].sort().map((category) => `- **${category}**: ${categories.get(category).sort((a, b) => a.doc_id.localeCompare(b.doc_id)).map((doc) => `[${doc.doc_id}](./${posix.relative('docs', doc.rel)})`).join(', ')}`).join('\n');
   const ownerRows = Object.entries(coverage.surface_to_docs).map(([surface, docs]) => [`\`${surface}\``, `[${docs[0]}](./${docIdToHref(docs[0])})`]);
-  return `# Documentation index\n\nGenerated navigation for every package-local documentation page. This index intentionally owns no public surface and no production source; ownership is explicit in each primary doc's frontmatter.\n\n## Start here\n\n- [Getting started](./getting-started.md)\n- [Choose a workflow](./choose-a-workflow.md)\n- [Read before editing production sources](./read-before-edit.md)\n- [Runtime contracts](./reference/runtime-contracts.md)\n\n## Docs by audience\n\n${audienceSections}\n\n## Docs by category\n\n${categorySections}\n\n## Public surface owners\n\n${mdTable(['Surface', 'Primary doc'], ownerRows)}\n\n## Public surface inventory\n\n${mdTable(['Kind', 'Name', 'ID', 'Provenance'], surfaceRows(codeFacts))}\n`;
+  return `# Documentation index\n\nGenerated navigation for every package-local documentation page. This index intentionally owns no public surface and no production source; ownership is explicit in each primary doc's frontmatter.\n\n## Start here\n\n- [Getting started](./getting-started.md)\n- [Choose a workflow](./choose-a-workflow.md)\n- [Read before editing production sources](./read-before-edit.md)\n- [Runtime contracts](./reference/runtime-contracts.md)\n\n## Docs by audience\n\n${audienceSections}\n\n## Docs by category\n\n${categorySections}\n\n## Public surface owners\n\n${mdTable(['Surface', 'Primary doc'], ownerRows)}\n\n## Public surface inventory\n\n${mdTable(['Kind', 'Name', 'ID', 'Availability', 'Default', 'Provenance'], surfaceRows(codeFacts))}\n`;
 }
 
 function docIdToHref(docId) {
@@ -2132,12 +3111,19 @@ function docIdToHref(docId) {
 
 function buildReadBeforeEditBody(codeFacts, coverage) {
   const rows = codeFacts.governed_sources.map((s) => [`\`${s}\``, `[${coverage.source_to_docs[s][0]}](./${docIdToHref(coverage.source_to_docs[s][0])})`]);
-  return `# Read before editing production sources\n\nEvery production file under \`src/**\` and \`extensions/**\` has exactly one primary behavioral documentation owner. This file is generated from authored ownership frontmatter and owns no production source itself.\n\n## Source ownership\n\n${mdTable(['Source', 'Primary behavioral owner'], rows)}\n\n## Public surfaces\n\n${list(codeFacts.public_surface_ids.map((s) => `\`${s}\``))}\n`;
+  const surfaces = PUBLIC_KINDS.flatMap((kind) => codeFacts.public_surfaces[kind] ?? []).map(
+    (surface) => [
+      `\`${surface.id}\``,
+      `\`${surface.availability}\``,
+      defaultAvailabilityLabel(surface),
+    ],
+  );
+  return `# Read before editing production sources\n\nEvery production file under \`src/**\` and \`extensions/**\` has exactly one primary behavioral documentation owner. This file is generated from authored ownership frontmatter and owns no production source itself.\n\n## Source ownership\n\n${mdTable(['Source', 'Primary behavioral owner'], rows)}\n\n## Public surfaces\n\n${mdTable(['Surface', 'Availability', 'Default'], surfaces)}\n`;
 }
 
 function buildFreshnessRegion(codeFacts, docsModel, attestations) {
   const missing = attestations.filter((x) => x.state !== 'pass').length;
-  return `- Canonical package version: \`${codeFacts.package.version}\`\n- Governed markdown docs: ${String(docsModel.docs.length)}\n- Public surfaces extracted: ${String(codeFacts.public_surface_ids.length)}\n- Governed production sources: ${String(codeFacts.governed_sources.length)}\n- Tool contracts extracted: ${String(codeFacts.tool_contracts.length)}\n- Schema IDs extracted: ${String(codeFacts.schema_ids.length)}\n- Environment variable references extracted: ${String(codeFacts.environment_variables.length)}\n- Behavioral attestation receipts not passing: ${String(missing)}\n- Receipt store: \`${ATTESTATIONS_PATH}\`\n\n\`npm run docs:verify\` is read-only: it renders generated files twice in memory and compares them with committed bytes. \`npm run docs:generate\` is the only docs writer.`;
+  return `- Canonical package version: \`${codeFacts.package.version}\`\n- Governed markdown docs: ${String(docsModel.docs.length)}\n- Public surfaces extracted: ${String(codeFacts.public_surface_ids.length)}\n- Public surfaces available by default: ${String(codeFacts.default_public_surface_ids.length)}\n- Finite feature values: ${codeFacts.configuration_variants.feature_values.map((value) => `\`${value}\``).join(', ')}\n- Finite dock shortcut values: ${codeFacts.configuration_variants.dock_shortcut_values.map((value) => `\`${value}\``).join(', ')}\n- Governed production sources: ${String(codeFacts.governed_sources.length)}\n- Tool contracts extracted: ${String(codeFacts.tool_contracts.length)}\n- Schema IDs extracted: ${String(codeFacts.schema_ids.length)}\n- Environment variable references extracted: ${String(codeFacts.environment_variables.length)}\n- Behavioral attestation receipts not passing: ${String(missing)}\n- Receipt store: \`${ATTESTATIONS_PATH}\`\n\n\`npm run docs:verify\` is read-only: it renders generated files twice in memory and compares them with committed bytes. \`npm run docs:generate\` is the only docs writer.`;
 }
 
 function schemaType(schema) {
@@ -2169,19 +3155,40 @@ function propertyRows(schema, prefix = '') {
 }
 
 function buildToolContractRegion(tool) {
-  return `${tool.label ? `- Label: **${tool.label}**\n` : ''}- Source: \`${tool.source}\`\n- Description: ${tool.description ?? 'none'}\n- Root schema: \`${tool.schema.type}\`${tool.schema.additionalProperties !== undefined ? `; additionalProperties: \`${String(tool.schema.additionalProperties)}\`` : ''}\n\n${mdTable(['Field', 'Required', 'Type', 'Description', 'Constraints'], propertyRows(tool.schema))}\n\n<details>\n<summary>Normalized TypeBox contract</summary>\n\n${codeBlockJson(tool.schema)}\n</details>`;
+  return `${tool.label ? `- Label: **${tool.label}**\n` : ''}- Source: \`${tool.source}\`\n- Availability: \`${tool.availability}\`\n- Available by default: **${defaultAvailabilityLabel(tool)}**\n- Description: ${tool.description ?? 'none'}\n- Root schema: \`${tool.schema.type}\`${tool.schema.additionalProperties !== undefined ? `; additionalProperties: \`${String(tool.schema.additionalProperties)}\`` : ''}\n\n${mdTable(['Field', 'Required', 'Type', 'Description', 'Constraints'], propertyRows(tool.schema))}\n\n<details>\n<summary>Normalized TypeBox contract</summary>\n\n${codeBlockJson(tool.schema)}\n</details>`;
 }
 
 function buildCommandContractRegion(commands) {
-  return mdTable(['Command', 'Description', 'Provenance'], commands.map((cmd) => [`\`/${cmd.name}\``, cmd.description ?? '', `\`${cmd.source}\``]));
+  return mdTable(
+    ['Command', 'Availability', 'Default', 'Description', 'Provenance'],
+    commands.map((cmd) => [
+      `\`/${cmd.name}\``,
+      `\`${cmd.availability}\``,
+      defaultAvailabilityLabel(cmd),
+      cmd.description ?? '',
+      `\`${cmd.source}\``,
+    ]),
+  );
 }
 
 function buildShortcutRegion(codeFacts) {
-  return mdTable(['Shortcut', 'Description', 'Provenance'], codeFacts.shortcut_contracts.map((s) => [`\`${s.name}\``, s.description ?? '', `\`${s.source}\``]));
+  return mdTable(
+    ['Shortcut', 'Availability', 'Default', 'Description', 'Provenance'],
+    codeFacts.shortcut_contracts.map((shortcut) => [
+      `\`${shortcut.name}\``,
+      `\`${shortcut.availability}\``,
+      defaultAvailabilityLabel(shortcut),
+      shortcut.description ?? '',
+      `\`${shortcut.source}\``,
+    ]),
+  );
 }
 
 function buildEventBusRegion(codeFacts) {
-  return `${mdTable(['Channel purpose', 'Channel', 'Schema'], [
+  const surface = codeFacts.public_surfaces.eventbus.find(
+    (item) => item.id === 'eventbus:background-task-v1',
+  );
+  return `Availability: \`${surface?.availability ?? ALWAYS_AVAILABLE}\`; available by default: **${surface?.default_available ? 'yes' : 'no'}**.\n\n${mdTable(['Channel purpose', 'Channel', 'Schema'], [
     ['Request', `\`${codeFacts.event_bus.channels.request}\``, `\`${codeFacts.event_bus.schemas.request}\``],
     ['Response', `\`${codeFacts.event_bus.channels.response}\``, `\`${codeFacts.event_bus.schemas.response}\``],
     ['Terminal', `\`${codeFacts.event_bus.channels.terminal}\``, `\`${codeFacts.event_bus.schemas.terminal}\``],
@@ -2189,14 +3196,34 @@ function buildEventBusRegion(codeFacts) {
 }
 
 function buildFusionWorkflowRegion(codeFacts) {
-  return mdTable(['Workflow', 'Tool', 'Context', 'Candidate capability', 'Candidate tools', 'Evaluator/merger tools', 'Provenance'], codeFacts.fusion_workflows.map((w) => [`\`${w.id}\``, `\`${w.toolName}\``, `\`${w.contextKind}\``, `\`${w.candidateCapability}\``, w.candidateTools.length ? w.candidateTools.map((x) => `\`${x}\``).join(', ') : 'none', 'none', `\`${w.source}\``]));
+  return mdTable(
+    ['Workflow', 'Availability', 'Default', 'Tool', 'Context', 'Candidate capability', 'Candidate tools', 'Evaluator/merger tools', 'Provenance'],
+    codeFacts.fusion_workflows.map((workflow) => {
+      const surface = codeFacts.public_surfaces.workflow.find(
+        (item) => item.id === `workflow:${workflow.id}`,
+      );
+      return [
+        `\`${workflow.id}\``,
+        `\`${surface?.availability ?? 'feature:fusion'}\``,
+        surface?.default_available ? 'yes' : 'no',
+        `\`${workflow.toolName}\``,
+        `\`${workflow.contextKind}\``,
+        `\`${workflow.candidateCapability}\``,
+        workflow.candidateTools.length
+          ? workflow.candidateTools.map((x) => `\`${x}\``).join(', ')
+          : 'none',
+        'none',
+        `\`${workflow.source}\``,
+      ];
+    }),
+  );
 }
 
 function buildRuntimeRegion(codeFacts) {
   const envRows = codeFacts.environment_variables.map((e) => [`\`${e.name}\``, e.access.join(', '), e.sources.map((s) => `\`${s}\``).join('<br>')]);
   const pathRows = codeFacts.runtime_paths_and_artifacts.map((p) => [p.kind, `\`${p.value}\``, `\`${p.source}\``]);
   const schemaRows = codeFacts.schema_ids.map((s) => [`\`${s.id}\``, `\`${s.source}\``]);
-  return `### Environment variable references\n\n${mdTable(['Name', 'Access', 'Provenance'], envRows)}\n\n### Runtime paths and artifacts\n\n${mdTable(['Kind', 'Path/artifact', 'Provenance'], pathRows)}\n\n### Schema identifiers\n\n${mdTable(['Schema', 'Provenance'], schemaRows)}\n\n### Status vocabularies\n\n${codeBlockJson(codeFacts.status_vocabularies)}`;
+  return `### Configuration variants\n\n${codeBlockJson(codeFacts.configuration_variants)}\n### Environment variable references\n\n${mdTable(['Name', 'Access', 'Provenance'], envRows)}\n\n### Runtime paths and artifacts\n\n${mdTable(['Kind', 'Path/artifact', 'Provenance'], pathRows)}\n\n### Schema identifiers\n\n${mdTable(['Schema', 'Provenance'], schemaRows)}\n\n### Status vocabularies\n\n${codeBlockJson(codeFacts.status_vocabularies)}`;
 }
 
 function applyGeneratedRegionsToDoc(doc, codeFacts, coverage, docsModel, attestations) {
@@ -2343,8 +3370,9 @@ function assertSvgSafe(root, rel) {
 
 export function checkPayloadFiles(files, root = PACKAGE_ROOT) {
   const fileSet = new Set(files);
-  const requiredRoots = ['extensions/anthropic-attribution.ts', 'extensions/background-tasks.ts', 'extensions/delegate-child.ts', 'extensions/fusion-child.ts', 'README.md', 'TESTING.md', 'TEST_PLAN.md', 'PUBLISHING.md', 'BACKGROUND-TASKS-INSTRUCTIONS.md', 'THIRD_PARTY_NOTICES.md', 'logo.png', 'LICENSE', 'package.json'];
+  const requiredRoots = ['dist/extensions/anthropic-attribution.js', 'dist/extensions/background-tasks.js', 'dist/extensions/anthropic-attribution-child.js', 'dist/extensions/delegate-child.js', 'dist/extensions/fusion-child.js', 'dist/package.json', 'extensions/anthropic-attribution.ts', 'extensions/background-tasks.ts', 'extensions/delegate-child.ts', 'extensions/fusion-child.ts', 'README.md', 'TESTING.md', 'TEST_PLAN.md', 'PUBLISHING.md', 'BACKGROUND-TASKS-INSTRUCTIONS.md', 'THIRD_PARTY_NOTICES.md', 'logo.png', 'LICENSE', 'package.json'];
   for (const f of requiredRoots) if (!fileSet.has(f)) throw new DocsGateError(`packed payload missing ${f}`);
+  for (const f of walkFiles(root, 'dist', () => true)) if (!fileSet.has(f)) throw new DocsGateError(`packed payload missing ${f}`);
   for (const f of walkFiles(root, 'src', () => true)) if (!fileSet.has(f)) throw new DocsGateError(`packed payload missing ${f}`);
   for (const f of walkFiles(root, 'extensions', () => true)) if (!fileSet.has(f)) throw new DocsGateError(`packed payload missing ${f}`);
   const docsModel = loadDocsModel({ packageRoot: root });

@@ -1,0 +1,18 @@
+# Mission B0 baseline design / red plan
+
+Route observed before work: `PI_PROVIDER=openai-codex`, `PI_MODEL=gpt-5.6-sol`, `PI_REASONING_LEVEL=max`. Initial package HEAD is `14afc33e3967a142758169d3217a4e63b4b3ec94`; the pre-existing dirty `maintenance/community-closeout-2026-09/STATE.md` is out of scope and will remain untouched.
+
+## Design
+
+1. **Type-safety guard** (`tests/package/type-safety.test.ts`, with a focused helper if useful): parse each `.ts`/`.tsx` file with the installed TypeScript compiler. Walk syntax nodes for `AnyKeyword`, directly nested/parenthesized assertion expressions, and production `NonNullExpression` nodes. Scan TypeScript comment trivia separately for real `@ts-ignore`, `@ts-expect-error`, and `@ts-nocheck` directives. Report source positions. Add in-memory adversarial controls proving multiline/parenthesized violations and real directive comments are rejected while ordinary prose, strings, templates, and regex literals are not. The existing full-tree check remains active and is expected to keep reporting the real attribution double assertion until the attribution lane integrates its fix.
+2. **File-URL pathname guard** (`tests/package/package.test.ts` plus a focused test helper): replace text regex/dataflow with a compiler-tree provenance check. Flag `.pathname`/`['pathname']` only when its receiver is a URL proven to derive from `import.meta.url`, a `file:` literal, or aliases thereof (including constructor/URL-object aliases and destructuring). Permit unknown/HTTP(S)-derived URLs, including the production Anthropic origin/path validation and request-path construction. Add direct positive and negative fixtures, including inline, variable, aliased `import.meta.url`, scoped `node:url` constructor alias, and Windows drive/UNC file URLs.
+3. **Offline packed consumer** (`tests/package/package.test.ts` plus a focused offline-registry helper): recursively inventory the real installed production dependency closure (`turndown@7.2.4` and `@mixmark-io/domino@2.2.0`), repack those read-only inputs with scripts disabled, and serve only their packuments/tarballs from a task-created loopback registry. Assert a separate empty isolated cache fails loudly in `--offline` mode; seed another initially empty isolated cache solely from that registry; stop the registry; then install the package tarball with `--offline`. Verify exact direct/transitive packages and execute a real Turndown conversion so the transitive DOM implementation is loaded. No user cache, external registry, dependency substitution, or production manifest change.
+4. Update only authored testing sections in `docs/operations/testing.md`, `TESTING.md`, and `TEST_PLAN.md` to describe semantic guards and explicit offline-cache preparation/negative controls.
+
+## Red / verification plan
+
+Use only `/private/tmp/pi-bg-closeout-iNoltL/{tmp,home,agent}/baseline` with `TMPDIR`, `HOME`, and `PI_CODING_AGENT_DIR` set there and `PI_OFFLINE=1 PI_SKIP_VERSION_CHECK=1 PI_TELEMETRY=0 CI=1`.
+
+- Before edits, capture the original focused type-safety failure and original file-URL guard failure; capture the packed-install `ENOTCACHED` failure through the package test/name filter. Preserve bounded logs under `logs/baseline`.
+- After adding controls, run focused source-guard controls. The fixture controls and URL guard must be green; the full type-safety tree must remain red only for the inherited real `src/core/anthropic-attribution.ts` double assertion if that lane has not integrated.
+- Run `npm run typecheck` and `npm run test:package`; report exact exits/test counts and distinguish inherited attribution or Windows-launcher failures from this lane. Run `git diff --check`, inspect staged paths, and commit only owned files by explicit path.

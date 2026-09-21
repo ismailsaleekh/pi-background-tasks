@@ -3,10 +3,11 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
- * Resolve the package-owned global Anthropic attribution extension.
+ * Resolve the package-owned always-on Anthropic child attribution extension.
  *
  * Package-owned child Pi processes disable ambient extension discovery, so they
- * must explicitly load this public extension entrypoint. Keeping path resolution
+ * must explicitly load this safety entrypoint. It deliberately bypasses the
+ * independently selectable ambient parent capability. Keeping path resolution
  * in one module prevents Fusion, delegation, and attested runs from deriving
  * different package paths.
  */
@@ -16,8 +17,8 @@ export function resolveAnthropicAttributionExtensionPath(
 ): string {
   const modulePath = fileURLToPath(moduleUrl);
   const extension = modulePath.endsWith('.ts')
-    ? 'anthropic-attribution.ts'
-    : 'anthropic-attribution.js';
+    ? 'anthropic-attribution-child.ts'
+    : 'anthropic-attribution-child.js';
   const candidate = resolve(dirname(modulePath), '../../extensions', extension);
   if (!pathExists(candidate)) {
     throw new Error(`Anthropic attribution extension is missing: ${candidate}`);

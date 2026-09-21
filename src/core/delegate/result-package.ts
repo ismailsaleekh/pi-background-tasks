@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { canonicalJson } from '../attested-pi-run.js';
+import { canonicalJson } from '../canonical-json.js';
 import {
   DELEGATE_RECEIPT_SCHEMA_VERSION,
   DELEGATE_RESULT_PACKAGE_SCHEMA_VERSION,
@@ -87,9 +87,7 @@ export function buildDelegateResultPackage(
       data_base64: bytes.toString('base64'),
     };
   });
-  const aggregate = Buffer.concat(
-    blocks.map((block) => Buffer.from(block.data_base64, 'base64')),
-  );
+  const aggregate = Buffer.concat(blocks.map((block) => Buffer.from(block.data_base64, 'base64')));
   return {
     schema_version: DELEGATE_RESULT_PACKAGE_SCHEMA_VERSION,
     task_id: input.taskId,
@@ -183,7 +181,11 @@ function parseUsage(value: unknown, taskId: string): DelegateUsageReport {
     );
   const usage = value['usage'];
   if (!isRecord(usage))
-    fail('delegate result package observed usage must be an object', 'child_result_invalid', taskId);
+    fail(
+      'delegate result package observed usage must be an object',
+      'child_result_invalid',
+      taskId,
+    );
   const cost = usage['cost'];
   if (!isRecord(cost))
     fail(
@@ -220,10 +222,7 @@ function parseUsage(value: unknown, taskId: string): DelegateUsageReport {
   };
 }
 
-function parseAttestations(
-  value: unknown,
-  taskId: string,
-): readonly DelegateRouteAttestation[] {
+function parseAttestations(value: unknown, taskId: string): readonly DelegateRouteAttestation[] {
   if (!Array.isArray(value))
     fail(
       'delegate result package route_attestations must be an array',
@@ -264,7 +263,11 @@ function parseSpillContentFormat(
 
 function parseSpillReceipts(value: unknown, taskId: string): readonly DelegateSpillReceipt[] {
   if (!Array.isArray(value))
-    fail('delegate result package spilled_artifacts must be an array', 'child_result_invalid', taskId);
+    fail(
+      'delegate result package spilled_artifacts must be an array',
+      'child_result_invalid',
+      taskId,
+    );
   return value.map((entry) => {
     if (!isRecord(entry))
       fail('delegate spill receipt must be an object', 'child_result_invalid', taskId);
@@ -332,7 +335,11 @@ export function verifyDelegateResultPackage(
 
   const routeRecord = parsed['route'];
   if (!isRecord(routeRecord))
-    fail('delegate result package route must be an object', 'child_result_invalid', expected.taskId);
+    fail(
+      'delegate result package route must be an object',
+      'child_result_invalid',
+      expected.taskId,
+    );
   const provider = requireString(routeRecord, 'provider', expected.taskId);
   const model = requireString(routeRecord, 'model', expected.taskId);
   if (provider !== expected.route.provider || model !== expected.route.model)
@@ -343,7 +350,10 @@ export function verifyDelegateResultPackage(
     );
   const attestations = parseAttestations(parsed['route_attestations'], expected.taskId);
   for (const attestation of attestations) {
-    if (attestation.provider !== expected.route.provider || attestation.model !== expected.route.model)
+    if (
+      attestation.provider !== expected.route.provider ||
+      attestation.model !== expected.route.model
+    )
       fail(
         `delegate child produced an assistant message on ${attestation.provider}/${attestation.model}, but the pinned route is ${expected.route.provider}/${expected.route.model}`,
         'route_mismatch',
@@ -353,7 +363,11 @@ export function verifyDelegateResultPackage(
 
   const answerRecord = parsed['answer'];
   if (!isRecord(answerRecord))
-    fail('delegate result package answer must be an object', 'child_result_invalid', expected.taskId);
+    fail(
+      'delegate result package answer must be an object',
+      'child_result_invalid',
+      expected.taskId,
+    );
   if (answerRecord['encoding'] !== 'utf-8')
     fail(
       'delegate result package answer encoding must be utf-8',
@@ -364,7 +378,11 @@ export function verifyDelegateResultPackage(
   const declaredSha = requireSha256(answerRecord, 'sha256', expected.taskId);
   const blocksValue = answerRecord['blocks'];
   if (!Array.isArray(blocksValue))
-    fail('delegate result package answer blocks must be an array', 'child_result_invalid', expected.taskId);
+    fail(
+      'delegate result package answer blocks must be an array',
+      'child_result_invalid',
+      expected.taskId,
+    );
 
   const blocks: DelegateAnswerBlock[] = [];
   const buffers: Buffer[] = [];

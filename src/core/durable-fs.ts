@@ -45,9 +45,13 @@ export interface DurableFileOperations {
   temporaryPath(target: string): string;
 }
 
+export interface DurableWriteOptions {
+  readonly signal?: AbortSignal | undefined;
+}
+
 export interface DurableFileWriter {
-  write(path: string, data: DurableData): Promise<void>;
-  replace(path: string, data: DurableData): Promise<void>;
+  write(path: string, data: DurableData, options?: DurableWriteOptions): Promise<void>;
+  replace(path: string, data: DurableData, options?: DurableWriteOptions): Promise<void>;
 }
 
 interface DurableErrorInput {
@@ -63,6 +67,48 @@ interface DurableErrorInput {
 interface WritableSequenceResult {
   primaryFailure: DurableFailure | undefined;
   cleanupFailures: DurableFailure[];
+  cancelled: boolean;
+}
+
+interface RenameSequenceResult {
+  error: unknown | undefined;
+  cancelled: boolean;
+}
+
+export class DurableFileCancellationError extends Error {
+  readonly code = 'durable_file_cancelled';
+  readonly path: string;
+  readonly reason: unknown;
+  readonly cleanupFailures: readonly DurableFailure[];
+  readonly targetPath: string | undefined;
+  readonly temporaryPath: string | undefined;
+  readonly renameCompleted: boolean;
+
+  constructor(input: {
+    path: string;
+    reason: unknown;
+    cleanupFailures: readonly DurableFailure[];
+    targetPath: string | undefined;
+    temporaryPath: string | undefined;
+    renameCompleted: boolean;
+  }) {
+    const reasonText = describeCause(input.reason);
+    const cleanupText =
+      input.cleanupFailures.length === 0
+        ? ''
+        : ` Cleanup failures: ${input.cleanupFailures.map(formatFailureForMessage).join('; ')}`;
+    const commitText = input.renameCompleted
+      ? ` Replacement may already be visible at ${input.targetPath ?? input.path}.`
+      : '';
+    super(`Durable file operation cancelled for ${input.path}: ${reasonText}.${commitText}${cleanupText}`);
+    this.name = 'DurableFileCancellationError';
+    this.path = input.path;
+    this.reason = input.reason;
+    this.cleanupFailures = [...input.cleanupFailures];
+    this.targetPath = input.targetPath;
+    this.temporaryPath = input.temporaryPath;
+    this.renameCompleted = input.renameCompleted;
+  }
 }
 
 export class DurableFileError extends Error {
@@ -149,20 +195,26 @@ async function writeSyncClose(
   handle: DurableWritableHandle,
   path: string,
   data: DurableData,
+  signal?: AbortSignal,
 ): Promise<WritableSequenceResult> {
   const cleanupFailures: DurableFailure[] = [];
   let primaryFailure: DurableFailure | undefined;
-  try {
-    await handle.writeFile(data);
-  } catch (error) {
-    primaryFailure = failure('write_file', path, error);
+  let cancelled = signal?.aborted === true;
+  if (!cancelled) {
+    try {
+      await handle.writeFile(data);
+    } catch (error) {
+      primaryFailure = failure('write_file', path, error);
+    }
+    cancelled = signal?.aborted === true;
   }
-  if (primaryFailure === undefined) {
+  if (primaryFailure === undefined && !cancelled) {
     try {
       await handle.sync();
     } catch (error) {
       primaryFailure = failure('sync_file', path, error);
     }
+    cancelled = signal?.aborted === true;
   }
   try {
     await handle.close();
@@ -171,7 +223,8 @@ async function writeSyncClose(
     if (primaryFailure === undefined) primaryFailure = closeFailure;
     else cleanupFailures.push(closeFailure);
   }
-  return { primaryFailure, cleanupFailures };
+  cancelled ||= signal?.aborted === true;
+  return { primaryFailure, cleanupFailures, cancelled };
 }
 
 async function syncCloseDirectory(
@@ -192,7 +245,31 @@ async function syncCloseDirectory(
     if (primaryFailure === undefined) primaryFailure = closeFailure;
     else cleanupFailures.push(closeFailure);
   }
-  return { primaryFailure, cleanupFailures };
+  return { primaryFailure, cleanupFailures, cancelled: false };
+}
+
+function cancellationReason(signal: AbortSignal): unknown {
+  return signal.reason ?? new Error('operation aborted');
+}
+
+function throwCancellation(
+  signal: AbortSignal,
+  path: string,
+  cleanupFailures: readonly DurableFailure[],
+  targetPath: string | undefined,
+  temporaryPath: string | undefined,
+  renameCompleted: boolean,
+): never {
+  const reason = cancellationReason(signal);
+  if (cleanupFailures.length === 0 && !renameCompleted && reason instanceof Error) throw reason;
+  throw new DurableFileCancellationError({
+    path,
+    reason,
+    cleanupFailures,
+    targetPath,
+    temporaryPath,
+    renameCompleted,
+  });
 }
 
 function throwDurable(
@@ -225,20 +302,33 @@ async function removeTemporary(
   }
 }
 
+function isAborted(signal: AbortSignal | undefined): boolean {
+  return signal?.aborted === true;
+}
+
 async function writeWithOperations(
   operations: DurableFileOperations,
   path: string,
   data: DurableData,
+  options: DurableWriteOptions,
 ): Promise<void> {
+  const signal = options.signal;
+  if (signal !== undefined && isAborted(signal))
+    throwCancellation(signal, path, [], path, undefined, false);
   let handle: DurableWritableHandle;
   try {
     handle = await operations.openWritable(path, 'w');
   } catch (error) {
+    if (signal !== undefined && isAborted(signal))
+      throwCancellation(signal, path, [], path, undefined, false);
     throwDurable(failure('open_file', path, error), [], path, undefined, false);
   }
-  const result = await writeSyncClose(handle, path, data);
+  const result = await writeSyncClose(handle, path, data, signal);
   if (result.primaryFailure !== undefined) {
     throwDurable(result.primaryFailure, result.cleanupFailures, path, undefined, false);
+  }
+  if (result.cancelled && signal !== undefined) {
+    throwCancellation(signal, path, result.cleanupFailures, path, undefined, false);
   }
 }
 
@@ -265,25 +355,52 @@ async function replaceWithOperations(
   operations: DurableFileOperations,
   path: string,
   data: DurableData,
+  options: DurableWriteOptions,
 ): Promise<void> {
+  const signal = options.signal;
+  if (signal !== undefined && isAborted(signal))
+    throwCancellation(signal, path, [], path, undefined, false);
   const temporaryPath = operations.temporaryPath(path);
   let handle: DurableWritableHandle;
   try {
     handle = await operations.openWritable(temporaryPath, 'wx', 0o600);
   } catch (error) {
+    if (signal !== undefined && isAborted(signal))
+      throwCancellation(signal, temporaryPath, [], path, temporaryPath, false);
     throwDurable(failure('open_file', temporaryPath, error), [], path, temporaryPath, false);
   }
-  const writeResult = await writeSyncClose(handle, temporaryPath, data);
+  const writeResult = await writeSyncClose(handle, temporaryPath, data, signal);
   if (writeResult.primaryFailure !== undefined) {
     await removeTemporary(operations, temporaryPath, writeResult.cleanupFailures);
     throwDurable(writeResult.primaryFailure, writeResult.cleanupFailures, path, temporaryPath, false);
   }
-  const renameError = await renameWithWindowsContention(operations, temporaryPath, path);
-  if (renameError !== undefined) {
+  if (writeResult.cancelled && signal !== undefined) {
+    await removeTemporary(operations, temporaryPath, writeResult.cleanupFailures);
+    throwCancellation(
+      signal,
+      temporaryPath,
+      writeResult.cleanupFailures,
+      path,
+      temporaryPath,
+      false,
+    );
+  }
+  const renameResult = await renameWithWindowsContention(
+    operations,
+    temporaryPath,
+    path,
+    signal,
+  );
+  if (renameResult.cancelled && signal !== undefined) {
+    const cleanupFailures: DurableFailure[] = [];
+    await removeTemporary(operations, temporaryPath, cleanupFailures);
+    throwCancellation(signal, temporaryPath, cleanupFailures, path, temporaryPath, false);
+  }
+  if (renameResult.error !== undefined) {
     const cleanupFailures: DurableFailure[] = [];
     await removeTemporary(operations, temporaryPath, cleanupFailures);
     throwDurable(
-      failure('rename_file', path, renameError),
+      failure('rename_file', path, renameResult.error),
       cleanupFailures,
       path,
       temporaryPath,
@@ -291,6 +408,9 @@ async function replaceWithOperations(
     );
   }
   await syncDirectoryAfterRename(operations, path, temporaryPath);
+  if (signal !== undefined && isAborted(signal)) {
+    throwCancellation(signal, path, [], path, temporaryPath, true);
+  }
 }
 
 /**
@@ -310,9 +430,18 @@ const WINDOWS_RENAME_CONTENTION_CODES: ReadonlySet<string> = new Set([
 const WINDOWS_RENAME_ATTEMPTS = 10;
 const WINDOWS_RENAME_RETRY_DELAY_MS = 20;
 
-function delay(ms: number): Promise<void> {
+function delay(ms: number, signal?: AbortSignal): Promise<void> {
+  if (isAborted(signal)) return Promise.resolve();
   return new Promise((resolve) => {
-    setTimeout(resolve, ms);
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', aborted);
+      resolve();
+    }, ms);
+    const aborted = () => {
+      clearTimeout(timer);
+      resolve();
+    };
+    signal?.addEventListener('abort', aborted, { once: true });
   });
 }
 
@@ -324,31 +453,34 @@ function delay(ms: number): Promise<void> {
  * final failure is still returned and raised loudly, no alternative write path
  * is taken, and no other platform or error code is retried.
  *
- * Returns the failure cause, or undefined on success.
+ * Returns an explicit success/error/cancellation sequence result.
  */
 async function renameWithWindowsContention(
   operations: DurableFileOperations,
   temporaryPath: string,
   targetPath: string,
-): Promise<unknown> {
+  signal?: AbortSignal,
+): Promise<RenameSequenceResult> {
   const attempts = operations.platform === 'win32' ? WINDOWS_RENAME_ATTEMPTS : 1;
   let lastError: unknown;
   for (let attempt = 1; attempt <= attempts; attempt++) {
+    if (isAborted(signal)) return { error: undefined, cancelled: true };
     try {
       await operations.rename(temporaryPath, targetPath);
-      return undefined;
+      return { error: undefined, cancelled: false };
     } catch (error) {
       lastError = error;
+      if (isAborted(signal)) return { error: undefined, cancelled: true };
       const code = nativeCodeForCause(error);
       const retryable =
         operations.platform === 'win32' &&
         code !== undefined &&
         WINDOWS_RENAME_CONTENTION_CODES.has(code);
-      if (!retryable || attempt === attempts) return error;
-      await delay(WINDOWS_RENAME_RETRY_DELAY_MS * attempt);
+      if (!retryable || attempt === attempts) return { error, cancelled: false };
+      await delay(WINDOWS_RENAME_RETRY_DELAY_MS * attempt, signal);
     }
   }
-  return lastError;
+  return { error: lastError, cancelled: false };
 }
 
 function temporaryPathForTarget(target: string): string {
@@ -382,19 +514,35 @@ const defaultWriter = createDurableFileWriter(nodeOperations);
 
 export function createDurableFileWriter(operations: DurableFileOperations): DurableFileWriter {
   return {
-    async write(path: string, data: DurableData): Promise<void> {
-      await writeWithOperations(operations, path, data);
+    async write(
+      path: string,
+      data: DurableData,
+      options: DurableWriteOptions = {},
+    ): Promise<void> {
+      await writeWithOperations(operations, path, data, options);
     },
-    async replace(path: string, data: DurableData): Promise<void> {
-      await replaceWithOperations(operations, path, data);
+    async replace(
+      path: string,
+      data: DurableData,
+      options: DurableWriteOptions = {},
+    ): Promise<void> {
+      await replaceWithOperations(operations, path, data, options);
     },
   };
 }
 
-export async function writeFileDurable(path: string, data: DurableData): Promise<void> {
-  await defaultWriter.write(path, data);
+export async function writeFileDurable(
+  path: string,
+  data: DurableData,
+  options: DurableWriteOptions = {},
+): Promise<void> {
+  await defaultWriter.write(path, data, options);
 }
 
-export async function replaceFileDurable(path: string, data: DurableData): Promise<void> {
-  await defaultWriter.replace(path, data);
+export async function replaceFileDurable(
+  path: string,
+  data: DurableData,
+  options: DurableWriteOptions = {},
+): Promise<void> {
+  await defaultWriter.replace(path, data, options);
 }

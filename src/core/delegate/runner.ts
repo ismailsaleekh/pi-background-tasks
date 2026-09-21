@@ -1,9 +1,9 @@
 import { existsSync } from 'node:fs';
-import { readFile } from 'node:fs/promises';
-import { canonicalJson } from '../attested-pi-run.js';
+import { readFile, rmdir } from 'node:fs/promises';
+import { canonicalJson } from '../canonical-json.js';
 import { replaceFileDurable } from '../durable-fs.js';
 import { resolveAnthropicAttributionExtensionPath } from '../anthropic-attribution-path.js';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { DelegateArtifactStore, discardDelegateArtifactRoot } from './artifacts.js';
 import {
   buildDelegateChildArgv,
@@ -14,9 +14,7 @@ import {
   type DelegatePreflightInput,
   type DelegatePreflightResult,
 } from './launch.js';
-import {
-  DELEGATE_INLINE_ANSWER_BYTES,
-} from './budget.js';
+import { DELEGATE_INLINE_ANSWER_BYTES } from './budget.js';
 import { verifyDelegateResultPackage, type VerifiedDelegateResult } from './result-package.js';
 import {
   DelegateError,
@@ -44,6 +42,8 @@ export interface PreparedDelegateLaunch {
   seedPathAbs: string;
   /** Exact prompt bytes delivered to the child over stdin. */
   stdinBytes: Buffer;
+  /** Remove this complete preparation while it is still unowned by a task. */
+  rollback: () => Promise<void>;
 }
 
 export interface PrepareDelegateLaunchInput extends DelegatePreflightInput {
@@ -55,6 +55,57 @@ export interface PrepareDelegateLaunchInput extends DelegatePreflightInput {
   attributionExtensionPath?: string | undefined;
   env?: NodeJS.ProcessEnv | undefined;
   now?: (() => Date) | undefined;
+  /** Activation closure cancels preparation before task ownership transfers. */
+  signal?: AbortSignal | undefined;
+}
+
+const PREPARATION_CLEANUP_ERROR_MAX_CHARS = 320;
+
+function boundedPreparationError(error: unknown): string {
+  const text = (error instanceof Error ? error.message : String(error))
+    .replace(/\s+/gu, ' ')
+    .trim();
+  if (text.length <= PREPARATION_CLEANUP_ERROR_MAX_CHARS) return text;
+  return `${text.slice(0, PREPARATION_CLEANUP_ERROR_MAX_CHARS)}…`;
+}
+
+function filesystemErrorCode(error: unknown): string | undefined {
+  if (typeof error !== 'object' || error === null) return undefined;
+  const code: unknown = Reflect.get(error, 'code');
+  return typeof code === 'string' ? code : undefined;
+}
+
+async function removeEmptyDirectory(path: string): Promise<boolean> {
+  try {
+    await rmdir(path);
+    return true;
+  } catch (error) {
+    const code = filesystemErrorCode(error);
+    if (code === 'ENOENT') return true;
+    if (code === 'ENOTEMPTY' || code === 'EEXIST') return false;
+    throw error;
+  }
+}
+
+async function discardUnownedDelegatePreparation(rootAbs: string): Promise<void> {
+  await discardDelegateArtifactRoot(rootAbs);
+  const runParent = dirname(rootAbs);
+  if (!(await removeEmptyDirectory(runParent))) return;
+  await removeEmptyDirectory(dirname(runParent));
+}
+
+function throwIfPreparationAborted(signal: AbortSignal | undefined): void {
+  if (signal?.aborted !== true) return;
+  const reason: unknown = signal.reason;
+  if (reason instanceof Error) throw reason;
+  throw new Error('delegate launch preparation was cancelled before task registration');
+}
+
+function preparationCleanupFailure(original: unknown, cleanup: unknown): AggregateError {
+  return new AggregateError(
+    [original, cleanup],
+    `delegate launch preparation failed and rollback also failed: ${boundedPreparationError(cleanup)}`,
+  );
 }
 
 /**
@@ -62,16 +113,16 @@ export interface PrepareDelegateLaunchInput extends DelegatePreflightInput {
  *
  * Preflight runs first and completes entirely before the artifact directory is
  * created, so every admission refusal leaves zero children AND zero artifacts.
- * When a step after directory creation fails, the partially created directory
- * is removed, so a refused launch never leaves a half-formed run behind.
+ * When a step after directory creation fails or activation cancellation is
+ * observed, the producer removes the unowned directory before rejecting.
  */
 export async function prepareDelegateLaunch(
   input: PrepareDelegateLaunchInput,
 ): Promise<PreparedDelegateLaunch> {
+  throwIfPreparationAborted(input.signal);
   // Resolve the guard extension before anything is created: a package missing
   // its child guard must refuse rather than spawn an unguarded child.
-  const childExtensionPath =
-    input.childExtensionPath ?? resolveDelegateChildExtensionPath();
+  const childExtensionPath = input.childExtensionPath ?? resolveDelegateChildExtensionPath();
   let attributionExtensionPath: string | undefined;
   if (input.route.provider === 'anthropic') {
     try {
@@ -89,41 +140,46 @@ export async function prepareDelegateLaunch(
     }
   }
 
+  throwIfPreparationAborted(input.signal);
   const preflight = preflightDelegateLaunch(input);
+  throwIfPreparationAborted(input.signal);
 
-  const store = await DelegateArtifactStore.create({
-    cwd: input.cwd,
-    taskId: preflight.taskId,
-    launchNonce: preflight.launchNonce,
-    sessionId: input.sessionId,
-    childSessionId: preflight.childSessionId,
-    childSessionDir: '',
-    extensionMode: input.extensionMode,
-    route: input.route,
-    limits: preflight.limits,
-    seedSha256: preflight.seed.sha256,
-    ...(input.now === undefined ? {} : { now: input.now }),
-  });
-
+  let store: DelegateArtifactStore | undefined;
   try {
+    store = await DelegateArtifactStore.create({
+      cwd: input.cwd,
+      taskId: preflight.taskId,
+      launchNonce: preflight.launchNonce,
+      sessionId: input.sessionId,
+      childSessionId: preflight.childSessionId,
+      childSessionDir: '',
+      extensionMode: input.extensionMode,
+      route: input.route,
+      limits: preflight.limits,
+      seedSha256: preflight.seed.sha256,
+      ...(input.now === undefined ? {} : { now: input.now }),
+    });
+    throwIfPreparationAborted(input.signal);
+
     const seedRef = await store.writeSeed(preflight.seed.serialized);
+    throwIfPreparationAborted(input.signal);
     // The persisted seed bytes are the bytes the child reads. Nothing
     // re-serializes them between here and the child, and the child verifies the
     // hash before its first model call.
     if (seedRef.sha256 !== preflight.seed.sha256) {
-      throw new DelegateError(
-        'delegate seed hash changed between construction and persistence',
-        {
-          code: 'seed_persist_failed',
-          childCreated: false,
-          taskId: preflight.taskId,
-          artifactDir: store.artifactDir,
-        },
-      );
+      throw new DelegateError('delegate seed hash changed between construction and persistence', {
+        code: 'seed_persist_failed',
+        childCreated: false,
+        taskId: preflight.taskId,
+        artifactDir: store.artifactDir,
+      });
     }
     await store.writeLedger(preflight.seed.ledger);
+    throwIfPreparationAborted(input.signal);
     await store.writeBudgetPlan(preflight.plan);
+    throwIfPreparationAborted(input.signal);
     const childSessionDirAbs = await ensureDelegateChildSessionDir(store.artifactDirAbs);
+    throwIfPreparationAborted(input.signal);
     const seedPathAbs = join(store.artifactDirAbs, 'seed.json');
     const argv = buildDelegateChildArgv({
       route: input.route,
@@ -169,6 +225,13 @@ export async function prepareDelegateLaunch(
     // The persisted prompt bytes must equal the bytes sent to the child, so the
     // artifact is evidence of what the child actually received.
     await store.writeChildPrompt(stdinBytes);
+    throwIfPreparationAborted(input.signal);
+    const artifactDirAbs = store.artifactDirAbs;
+    let rollbackPromise: Promise<void> | undefined;
+    const rollback = (): Promise<void> => {
+      rollbackPromise ??= discardUnownedDelegatePreparation(artifactDirAbs);
+      return rollbackPromise;
+    };
     return {
       preflight,
       store,
@@ -178,10 +241,15 @@ export async function prepareDelegateLaunch(
       childSessionDirAbs,
       seedPathAbs,
       stdinBytes,
+      rollback,
     };
   } catch (error) {
-    // A failure after directory creation must not leave a half-formed run.
-    await discardDelegateArtifactRoot(store.artifactDirAbs);
+    if (store === undefined) throw error;
+    try {
+      await discardUnownedDelegatePreparation(store.artifactDirAbs);
+    } catch (cleanupError) {
+      throw preparationCleanupFailure(error, cleanupError);
+    }
     throw error;
   }
 }
@@ -246,17 +314,19 @@ async function adjudicateDelegateTerminal(
   const resultPath = join(input.artifactDirAbs, 'result.json');
   const terminalPath = join(input.artifactDirAbs, 'child-terminal.json');
   if (!existsSync(resultPath)) {
-    const recorded = existsSync(terminalPath)
-      ? await readChildTerminal(terminalPath)
-      : undefined;
+    const recorded = existsSync(terminalPath) ? await readChildTerminal(terminalPath) : undefined;
     const cancelled = input.taskStatus === 'killed';
     const code = recorded?.code ?? (cancelled ? 'child_cancelled' : 'child_exited_without_commit');
     const detail =
       recorded?.message ??
       input.taskError ??
       'the delegate child exited without committing a result package';
-    const preserved = ['seed.json', 'budget-plan.json', 'child-terminal.json', 'runtime-budget.json']
-      .filter((name) => existsSync(join(input.artifactDirAbs, name)));
+    const preserved = [
+      'seed.json',
+      'budget-plan.json',
+      'child-terminal.json',
+      'runtime-budget.json',
+    ].filter((name) => existsSync(join(input.artifactDirAbs, name)));
     if (
       input.taskOutputPath !== undefined &&
       input.taskOutputAbsPath !== undefined &&
@@ -265,25 +335,26 @@ async function adjudicateDelegateTerminal(
       preserved.push(input.taskOutputPath);
     }
     const diagnosticTargets = preserved.filter(
-      (name) => name === 'child-terminal.json' || name === 'runtime-budget.json' || name === input.taskOutputPath,
+      (name) =>
+        name === 'child-terminal.json' ||
+        name === 'runtime-budget.json' ||
+        name === input.taskOutputPath,
     );
-    const diagnostic = diagnosticTargets.length === 0
-      ? 'No child terminal record or merged task output exists; inspect the preserved launch artifacts listed above.'
-      : `Inspect the preserved diagnostic evidence: ${diagnosticTargets.join(', ')}.`;
-    const error = new DelegateError(
-      `bg_delegate produced no committed answer: ${detail}`,
-      {
-        code: isDelegateErrorCode(code) ? code : 'child_exited_without_commit',
-        childCreated: true,
-        taskId: input.taskId,
-        artifactDir: input.artifactDirAbs,
-        preserved,
-        remediation: [
-          diagnostic,
-          'No partial answer is returned; nothing was truncated to look like success.',
-        ],
-      },
-    );
+    const diagnostic =
+      diagnosticTargets.length === 0
+        ? 'No child terminal record or merged task output exists; inspect the preserved launch artifacts listed above.'
+        : `Inspect the preserved diagnostic evidence: ${diagnosticTargets.join(', ')}.`;
+    const error = new DelegateError(`bg_delegate produced no committed answer: ${detail}`, {
+      code: isDelegateErrorCode(code) ? code : 'child_exited_without_commit',
+      childCreated: true,
+      taskId: input.taskId,
+      artifactDir: input.artifactDirAbs,
+      preserved,
+      remediation: [
+        diagnostic,
+        'No partial answer is returned; nothing was truncated to look like success.',
+      ],
+    });
     const outcome: DelegateTaskOutcome = {
       status: cancelled ? 'cancelled' : 'failed',
       errorCode: error.code,

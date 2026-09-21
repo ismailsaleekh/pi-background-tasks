@@ -2,8 +2,8 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { EventEmitter } from 'node:events';
-import { existsSync } from 'node:fs';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { existsSync, realpathSync } from 'node:fs';
+import { chmod, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { SpawnOptions } from 'node:child_process';
@@ -1146,7 +1146,7 @@ void describe('fusion Pi child runner', () => {
   });
 
   void it('loads package-owned Anthropic attribution/sanitization before the runtime governor', () => {
-    const attribution = () => '/pkg/extensions/anthropic-attribution.ts';
+    const attribution = () => '/pkg/extensions/anthropic-attribution-child.ts';
     const claude = buildFusionPiChildArgv(
       resolvedModel('anthropic', 'claude-opus-5'),
       'system',
@@ -1158,7 +1158,10 @@ void describe('fusion Pi child runner', () => {
       if (value === '--extension') acc.push(claude[index + 1] ?? '');
       return acc;
     }, []);
-    assert.deepEqual(extensionArgs, ['/pkg/extensions/anthropic-attribution.ts', 'extension.js']);
+    assert.deepEqual(extensionArgs, [
+      '/pkg/extensions/anthropic-attribution-child.ts',
+      'extension.js',
+    ]);
     assert.equal(extensionArgs.at(-1), 'extension.js');
   });
 
@@ -1181,7 +1184,10 @@ void describe('fusion Pi child runner', () => {
 
   void it('resolves the package-owned global attribution extension and fails loudly if absent', () => {
     const attribution = resolveAnthropicAttributionExtensionPath();
-    assert.match(attribution.replaceAll('\\', '/'), /extensions\/anthropic-attribution\.ts$/);
+    assert.match(
+      attribution.replaceAll('\\', '/'),
+      /extensions\/anthropic-attribution-child\.ts$/,
+    );
     assert.equal(existsSync(attribution), true);
     assert.throws(
       () => resolveAnthropicAttributionExtensionPath(import.meta.url, () => false),
@@ -1691,6 +1697,10 @@ void describe('fusion Pi child runner', () => {
   });
 
   void it('pipes the prompt through stdin and returns the exact full text with compact metadata', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'pi-fusion-pinned-launch-'));
+    const admittedPi = join(root, 'pi');
+    await writeFile(admittedPi, '#!/bin/sh\nexit 0\n', 'utf8');
+    await chmod(admittedPi, 0o755);
     const child = new FakeChild(777);
     const harness = makeSpawn(child);
     const run = runPiChild({
@@ -1704,22 +1714,13 @@ void describe('fusion Pi child runner', () => {
       spawn: harness.spawn,
       platform: 'linux',
       env: { PI_SESSION_FILE: 'old', ANTHROPIC_API_KEY: 'metered-key' },
+      piLaunchDependencies: { path: root, hostScript: '' },
     });
     await tick();
     const record = harness.records[0];
-    assert.ok(record, 'spawn record exists');
-    assert.equal(record.command, 'pi');
-    assert.equal(record.options.shell, false);
-    assert.deepEqual(record.options.stdio, ['pipe', 'pipe', 'pipe']);
-    assert.equal(record.options.env?.['PI_SESSION_FILE'], undefined);
-    assert.equal(record.options.env?.['ANTHROPIC_API_KEY'], undefined);
-    assert.equal(record.options.env?.[FUSION_TOOL_CALL_LOG_PATH_ENV], undefined);
-    assert.equal(
-      Buffer.concat(child.stdin.chunks).toString('utf8'),
-      'large prompt with U+2028 \u2028 and U+2029 \u2029',
-    );
-    assert.equal(child.stdin.ended, true);
 
+    // Settle the fake child before making spawn assertions. A failed assertion
+    // must not strand the runner's timeout/cleanup handles and suppress TAP summary.
     const response = Buffer.from('final héllo\n', 'utf8');
     child.stdout.emitData(response.subarray(0, 4));
     child.stdout.emitData(response.subarray(4));
@@ -1728,22 +1729,39 @@ void describe('fusion Pi child runner', () => {
     child.stderr.emitData(metadata.subarray(0, 23));
     child.stderr.emitData(metadata.subarray(23));
     child.close(0, null);
-    const result = await run;
-    assert.equal(result.text, 'final héllo');
-    assert.equal(result.usage.input, 6);
-    assert.equal(result.usage.output, 8);
-    assert.equal(result.usage.totalTokens, 21);
-    assert.deepEqual(result.usage.cost, {
-      input: 0.060000000000000005,
-      output: 0.08,
-      cacheRead: 0.07,
-      cacheWrite: 0.09,
-      total: 0.30000000000000004,
-    });
-    assert.equal(result.stderr.toString('utf8'), 'diagnostic');
-    assert.equal(result.events.toString('utf8').split('\n').filter(Boolean).length, 3);
-    assert.match(result.events.toString('utf8'), /fusion-child-settlement\.v3/);
-    assert.doesNotMatch(result.events.toString('utf8'), /final héllo/);
+
+    try {
+      const result = await run;
+      assert.ok(record, 'spawn record exists');
+      assert.equal(record.command, realpathSync(admittedPi));
+      assert.equal(record.options.shell, false);
+      assert.deepEqual(record.options.stdio, ['pipe', 'pipe', 'pipe']);
+      assert.equal(record.options.env?.['PI_SESSION_FILE'], undefined);
+      assert.equal(record.options.env?.['ANTHROPIC_API_KEY'], undefined);
+      assert.equal(record.options.env?.[FUSION_TOOL_CALL_LOG_PATH_ENV], undefined);
+      assert.equal(
+        Buffer.concat(child.stdin.chunks).toString('utf8'),
+        'large prompt with U+2028 \u2028 and U+2029 \u2029',
+      );
+      assert.equal(child.stdin.ended, true);
+      assert.equal(result.text, 'final héllo');
+      assert.equal(result.usage.input, 6);
+      assert.equal(result.usage.output, 8);
+      assert.equal(result.usage.totalTokens, 21);
+      assert.deepEqual(result.usage.cost, {
+        input: 0.060000000000000005,
+        output: 0.08,
+        cacheRead: 0.07,
+        cacheWrite: 0.09,
+        total: 0.30000000000000004,
+      });
+      assert.equal(result.stderr.toString('utf8'), 'diagnostic');
+      assert.equal(result.events.toString('utf8').split('\n').filter(Boolean).length, 3);
+      assert.match(result.events.toString('utf8'), /fusion-child-settlement\.v3/);
+      assert.doesNotMatch(result.events.toString('utf8'), /final héllo/);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 
   void it('passes tool-call audit env vars only for tool-enabled children', async () => {

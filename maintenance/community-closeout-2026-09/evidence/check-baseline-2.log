@@ -1,0 +1,38 @@
+
+> pi-background-tasks@2.5.0 test:type-safety
+> tsx --test tests/package/type-safety.test.ts
+
+▶ type-safety standard
+  ✖ has no explicit top-type escape, compiler suppressions, or double assertions in package TypeScript (42.497042ms)
+  ✔ has no production non-null assertion bypasses (9.02325ms)
+✖ type-safety standard (52.162541ms)
+ℹ tests 2
+ℹ suites 1
+ℹ pass 1
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 164.161042
+
+✖ failing tests:
+
+test at tests/package/type-safety.test.ts:1:1566
+✖ has no explicit top-type escape, compiler suppressions, or double assertions in package TypeScript (42.497042ms)
+  AssertionError [ERR_ASSERTION]: <REVIEW_ROOT>/baseline/src/core/anthropic-attribution.ts:83 explicit top-type escape: // Bump whenever any system/tool/message wire projection changes. Old receipts then
+  <REVIEW_ROOT>/baseline/src/core/anthropic-attribution.ts:1493 double assertion: return details as unknown as AnthropicLineageDetails;
+  
+  2 !== 0
+  
+      at TestContext.<anonymous> (<REVIEW_ROOT>/baseline/tests/package/type-safety.test.ts:72:12)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1771:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

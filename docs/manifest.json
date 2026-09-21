@@ -1,16 +1,15 @@
 {
   "attestation_state": [
     {
-      "authored_body_sha256": "sha256:8b8a883eb261dd221d348724fb43ae13fac19eb52a30f688d55ff80b2039be98",
+      "authored_body_sha256": "sha256:d71aace12a6d092e963a2d99915f94d45c34c4f93e3ce936837dc6182dc1d6d3",
       "covers_sources": [
         "src/core/extension-api.ts"
       ],
       "doc_id": "api/eventbus-v1",
-      "notes": "Reviewed EventBus channels, closed schemas, operations, request correlation and rejection, close unsubscribe behavior, terminal ordering, latched publication, retry semantics, and at-least-once deduplication guidance.",
       "rel": "docs/api/eventbus-v1.md",
       "required": true,
       "reviewer": "gpt-5.5-final-eventbus-reviewer",
-      "state": "pass"
+      "state": "stale-authored-prose"
     },
     {
       "authored_body_sha256": "sha256:810591c82ced086e1622be9b037db88c8a667856580895dc90cd5af54c6e2107",
@@ -26,8 +25,9 @@
       "state": "stale-authored-prose"
     },
     {
-      "authored_body_sha256": "sha256:d74e15a5d9c67a6602e341a68a08d8ed06edb0769cc114e689d5702ebab2b575",
+      "authored_body_sha256": "sha256:1668305b87b152b6fc98ba3f7bcf029269d4f042a4b39192232a3cc472fdc2ae",
       "covers_sources": [
+        "extensions/anthropic-attribution-child.ts",
         "extensions/anthropic-attribution.ts",
         "src/core/anthropic-attribution-path.ts",
         "src/core/anthropic-attribution.ts"
@@ -38,8 +38,9 @@
       "state": "missing"
     },
     {
-      "authored_body_sha256": "sha256:0840d793b8c18869f9a3bb8a72beeb602824ed1a580161f3456126af8af9b459",
+      "authored_body_sha256": "sha256:462e0604e3965782da8aee1f77a113f454d60d905b8e58ecb622b8979d111a00",
       "covers_sources": [
+        "src/core/attested-pi-contract.ts",
         "src/core/attested-pi-run.ts"
       ],
       "doc_id": "subsystems/attested-pi-runs",
@@ -49,10 +50,12 @@
       "state": "stale-authored-prose"
     },
     {
-      "authored_body_sha256": "sha256:253948c8b1f4dd339b0c1eeabd6e8addf584fe208a0f71c3a7f094921ff4547f",
+      "authored_body_sha256": "sha256:2d05c5c7b510ef46489113efc08158e2dee1eb3c5883456c4ddf23fdc57f87c2",
       "covers_sources": [
         "src/core/common.ts",
         "src/core/registry.ts",
+        "src/core/reload-shell-owner.ts",
+        "src/core/shell-policy.ts",
         "src/core/windows-taskkill.ts"
       ],
       "doc_id": "subsystems/background-task-runtime",
@@ -62,10 +65,12 @@
       "state": "stale-authored-prose"
     },
     {
-      "authored_body_sha256": "sha256:40ee5dac92b9e873d6a9f71a59c03ff1ccd44d6717a13d3be18f74b19e68326e",
+      "authored_body_sha256": "sha256:cf4daaf407a01768f451f2374b5bb0a98efd7b4e5e0db07768c04e66a087f368",
       "covers_sources": [
+        "src/core/canonical-json.ts",
         "src/core/durable-fs.ts",
-        "src/core/pi-launch.ts"
+        "src/core/pi-launch.ts",
+        "src/core/task-durable.ts"
       ],
       "doc_id": "subsystems/child-launch-durability-and-safety",
       "rel": "docs/subsystems/child-launch-durability-and-safety.md",
@@ -74,11 +79,12 @@
       "state": "stale-authored-prose"
     },
     {
-      "authored_body_sha256": "sha256:67fbb232e66bf0b9f4c1a81b54ec5476c0aae929ed0f0777d57601afcac8e08b",
+      "authored_body_sha256": "sha256:d1e5920202ddc1368fa94148ad96906784937084d6ef5a72f1153f8dc3a4374e",
       "covers_sources": [
         "extensions/delegate-child.ts",
         "src/core/delegate/artifacts.ts",
         "src/core/delegate/budget.ts",
+        "src/core/delegate/facade-contract.ts",
         "src/core/delegate/hook-contract-evidence.json",
         "src/core/delegate/hook-contract.ts",
         "src/core/delegate/launch.ts",
@@ -86,6 +92,7 @@
         "src/core/delegate/runner.ts",
         "src/core/delegate/seed.ts",
         "src/core/delegate/types.ts",
+        "src/core/lazy-module.ts",
         "src/delegate-child-extension.ts",
         "src/delegate-extension.ts"
       ],
@@ -96,7 +103,7 @@
       "state": "stale-authored-prose"
     },
     {
-      "authored_body_sha256": "sha256:cd882ae075d47e97e2fb45709d7ac044811eedb68e2377b1742ac44147297aa4",
+      "authored_body_sha256": "sha256:97f8ae7b3d811704207fc40fc4126ab85d58e9dd86cb59d496291a2313d85463",
       "covers_sources": [
         "extensions/fusion-child.ts",
         "src/core/fusion/artifacts.ts",
@@ -107,6 +114,7 @@
         "src/core/fusion/config.ts",
         "src/core/fusion/context.ts",
         "src/core/fusion/evaluation.ts",
+        "src/core/fusion/facade-contract.ts",
         "src/core/fusion/orchestrator.ts",
         "src/core/fusion/output-contract.ts",
         "src/core/fusion/pi-child.ts",
@@ -127,9 +135,10 @@
       "state": "stale-authored-prose"
     },
     {
-      "authored_body_sha256": "sha256:caa46c3699124e0860a6f53f1bf6d31506e7eb8ad89c1871a5efeecc21a1d413",
+      "authored_body_sha256": "sha256:e1fdd8fbce4cb918fb8f361b4c13b1f78fadd455a5a18b22836a6f0b466f4119",
       "covers_sources": [
         "extensions/background-tasks.ts",
+        "src/core/config.ts",
         "src/core/update-check.ts",
         "src/extension.ts",
         "src/ui/background-tasks-manager.ts"
@@ -140,6 +149,62 @@
       "reviewer": "existing-gpt-5.5-host-panel-plus-operator-update-delta",
       "state": "stale-authored-prose"
     }
+  ],
+  "configuration_variants": {
+    "default_dock_shortcut": "shift+down",
+    "default_features": [
+      "process",
+      "delegate",
+      "fusion",
+      "attested",
+      "attribution"
+    ],
+    "dock_shortcut_values": [
+      "shift+down",
+      "ctrl+alt+b",
+      "off"
+    ],
+    "feature_values": [
+      "process",
+      "delegate",
+      "fusion",
+      "attested",
+      "attribution"
+    ],
+    "source": "src/core/config.ts"
+  },
+  "default_public_surface_ids": [
+    "command:bg",
+    "command:bg-clear",
+    "command:bg-tasks",
+    "command:bg-update",
+    "command:claude-cache",
+    "command:fusion",
+    "command:fusion-models",
+    "command:jobs",
+    "command:kill",
+    "command:logs",
+    "command:tasks",
+    "eventbus:background-task-v1",
+    "renderer:background-task-notification",
+    "renderer:fusion-result",
+    "shortcut:ctrl+alt+c",
+    "shortcut:shift+down",
+    "tool:bg_delegate",
+    "tool:bg_kill",
+    "tool:bg_logs",
+    "tool:bg_result",
+    "tool:bg_run",
+    "tool:bg_run_pi_attested",
+    "tool:bg_status",
+    "tool:fusion_investigate",
+    "tool:fusion_reason",
+    "tool:fusion_research",
+    "tool:fusion_validate",
+    "workflow:investigate",
+    "workflow:reason",
+    "workflow:research",
+    "workflow:validate"
   ],
   "docs": {
     "INDEX": {
@@ -375,6 +440,7 @@
       "audience": "user",
       "covers_sources": [],
       "covers_surfaces": [
+        "shortcut:ctrl+alt+b",
         "shortcut:ctrl+alt+c",
         "shortcut:shift+down"
       ],
@@ -386,6 +452,7 @@
     "subsystems/anthropic-attribution": {
       "audience": "maintainer",
       "covers_sources": [
+        "extensions/anthropic-attribution-child.ts",
         "extensions/anthropic-attribution.ts",
         "src/core/anthropic-attribution-path.ts",
         "src/core/anthropic-attribution.ts"
@@ -399,6 +466,7 @@
     "subsystems/attested-pi-runs": {
       "audience": "maintainer",
       "covers_sources": [
+        "src/core/attested-pi-contract.ts",
         "src/core/attested-pi-run.ts"
       ],
       "covers_surfaces": [],
@@ -412,6 +480,8 @@
       "covers_sources": [
         "src/core/common.ts",
         "src/core/registry.ts",
+        "src/core/reload-shell-owner.ts",
+        "src/core/shell-policy.ts",
         "src/core/windows-taskkill.ts"
       ],
       "covers_surfaces": [],
@@ -423,8 +493,10 @@
     "subsystems/child-launch-durability-and-safety": {
       "audience": "maintainer",
       "covers_sources": [
+        "src/core/canonical-json.ts",
         "src/core/durable-fs.ts",
-        "src/core/pi-launch.ts"
+        "src/core/pi-launch.ts",
+        "src/core/task-durable.ts"
       ],
       "covers_surfaces": [],
       "mode": "authored",
@@ -438,6 +510,7 @@
         "extensions/delegate-child.ts",
         "src/core/delegate/artifacts.ts",
         "src/core/delegate/budget.ts",
+        "src/core/delegate/facade-contract.ts",
         "src/core/delegate/hook-contract-evidence.json",
         "src/core/delegate/hook-contract.ts",
         "src/core/delegate/launch.ts",
@@ -445,6 +518,7 @@
         "src/core/delegate/runner.ts",
         "src/core/delegate/seed.ts",
         "src/core/delegate/types.ts",
+        "src/core/lazy-module.ts",
         "src/delegate-child-extension.ts",
         "src/delegate-extension.ts"
       ],
@@ -475,6 +549,7 @@
         "src/core/fusion/config.ts",
         "src/core/fusion/context.ts",
         "src/core/fusion/evaluation.ts",
+        "src/core/fusion/facade-contract.ts",
         "src/core/fusion/orchestrator.ts",
         "src/core/fusion/output-contract.ts",
         "src/core/fusion/pi-child.ts",
@@ -504,6 +579,7 @@
       "audience": "maintainer",
       "covers_sources": [
         "extensions/background-tasks.ts",
+        "src/core/config.ts",
         "src/core/update-check.ts",
         "src/extension.ts",
         "src/ui/background-tasks-manager.ts"
@@ -813,8 +889,8 @@
       "node": ">=22.19.0"
     },
     "entrypoints": [
-      "./extensions/anthropic-attribution.ts",
-      "./extensions/background-tasks.ts"
+      "./dist/extensions/anthropic-attribution.js",
+      "./dist/extensions/background-tasks.js"
     ],
     "files": [
       "BACKGROUND-TASKS-INSTRUCTIONS.md",
@@ -824,6 +900,7 @@
       "TESTING.md",
       "TEST_PLAN.md",
       "THIRD_PARTY_NOTICES.md",
+      "dist/",
       "docs/",
       "extensions/",
       "logo.png",
@@ -832,7 +909,7 @@
     "image": "https://raw.githubusercontent.com/ismailsaleekh/pi-background-tasks/main/logo.png",
     "name": "pi-background-tasks",
     "type": "module",
-    "version": "2.5.0"
+    "version": "2.6.2"
   },
   "public_surface_ids": [
     "command:bg",
@@ -849,6 +926,7 @@
     "eventbus:background-task-v1",
     "renderer:background-task-notification",
     "renderer:fusion-result",
+    "shortcut:ctrl+alt+b",
     "shortcut:ctrl+alt+c",
     "shortcut:shift+down",
     "tool:bg_delegate",
@@ -870,90 +948,114 @@
   "public_surfaces": {
     "command": [
       {
-        "description": "Start a shell command as a tracked background task: /bg [--agent] [--name \"Task name\"] <command>",
+        "availability": "always",
+        "default_available": true,
+        "description": "Start a tracked shell command: /bg [--survive-reload] [--agent] [--name \"Task name\"] <command>",
         "id": "command:bg",
         "kind": "command",
         "name": "bg",
-        "source": "src/extension.ts:517"
+        "source": "src/extension.ts:750"
       },
       {
+        "availability": "always",
+        "default_available": true,
         "description": "Clear finished background task footer notices",
         "id": "command:bg-clear",
         "kind": "command",
         "name": "bg-clear",
-        "source": "src/extension.ts:559"
+        "source": "src/extension.ts:793"
       },
       {
+        "availability": "always",
+        "default_available": true,
         "description": "Open the background task manager UI",
         "id": "command:bg-tasks",
         "kind": "command",
         "name": "bg-tasks",
-        "source": "src/extension.ts:551"
+        "source": "src/extension.ts:785"
       },
       {
+        "availability": "always",
+        "default_available": true,
         "description": "Show how to update pi-background-tasks to the latest published version",
         "id": "command:bg-update",
         "kind": "command",
         "name": "bg-update",
-        "source": "src/extension.ts:567"
+        "source": "src/extension.ts:801"
       },
       {
+        "availability": "feature:attribution",
+        "default_available": true,
         "description": "Show or set Claude cache retention for this session (short, long, default)",
         "id": "command:claude-cache",
         "kind": "command",
         "name": "claude-cache",
-        "source": "src/core/anthropic-attribution.ts:3026"
+        "source": "src/core/anthropic-attribution.ts:3220"
       },
       {
+        "availability": "feature:fusion",
+        "default_available": true,
         "description": "Start fixed-purpose Fusion reason in the background and return immediately.",
         "id": "command:fusion",
         "kind": "command",
         "name": "fusion",
-        "source": "src/fusion-extension.ts:996"
+        "source": "src/fusion-extension.ts:1083"
       },
       {
+        "availability": "feature:fusion",
+        "default_available": true,
         "description": "Open the five-slot global fusion model selector.",
         "id": "command:fusion-models",
         "kind": "command",
         "name": "fusion-models",
-        "source": "src/fusion-extension.ts:1029"
+        "source": "src/fusion-extension.ts:1123"
       },
       {
+        "availability": "always",
+        "default_available": true,
         "description": "List running and recent background tasks",
         "id": "command:jobs",
         "kind": "command",
         "name": "jobs",
-        "source": "src/extension.ts:605"
+        "source": "src/extension.ts:850"
       },
       {
+        "availability": "always",
+        "default_available": true,
         "description": "Stop a running background task: /kill <id>",
         "id": "command:kill",
         "kind": "command",
         "name": "kill",
-        "source": "src/extension.ts:649"
+        "source": "src/extension.ts:894"
       },
       {
+        "availability": "always",
+        "default_available": true,
         "description": "Show bounded output from a background task: /logs <id> [maxBytes]",
         "id": "command:logs",
         "kind": "command",
         "name": "logs",
-        "source": "src/extension.ts:618"
+        "source": "src/extension.ts:863"
       },
       {
+        "availability": "always",
+        "default_available": true,
         "description": "Open the Claude-like background task manager UI",
         "id": "command:tasks",
         "kind": "command",
         "name": "tasks",
-        "source": "src/extension.ts:543"
+        "source": "src/extension.ts:777"
       }
     ],
     "eventbus": [
       {
+        "availability": "always",
         "channels": {
           "request": "pi-background-tasks:request:v1",
           "response": "pi-background-tasks:response:v1",
           "terminal": "pi-background-tasks:terminal:v1"
         },
+        "default_available": true,
         "id": "eventbus:background-task-v1",
         "kind": "eventbus",
         "name": "background-task-v1",
@@ -969,36 +1071,55 @@
     ],
     "renderer": [
       {
+        "availability": "always",
+        "default_available": true,
         "id": "renderer:background-task-notification",
         "kind": "renderer",
         "name": "background-task-notification",
-        "source": "src/extension.ts:426"
+        "source": "src/extension.ts:627"
       },
       {
+        "availability": "feature:fusion",
+        "default_available": true,
         "id": "renderer:fusion-result",
         "kind": "renderer",
         "name": "fusion-result",
-        "source": "src/fusion-extension.ts:980"
+        "source": "src/fusion-extension.ts:1067"
       }
     ],
     "shortcut": [
       {
+        "availability": "dock:ctrl+alt+b",
+        "default_available": false,
+        "description": "Open focused background task footer dock",
+        "id": "shortcut:ctrl+alt+b",
+        "kind": "shortcut",
+        "name": "ctrl+alt+b",
+        "source": "src/extension.ts:834"
+      },
+      {
+        "availability": "always",
+        "default_available": true,
         "description": "Clear finished background task footer notices (terminal-dependent fallback for /bg-clear)",
         "id": "shortcut:ctrl+alt+c",
         "kind": "shortcut",
         "name": "ctrl+alt+c",
-        "source": "src/extension.ts:597"
+        "source": "src/extension.ts:842"
       },
       {
+        "availability": "dock:shift+down",
+        "default_available": true,
         "description": "Open focused background task footer dock",
         "id": "shortcut:shift+down",
         "kind": "shortcut",
         "name": "shift+down",
-        "source": "src/extension.ts:590"
+        "source": "src/extension.ts:825"
       }
     ],
     "tool": [
       {
+        "availability": "feature:delegate",
+        "default_available": true,
         "description": "Launch one background Pi agent seeded with a frozen projection of the current conversation, then return a launch receipt immediately. The child has its own session, a route pinned at launch that is never substituted, and read-only tools. Extension discovery is isolated by default; ambient mode supports extension-registered providers but executes arbitrary discovered extension code. Retrieve its verified answer with bg_result.",
         "id": "tool:bg_delegate",
         "kind": "tool",
@@ -1083,9 +1204,11 @@
           ],
           "type": "object"
         },
-        "source": "src/delegate-extension.ts:340"
+        "source": "src/delegate-extension.ts:500"
       },
       {
+        "availability": "always",
+        "default_available": true,
         "description": "Stop a running background task by ID. Fails loudly if the task is unknown or already finished.",
         "id": "tool:bg_kill",
         "kind": "tool",
@@ -1107,9 +1230,11 @@
           ],
           "type": "object"
         },
-        "source": "src/extension.ts:908"
+        "source": "src/extension.ts:1181"
       },
       {
+        "availability": "always",
+        "default_available": true,
         "description": "Read bounded output from a background task for deliberate inspection; this is not a waiting primitive. Output is capped at 50.0KB for model safety and points to the full output file when truncated.",
         "id": "tool:bg_logs",
         "kind": "tool",
@@ -1141,9 +1266,11 @@
           ],
           "type": "object"
         },
-        "source": "src/extension.ts:863"
+        "source": "src/extension.ts:1136"
       },
       {
+        "availability": "any(feature:delegate,feature:fusion)",
+        "default_available": true,
         "description": "Retrieve a hash-verified result from a bg_delegate or background Fusion task. Never blocks: a running task returns a typed not-ready result. Oversized answers are never truncated.",
         "id": "tool:bg_result",
         "kind": "tool",
@@ -1171,9 +1298,11 @@
           ],
           "type": "object"
         },
-        "source": "src/delegate-extension.ts:516"
+        "source": "src/delegate-extension.ts:757"
       },
       {
+        "availability": "always",
+        "default_available": true,
         "description": "Start a named long-running shell command in the background and return immediately with a task ID and output path. By default, completed, failed, or killed terminal state is delivered automatically as <background-task-notification> and starts a follow-up agent turn; do not sleep or poll merely to wait. Output is written to .pi/tasks and model-visible logs are bounded to 50.0KB.",
         "id": "tool:bg_run",
         "kind": "tool",
@@ -1212,6 +1341,10 @@
               "description": "Whether to deliver the durable terminal notification. Default: true; disable only when deliberately taking over completion monitoring.",
               "type": "boolean"
             },
+            "surviveReload": {
+              "description": "Opt in to retaining this exact ordinary isAgent:false shell execution across a real same-process Pi reload. Default: false. Unsupported for agent, managed, delegate, Fusion, and attested tasks.",
+              "type": "boolean"
+            },
             "timeoutSeconds": {
               "description": "Optional timeout; task is failed and killed when exceeded",
               "type": "number"
@@ -1228,9 +1361,11 @@
           ],
           "type": "object"
         },
-        "source": "src/extension.ts:682"
+        "source": "src/extension.ts:927"
       },
       {
+        "availability": "feature:attested",
+        "default_available": true,
         "description": "Opt-in evidence-oriented direct Pi spawn. Launches exactly one `pi --mode json` child, records raw Pi events/stderr, hashes prompt/report/output, observes OAuth through ModelRegistry, and emits a strict attestation sidecar only after successful completion.",
         "id": "tool:bg_run_pi_attested",
         "kind": "tool",
@@ -1289,9 +1424,11 @@
           ],
           "type": "object"
         },
-        "source": "src/extension.ts:767"
+        "source": "src/extension.ts:1036"
       },
       {
+        "availability": "always",
+        "default_available": true,
         "description": "Inspect one background task or list all running/recent background tasks. This is a point-in-time inspection tool, not a waiting primitive.",
         "id": "tool:bg_status",
         "kind": "tool",
@@ -1313,9 +1450,11 @@
           "required": [],
           "type": "object"
         },
-        "source": "src/extension.ts:832"
+        "source": "src/extension.ts:1105"
       },
       {
+        "availability": "feature:fusion",
+        "default_available": true,
         "description": "Start a five-model Fusion investigation as a tracked background task and return immediately after durable preflight. Retrieve the verified result with bg_result after notification. Candidate children run in clean bounded read-only contexts.",
         "id": "tool:fusion_investigate",
         "kind": "tool",
@@ -1376,9 +1515,11 @@
           ],
           "type": "object"
         },
-        "source": "src/fusion-extension.ts:1197"
+        "source": "src/fusion-extension.ts:1305"
       },
       {
+        "availability": "feature:fusion",
+        "default_available": true,
         "description": "Start a five-model Fusion reason workflow as a tracked background task and return immediately after durable preflight. Retrieve the verified result with bg_result after notification. Candidate children receive the reason projection and no tools; evaluator and merger also run without tools.",
         "id": "tool:fusion_reason",
         "kind": "tool",
@@ -1404,9 +1545,11 @@
           ],
           "type": "object"
         },
-        "source": "src/fusion-extension.ts:1179"
+        "source": "src/fusion-extension.ts:1287"
       },
       {
+        "availability": "feature:fusion",
+        "default_available": true,
         "description": "Start a five-model Fusion research workflow as a tracked background task and return immediately after durable preflight. Retrieve the verified result with bg_result after notification. Targeted URL fetch is not web search; fetched pages and URLs are untrusted.",
         "id": "tool:fusion_research",
         "kind": "tool",
@@ -1493,9 +1636,11 @@
           ],
           "type": "object"
         },
-        "source": "src/fusion-extension.ts:1216"
+        "source": "src/fusion-extension.ts:1324"
       },
       {
+        "availability": "feature:fusion",
+        "default_available": true,
         "description": "Start an advisory, read-only Fusion validation review as a tracked background task and return immediately after durable preflight. Retrieve the verified result with bg_result after notification. It is not a build/test/lint substitute and never modifies files.",
         "id": "tool:fusion_validate",
         "kind": "tool",
@@ -1623,12 +1768,14 @@
           ],
           "type": "object"
         },
-        "source": "src/fusion-extension.ts:1236"
+        "source": "src/fusion-extension.ts:1344"
       }
     ],
     "workflow": [
       {
+        "availability": "feature:fusion",
         "contextKind": "clean_task",
+        "default_available": true,
         "id": "workflow:investigate",
         "kind": "workflow",
         "name": "investigate",
@@ -1636,7 +1783,9 @@
         "toolName": "fusion_investigate"
       },
       {
+        "availability": "feature:fusion",
         "contextKind": "session_projection",
+        "default_available": true,
         "id": "workflow:reason",
         "kind": "workflow",
         "name": "reason",
@@ -1644,7 +1793,9 @@
         "toolName": "fusion_reason"
       },
       {
+        "availability": "feature:fusion",
         "contextKind": "clean_task",
+        "default_available": true,
         "id": "workflow:research",
         "kind": "workflow",
         "name": "research",
@@ -1652,7 +1803,9 @@
         "toolName": "fusion_research"
       },
       {
+        "availability": "feature:fusion",
         "contextKind": "clean_task",
+        "default_available": true,
         "id": "workflow:validate",
         "kind": "workflow",
         "name": "validate",
@@ -1663,6 +1816,9 @@
   },
   "schema_version": "pi-background-tasks.docs-manifest.v2",
   "source_to_docs": {
+    "extensions/anthropic-attribution-child.ts": [
+      "subsystems/anthropic-attribution"
+    ],
     "extensions/anthropic-attribution.ts": [
       "subsystems/anthropic-attribution"
     ],
@@ -1681,11 +1837,20 @@
     "src/core/anthropic-attribution.ts": [
       "subsystems/anthropic-attribution"
     ],
+    "src/core/attested-pi-contract.ts": [
+      "subsystems/attested-pi-runs"
+    ],
     "src/core/attested-pi-run.ts": [
       "subsystems/attested-pi-runs"
     ],
+    "src/core/canonical-json.ts": [
+      "subsystems/child-launch-durability-and-safety"
+    ],
     "src/core/common.ts": [
       "subsystems/background-task-runtime"
+    ],
+    "src/core/config.ts": [
+      "subsystems/host-ui-and-telemetry"
     ],
     "src/core/context/parent-snapshot.ts": [
       "concepts/context-projection-and-budgeting"
@@ -1700,6 +1865,9 @@
       "subsystems/delegation"
     ],
     "src/core/delegate/budget.ts": [
+      "subsystems/delegation"
+    ],
+    "src/core/delegate/facade-contract.ts": [
       "subsystems/delegation"
     ],
     "src/core/delegate/hook-contract-evidence.json": [
@@ -1753,6 +1921,9 @@
     "src/core/fusion/evaluation.ts": [
       "subsystems/fusion"
     ],
+    "src/core/fusion/facade-contract.ts": [
+      "subsystems/fusion"
+    ],
     "src/core/fusion/orchestrator.ts": [
       "subsystems/fusion"
     ],
@@ -1780,11 +1951,23 @@
     "src/core/fusion/workflows.ts": [
       "subsystems/fusion"
     ],
+    "src/core/lazy-module.ts": [
+      "subsystems/delegation"
+    ],
     "src/core/pi-launch.ts": [
       "subsystems/child-launch-durability-and-safety"
     ],
     "src/core/registry.ts": [
       "subsystems/background-task-runtime"
+    ],
+    "src/core/reload-shell-owner.ts": [
+      "subsystems/background-task-runtime"
+    ],
+    "src/core/shell-policy.ts": [
+      "subsystems/background-task-runtime"
+    ],
+    "src/core/task-durable.ts": [
+      "subsystems/child-launch-durability-and-safety"
     ],
     "src/core/update-check.ts": [
       "subsystems/host-ui-and-telemetry"
@@ -1856,6 +2039,9 @@
     ],
     "renderer:fusion-result": [
       "subsystems/fusion"
+    ],
+    "shortcut:ctrl+alt+b": [
+      "reference/shortcuts-and-dock"
     ],
     "shortcut:ctrl+alt+c": [
       "reference/shortcuts-and-dock"

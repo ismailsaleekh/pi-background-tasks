@@ -5,7 +5,7 @@ mode: authored
 review_policy: behavioral
 stability: evolving
 covers_surfaces: []
-covers_sources: [extensions/delegate-child.ts, src/core/delegate/artifacts.ts, src/core/delegate/budget.ts, src/core/delegate/hook-contract-evidence.json, src/core/delegate/hook-contract.ts, src/core/delegate/launch.ts, src/core/delegate/result-package.ts, src/core/delegate/runner.ts, src/core/delegate/seed.ts, src/core/delegate/types.ts, src/delegate-child-extension.ts, src/delegate-extension.ts]
+covers_sources: [extensions/delegate-child.ts, src/core/delegate/artifacts.ts, src/core/delegate/budget.ts, src/core/delegate/facade-contract.ts, src/core/delegate/hook-contract-evidence.json, src/core/delegate/hook-contract.ts, src/core/delegate/launch.ts, src/core/delegate/result-package.ts, src/core/delegate/runner.ts, src/core/delegate/seed.ts, src/core/delegate/types.ts, src/core/lazy-module.ts, src/delegate-child-extension.ts, src/delegate-extension.ts]
 ---
 # Delegation subsystem
 
@@ -15,12 +15,15 @@ This document is the primary behavioral owner for delegation runtime code:
 - `src/delegate-child-extension.ts`
 - `extensions/delegate-child.ts`
 - every current file under `src/core/delegate/**`, including `hook-contract-evidence.json`
+- the internal activation-local loader in `src/core/lazy-module.ts`, shared with the Fusion facade
 
 It does **not** claim ownership of shared `common`, `registry`, `pi-launch`, or `durable-fs`; delegation consumes those integration points.
 
 ## Behavioral contract
 
-Delegation provides one background child Pi agent, one directive, one pinned route, and read-only inspection tools. The parent gets a launch receipt immediately and later retrieves a verified answer through `bg_result`.
+Delegation provides one background child Pi agent, one directive, one pinned route, and read-only inspection tools. It is registered only when `PI_BG_FEATURES` includes `delegate`. The parent gets a launch receipt immediately and later retrieves a verified answer through `bg_result`.
+
+`bg_result` is a shared derived surface, not part of the delegate toggle: it is registered exactly once when delegate or Fusion is enabled. Delegate-only and Fusion-only configurations therefore retain the correct verifier/retrieval path, while process-only has neither a producer nor `bg_result`.
 
 The design deliberately separates:
 
@@ -29,6 +32,14 @@ The design deliberately separates:
 - child answer commit (`result.json`),
 - parent adjudication (`outcome.json`),
 - user retrieval (`bg_result`).
+
+## Lazy facade activation
+
+Enabled schemas, descriptions, argument preparation, renderers, and tool registration are immediate. Delegate launch/seed/budget/runner code is imported only on the first valid `bg_delegate` execution. `bg_result` has independent delegate and Fusion verifier loaders and selects one only after task facts identify the producer; a running result imports neither verifier.
+
+Each loader is activation-local and single-flight: simultaneous cold calls await one module import but continue as independent runs. Its states are `unloaded`, `loading`, `loaded`, `failed`, and `closed`. An import failure is wrapped with a bounded module-specific diagnostic and remains sticky for that activation. The entrypoint constructs one activation-local synchronous close fence and explicitly gives it to every enabled core, Fusion, delegate, and result lane. Its first shutdown handler closes every loader, advances Fusion generation, aborts Fusion controllers, and aborts delegate preparation before any later handler can await cleanup. A module arriving after closure is discarded before its operation can create an artifact, task, or child or touch stale host APIs. Reload constructs a new facade and may retry; the closed instance is never reopened, and no process-global cache stores `pi` or host context.
+
+The main entrypoint dynamically imports the lightweight delegate/result facade only when delegate or Fusion is enabled. Process-only startup therefore imports neither advanced facade nor verifier/producer code. Published Pi entrypoints execute precompiled JavaScript from `dist/`; authoritative TypeScript remains shipped for source/API compatibility and development tests. The compiled `dist/src/**` files are private chunks reached through those Pi entrypoints, not standalone Node entrypoints. Packed-package tests exercise successful delegate/result first use without any package-local Pi SDK peer.
 
 ## Seed and context policy
 
@@ -55,6 +66,8 @@ The assistant message containing the active `bg_delegate` call is excluded as a 
 
 Public admission first loads hook evidence and resolves the requested/current route; launch preparation then resolves the package-owned child guard extension. Inside `preflightDelegateLaunch()`, the hook-contract gate runs before capability/tool policy, limit checks, seed construction, and launch budget admission. All of these checks complete before child process, child session directory, or artifact root creation. Route, guard-extension, hook-contract, or later admission refusal therefore leaves zero child processes and zero delegate artifacts; do not rely on one absolute error-precedence order across those pre-preflight resolutions.
 
+Preparation remains uncommitted until the registry accepts task ownership. It receives the activation abort signal and checks it around every awaited artifact/session write. A complete prepared value carries an idempotent producer-owned rollback. If shutdown wins before registration, the facade waits for that rollback and removes the run root plus only empty delegate parent directories before rejecting; no seed, projected context, child-session directory, or starter survives. If a starter rejects, the facade checks the exact task id in the registry and rolls back only when it is unregistered. Registered task artifacts stay under the existing registry lifecycle and are never deleted by preparation rollback. Cleanup failure is bounded, logged, and propagated rather than hidden.
+
 The child launch:
 
 - direct Pi spawn through the registry, not a shell;
@@ -66,7 +79,7 @@ The child launch:
 - extension discovery disabled by default in `extensionMode:"isolated"`;
 - extension discovery deliberately enabled only by `extensionMode:"ambient"`;
 - non-Anthropic children explicitly load the package-owned child guard in both modes;
-- Anthropic children explicitly load package attribution/sanitization first, then the child guard, in both modes.
+- Anthropic children explicitly load the always-on `extensions/anthropic-attribution-child.ts` safety entrypoint first, then the child guard, in both modes, regardless of the parent ambient-attribution capability.
 
 Ambient mode exists for providers registered by user/project Pi extensions. It omits only `--no-extensions`; it accepts no caller-supplied extension paths and performs no provider fallback or route substitution. Ambient discovery executes arbitrary trusted-location extension code in the child process. That code has Node process privileges and is not sandboxed by Pi's model-visible tool allowlist, so ambient mode deliberately weakens the inspect-only process-isolation guarantee. It must not be described as safe or equivalent to isolated mode.
 

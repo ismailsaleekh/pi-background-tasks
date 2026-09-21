@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { chmod, mkdir } from 'node:fs/promises';
 import { basename, isAbsolute, join, relative, sep } from 'node:path';
-import { canonicalJson, sha256Buffer } from '../attested-pi-run.js';
+import { canonicalJson, sha256Buffer } from '../canonical-json.js';
 import { sanitizePathSegment } from '../common.js';
 import { replaceFileDurable } from '../durable-fs.js';
 import {
@@ -443,7 +443,9 @@ function failureArtifactClassification(
   return 'evidence_only';
 }
 
-function failureAttemptMetadata(manifest: FusionArtifactManifest): readonly FusionFailureAttemptMetadata[] {
+function failureAttemptMetadata(
+  manifest: FusionArtifactManifest,
+): readonly FusionFailureAttemptMetadata[] {
   return manifest.attempts
     .map((attempt) => ({
       stage: attempt.stage,
@@ -452,10 +454,11 @@ function failureAttemptMetadata(manifest: FusionArtifactManifest): readonly Fusi
       status: attempt.status,
       child_created: attempt.child_created,
     }))
-    .sort((left, right) =>
-      compareArtifactText(left.stage, right.stage) ||
-      (left.slot ?? 0) - (right.slot ?? 0) ||
-      left.attempt - right.attempt,
+    .sort(
+      (left, right) =>
+        compareArtifactText(left.stage, right.stage) ||
+        (left.slot ?? 0) - (right.slot ?? 0) ||
+        left.attempt - right.attempt,
     );
 }
 
@@ -470,7 +473,9 @@ export function buildFusionFailureSummary(input: {
     (input.terminalState !== 'failed' && input.terminalState !== 'cancelled') ||
     input.manifest.state !== input.terminalState
   ) {
-    throw errorForArtifact('failure summary requires a matching failed/cancelled terminal manifest');
+    throw errorForArtifact(
+      'failure summary requires a matching failed/cancelled terminal manifest',
+    );
   }
   if (input.manifest.error !== input.terminalError.message) {
     throw errorForArtifact('failure summary terminal error does not match the durable manifest');
@@ -750,10 +755,7 @@ export class FusionArtifactStore {
    * stage-output bodies.
    */
   async writeFailureSummary(summary: FusionFailureSummaryV1): Promise<FusionArtifactRef> {
-    if (
-      this.manifest.state !== 'failed' &&
-      this.manifest.state !== 'cancelled'
-    ) {
+    if (this.manifest.state !== 'failed' && this.manifest.state !== 'cancelled') {
       throw errorForArtifact('failure summary requires a failed/cancelled terminal manifest');
     }
     if (summary.terminal_state !== this.manifest.state) {
@@ -766,10 +768,7 @@ export class FusionArtifactStore {
     ) {
       throw errorForArtifact('failure summary identity does not match the terminal manifest');
     }
-    if (
-      summary.answer?.present !== false ||
-      summary.answer.reason !== 'run_did_not_commit'
-    ) {
+    if (summary.answer?.present !== false || summary.answer.reason !== 'run_did_not_commit') {
       throw errorForArtifact('failure summary must assert that no answer was committed');
     }
     if (this.manifest.error === undefined || this.manifest.artifacts['error.json'] === undefined) {
@@ -781,7 +780,9 @@ export class FusionArtifactStore {
     ) {
       throw errorForArtifact('failure summary terminal error metadata does not match the manifest');
     }
-    if (canonicalJson(summary.progress) !== canonicalJson(buildFusionRunProgress(this.snapshot()))) {
+    if (
+      canonicalJson(summary.progress) !== canonicalJson(buildFusionRunProgress(this.snapshot()))
+    ) {
       throw errorForArtifact('failure summary progress does not match the terminal manifest');
     }
     if (canonicalJson(summary.usage_so_far) !== canonicalJson(this.manifest.usage)) {

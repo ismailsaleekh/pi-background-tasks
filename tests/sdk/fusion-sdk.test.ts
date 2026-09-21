@@ -8,17 +8,20 @@ import type { AssistantMessage, UserMessage } from '@earendil-works/pi-ai';
 import {
   ModelRuntime,
   createAgentSession,
+  createEventBus,
   DefaultResourceLoader,
   ModelRegistry,
   SessionManager,
   SettingsManager,
   Theme,
   type AgentSession,
+  type EventBus,
   type ExtensionUIContext,
   type KeybindingsManager,
 } from '@earendil-works/pi-coding-agent';
 import type { Component, TUI } from '@earendil-works/pi-tui';
 import { parseJsonText } from '../../src/core/common.js';
+import { BG_TERMINAL_CHANNEL, BG_TERMINAL_SCHEMA } from '../../src/core/extension-api.js';
 import { resolvePiLaunch } from '../../src/core/pi-launch.js';
 import { CURRENT_MODEL_SELECTION, FUSION_MODEL_CONFIG_FILE } from '../../src/core/fusion/config.js';
 import {
@@ -65,6 +68,7 @@ interface Harness {
   root: string;
   agentDir: string;
   fakeLogPath: string;
+  eventBus: EventBus;
 }
 
 interface HarnessOptions {
@@ -311,10 +315,12 @@ async function harness(options: HarnessOptions = {}): Promise<Harness> {
     defaultProvider: 'pi-bg-fusion',
     defaultModel: 'current-model',
   });
+  const eventBus = createEventBus();
   const loader = new DefaultResourceLoader({
     cwd,
     agentDir,
     settingsManager,
+    eventBus,
     additionalExtensionPaths: [backgroundTasksExtensionPath],
     noExtensions: true,
     noSkills: true,
@@ -369,8 +375,8 @@ async function harness(options: HarnessOptions = {}): Promise<Harness> {
   assert.equal(session.model?.provider, 'pi-bg-fusion');
   assert.equal(session.model?.id, 'current-model');
   session.setThinkingLevel('low');
-  await session.extensionRunner.emit({ type: 'session_start', reason: 'startup' });
-  return { session, cwd, root, agentDir, fakeLogPath: fake.logPath };
+  await session.bindExtensions({ onError: () => undefined });
+  return { session, cwd, root, agentDir, fakeLogPath: fake.logPath, eventBus };
 }
 
 async function disposeHarness(h: Harness): Promise<void> {
@@ -993,6 +999,12 @@ void describe('fusion SDK integration', { concurrency: false }, () => {
   void it('cancels live fusion children on session shutdown', async (t) => {
     if (skipWin32FusionChildPathFixture(t)) return;
     const h = await harness({ fakeDelayMs: 10000 });
+    const terminalTaskIds: string[] = [];
+    const unsubscribeTerminal = h.eventBus.on(BG_TERMINAL_CHANNEL, (value) => {
+      if (!isRecord(value) || value['schema_version'] !== BG_TERMINAL_SCHEMA) return;
+      const task = value['task'];
+      if (isRecord(task) && typeof task['id'] === 'string') terminalTaskIds.push(task['id']);
+    });
     let disposed = false;
     try {
       const tool = h.session.getToolDefinition('fusion_reason');
@@ -1017,41 +1029,100 @@ void describe('fusion SDK integration', { concurrency: false }, () => {
       await h.session.extensionRunner.emit({ type: 'session_shutdown', reason: 'reload' });
       const resultTool = h.session.getToolDefinition('bg_result');
       assert.ok(resultTool);
-      const terminal = await resultTool.execute(
-        'result-shutdown',
-        { taskId, delivery: 'artifact' },
+      for (const delivery of ['artifact', undefined, 'inline'] as const) {
+        await assert.rejects(
+          resultTool.execute(
+            `result-shutdown-${delivery ?? 'default'}`,
+            delivery === undefined ? { taskId } : { taskId, delivery },
+            undefined,
+            undefined,
+            h.session.extensionRunner.createContext(),
+          ),
+          /lazy_module_closed.*background-result facade.*closed activation/,
+          'a tool retained from the old activation must reject after shutdown',
+        );
+      }
+      assert.equal(
+        terminalTaskIds.filter((publishedId) => publishedId === taskId).length,
+        0,
+        'managed terminal publication is abandoned once reload shutdown begins',
+      );
+      h.session.dispose();
+      disposed = true;
+    } finally {
+      unsubscribeTerminal();
+      if (!disposed) await disposeHarness(h);
+    }
+  });
+
+  void it('uses AgentSession.reload() to cancel managed Fusion and bind a fresh ordinary publisher', async (t) => {
+    if (skipWin32FusionChildPathFixture(t)) return;
+    const h = await harness({ fakeDelayMs: 10000 });
+    const terminalTaskIds: string[] = [];
+    const unsubscribeTerminal = h.eventBus.on(BG_TERMINAL_CHANNEL, (value) => {
+      if (!isRecord(value) || value['schema_version'] !== BG_TERMINAL_SCHEMA) return;
+      const task = value['task'];
+      if (isRecord(task) && typeof task['id'] === 'string') terminalTaskIds.push(task['id']);
+    });
+    try {
+      const oldRunner = h.session.extensionRunner;
+      const oldContext = oldRunner.createContext();
+      const fusionTool = h.session.getToolDefinition('fusion_reason');
+      assert.ok(fusionTool, 'fusion_reason tool should be registered');
+      const launch = await fusionTool.execute(
+        'call-real-reload',
+        { prompt: 'cancel this managed run through a real AgentSession reload' },
+        undefined,
+        undefined,
+        oldContext,
+      );
+      assert.ok(isFusionLaunchDetails(launch.details));
+      const task = launch.details['task'];
+      assert.ok(isRecord(task));
+      const managedTaskId = stringField(task, 'id');
+      await waitForInvocationCount(h.fakeLogPath, 3);
+
+      await h.session.reload();
+      assert.notEqual(h.session.extensionRunner, oldRunner, 'reload must replace the extension runner');
+      assert.throws(() => oldContext.cwd, /stale after session replacement or reload/u);
+      await new Promise((resolveWait) => setTimeout(resolveWait, 100));
+      assert.equal(
+        terminalTaskIds.filter((taskId) => taskId === managedTaskId).length,
+        0,
+        'the reload-cancelled managed task must not publish from the old activation',
+      );
+
+      const bgRun = h.session.getToolDefinition('bg_run');
+      assert.ok(bgRun, 'fresh reload activation must register bg_run');
+      const ordinary = await bgRun.execute(
+        'call-after-real-reload',
+        {
+          name: 'fresh ordinary after managed reload',
+          command: 'echo fresh-after-managed-reload',
+          isAgent: false,
+          notifyOnCompletion: false,
+          triggerOnCompletion: false,
+        },
         undefined,
         undefined,
         h.session.extensionRunner.createContext(),
       );
-      assert.ok(isRecord(terminal.details));
-      assert.equal(terminal.details['state'], 'cancelled');
-      assert.equal(terminal.details['delivery'], 'none');
-      assert.deepEqual(terminal.details['answer'], { present: false, reason: 'run_did_not_commit' });
-      assert.equal(terminal.details['summary_status'], 'verified');
-      assert.equal(terminal.details['usage_delivered'], undefined);
-      assert.equal('usage' in terminal, false);
-      for (const delivery of [undefined, 'inline'] as const) {
-        const repeat = await resultTool.execute(
-          `result-shutdown-${delivery ?? 'default'}`,
-          delivery === undefined ? { taskId } : { taskId, delivery },
-          undefined,
-          undefined,
-          h.session.extensionRunner.createContext(),
-        );
-        assert.ok(isRecord(repeat.details));
-        assert.equal(repeat.details['state'], 'cancelled');
-        assert.equal(repeat.details['delivery'], 'none');
-        assert.deepEqual(repeat.details['answer'], {
-          present: false,
-          reason: 'run_did_not_commit',
-        });
-        assert.equal('usage' in repeat, false);
+      assert.ok(isRecord(ordinary.details));
+      const ordinaryTask = ordinary.details['task'];
+      assert.ok(isRecord(ordinaryTask));
+      const ordinaryTaskId = stringField(ordinaryTask, 'id');
+      const deadline = Date.now() + 3000;
+      while (!terminalTaskIds.includes(ordinaryTaskId) && Date.now() < deadline) {
+        await new Promise((resolveWait) => setTimeout(resolveWait, 20));
       }
-      h.session.dispose();
-      disposed = true;
+      assert.equal(
+        terminalTaskIds.filter((taskId) => taskId === ordinaryTaskId).length,
+        1,
+        'the freshly bound activation must publish one ordinary terminal',
+      );
     } finally {
-      if (!disposed) await disposeHarness(h);
+      unsubscribeTerminal();
+      await disposeHarness(h);
     }
   });
 

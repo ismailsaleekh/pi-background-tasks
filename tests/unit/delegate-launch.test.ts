@@ -137,7 +137,7 @@ void describe('delegate child isolation', () => {
     childSessionId: 'delegate-child-1',
     childSessionDir: '/tmp/task/child-session',
     childExtensionPath: '/pkg/extensions/delegate-child.ts',
-    attributionExtensionPath: '/pkg/extensions/anthropic-attribution.ts',
+    attributionExtensionPath: '/pkg/extensions/anthropic-attribution-child.ts',
     systemPrompt: 'child system prompt',
   });
 
@@ -182,7 +182,7 @@ void describe('delegate child isolation', () => {
       entry === '--extension' ? [argv[index + 1] ?? ''] : [],
     );
     assert.deepEqual(extensionPaths, [
-      '/pkg/extensions/anthropic-attribution.ts',
+      '/pkg/extensions/anthropic-attribution-child.ts',
       '/pkg/extensions/delegate-child.ts',
     ]);
   });
@@ -246,7 +246,7 @@ void describe('delegate child isolation', () => {
       childSessionId: 'delegate-ambient',
       childSessionDir: '/tmp/task/ambient-session',
       childExtensionPath: '/pkg/extensions/delegate-child.ts',
-      attributionExtensionPath: '/pkg/extensions/anthropic-attribution.ts',
+      attributionExtensionPath: '/pkg/extensions/anthropic-attribution-child.ts',
       systemPrompt: 'child system prompt',
     });
     assert.ok(!ambient.includes('--no-extensions'));
@@ -265,7 +265,10 @@ void describe('delegate child isolation', () => {
       ambient.flatMap((entry, index) =>
         entry === '--extension' ? [ambient[index + 1] ?? ''] : [],
       ),
-      ['/pkg/extensions/anthropic-attribution.ts', '/pkg/extensions/delegate-child.ts'],
+      [
+        '/pkg/extensions/anthropic-attribution-child.ts',
+        '/pkg/extensions/delegate-child.ts',
+      ],
     );
     assert.equal(ambient[ambient.indexOf('--provider') + 1], 'anthropic');
     assert.equal(ambient[ambient.indexOf('--model') + 1], 'claude-test');
@@ -595,6 +598,14 @@ void describe('delegate launch preparation creates nothing on refusal', () => {
     assert.deepEqual(await delegateDirEntries(root), []);
   });
 
+  void it('creates zero artifacts when activation cancellation precedes preparation', async () => {
+    const { root, input } = await attempt({});
+    const controller = new AbortController();
+    controller.abort(new Error('unit preparation shutdown'));
+    await assert.rejects(prepareDelegateLaunch({ ...input, signal: controller.signal }), /unit preparation shutdown/);
+    assert.deepEqual(await delegateDirEntries(root), []);
+  });
+
   void it('delivers the seed to the child as its prompt, not merely on disk', async () => {
     const { input } = await attempt({});
     const prepared = await prepareDelegateLaunch(input);
@@ -651,6 +662,15 @@ void describe('delegate launch preparation creates nothing on refusal', () => {
     assert.ok(prepared.childSessionDirAbs.startsWith(prepared.store.artifactDirAbs));
     assert.equal(await delegateDirEntries(root).then((entries) => entries.length), 1);
     void root;
+  });
+
+  void it('idempotently rolls back a complete preparation before task ownership transfers', async () => {
+    const { root, input } = await attempt({});
+    const prepared = await prepareDelegateLaunch(input);
+    assert.equal(existsSync(prepared.store.artifactDirAbs), true);
+    await Promise.all([prepared.rollback(), prepared.rollback()]);
+    assert.equal(existsSync(prepared.store.artifactDirAbs), false);
+    assert.equal(existsSync(join(root, '.pi', 'delegate')), false);
   });
 
   void it('leaves no half-formed run when a post-directory step fails', async () => {

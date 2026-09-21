@@ -11,7 +11,9 @@ covers_sources: []
 
 <!-- pi-docs:begin name="tool-contract-bg_result" generator="scripts/docs/generate.mjs" -->
 - Label: **Background Result**
-- Source: `src/delegate-extension.ts:516`
+- Source: `src/delegate-extension.ts:757`
+- Availability: `any(feature:delegate,feature:fusion)`
+- Available by default: **yes**
 - Description: Retrieve a hash-verified result from a bg_delegate or background Fusion task. Never blocks: a running task returns a typed not-ready result. Oversized answers are never truncated.
 - Root schema: `object`; additionalProperties: `false`
 
@@ -47,7 +49,7 @@ covers_sources: []
 </details>
 <!-- pi-docs:end name="tool-contract-bg_result" -->
 
-`bg_result` retrieves the result of a `bg_delegate` or background Fusion task. It never blocks: a running task returns a typed not-ready view, and a terminal task is verified before any answer bytes are returned.
+`bg_result` retrieves the result of a `bg_delegate` or background Fusion task. It is a derived surface: registered exactly once when `PI_BG_FEATURES` includes `delegate` or `fusion`, and absent when both producers are disabled. Delegate-only and Fusion-only configurations use the same verifier and retain their respective producer path. It never blocks: a running task returns a typed not-ready view, and a terminal task is verified before any answer bytes are returned.
 
 ## Public arguments
 
@@ -92,7 +94,7 @@ The returned text is decoded from the same aggregate buffer that was hashed. Cor
 
 ## Fusion retrieval
 
-A completed Fusion task is accepted only when `manifest.json` is terminal `completed`, its `result.json` and `merged.md` fixed references match, both files match manifest-bound byte lengths and SHA-256 values, run/workflow/artifact identity matches the task, result details carry the current schema, usage is complete, and merged bytes are well-formed UTF-8. The first successful retrieval attaches complete Fusion usage exactly once; later retrievals omit usage to prevent double-counting.
+A completed Fusion task is accepted only when `manifest.json` is terminal `completed`, its `result.json` and `merged.md` fixed references match, both files match manifest-bound byte lengths and SHA-256 values, run/workflow/artifact identity matches the task, result details carry the current schema, usage is complete, and merged bytes are well-formed UTF-8. The first successful retrieval attaches complete Fusion usage exactly once; later retrievals omit usage to prevent double-counting. Verification and delivery checks precede the durable claim. If shutdown begins after that claim starts, the in-flight retrieval finishes with usage and performs no later host effect; closure before the claim leaves it available to a fresh retrieval. A metadata-write failure remains loud and is not silently reset.
 
 ## Fusion failed/cancelled terminal view
 

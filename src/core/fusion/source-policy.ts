@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { constants } from 'node:fs';
 import { open } from 'node:fs/promises';
 import { isIP } from 'node:net';
-import { canonicalJson } from '../attested-pi-run.js';
+import { canonicalJson } from '../canonical-json.js';
 import { isJsonObject, parseJsonText } from '../common.js';
 import {
   FUSION_SOURCE_POLICY_SCHEMA_VERSION,
@@ -111,13 +111,19 @@ export function canonicalizeFusionPublicUrl(value: string): string {
     });
   }
   const ipKind = isIP(normalizedHost);
-  if ((ipKind === 4 && isBlockedIpv4(normalizedHost)) || (ipKind === 6 && isBlockedIpv6(normalizedHost))) {
+  if (
+    (ipKind === 4 && isBlockedIpv4(normalizedHost)) ||
+    (ipKind === 6 && isBlockedIpv6(normalizedHost))
+  ) {
     throw new FusionError('fusion research source URL must be public, not private/reserved', {
       code: 'orchestration_failed',
       childCreated: false,
     });
   }
-  if ((url.protocol === 'http:' && url.port === '80') || (url.protocol === 'https:' && url.port === '443')) {
+  if (
+    (url.protocol === 'http:' && url.port === '80') ||
+    (url.protocol === 'https:' && url.port === '443')
+  ) {
     url.port = '';
   }
   return url.toString();
@@ -183,21 +189,28 @@ export function sourcePolicyCanonicalBytes(policy: FusionSourcePolicyV1): string
 
 function requireString(record: Record<PropertyKey, unknown>, key: string, label: string): string {
   const value = record[key];
-  if (typeof value !== 'string' || value.length === 0) throw new Error(`${label}.${key} must be non-blank string`);
+  if (typeof value !== 'string' || value.length === 0)
+    throw new Error(`${label}.${key} must be non-blank string`);
   return value;
 }
 
 export function parseFusionSourcePolicy(value: unknown): FusionSourcePolicyV1 {
-  if (!isJsonObject(value) || Array.isArray(value)) throw new Error('fusion source policy must be object');
+  if (!isJsonObject(value) || Array.isArray(value))
+    throw new Error('fusion source policy must be object');
   const keys = Object.keys(value).sort();
   const expected = ['cwd', 'root_sha256', 'schema_version', 'sources', 'workflow'];
-  if (keys.join('\0') !== expected.join('\0')) throw new Error('fusion source policy keys mismatch');
-  if (value['schema_version'] !== FUSION_SOURCE_POLICY_SCHEMA_VERSION) throw new Error('fusion source policy schema_version mismatch');
-  if (value['workflow'] !== 'research') throw new Error('fusion source policy workflow must be research');
+  if (keys.join('\0') !== expected.join('\0'))
+    throw new Error('fusion source policy keys mismatch');
+  if (value['schema_version'] !== FUSION_SOURCE_POLICY_SCHEMA_VERSION)
+    throw new Error('fusion source policy schema_version mismatch');
+  if (value['workflow'] !== 'research')
+    throw new Error('fusion source policy workflow must be research');
   const cwd = requireString(value, 'cwd', 'fusion source policy');
   const rootSha256 = requireString(value, 'root_sha256', 'fusion source policy');
-  if (!SHA256_HEX.test(rootSha256)) throw new Error('fusion source policy.root_sha256 must be sha256');
-  if (!Array.isArray(value['sources'])) throw new Error('fusion source policy.sources must be array');
+  if (!SHA256_HEX.test(rootSha256))
+    throw new Error('fusion source policy.root_sha256 must be sha256');
+  if (!Array.isArray(value['sources']))
+    throw new Error('fusion source policy.sources must be array');
   const sources = value['sources'].map((item, index): FusionDeclaredSourceV1 => {
     const label = `fusion source policy.sources[${String(index)}]`;
     if (!isJsonObject(item) || Array.isArray(item)) throw new Error(`${label} must be object`);
@@ -209,10 +222,12 @@ export function parseFusionSourcePolicy(value: unknown): FusionSourcePolicyV1 {
     const canonical_url = requireString(item, 'canonical_url', label);
     const sha256 = requireString(item, 'sha256', label);
     if (!SHA256_HEX.test(sha256)) throw new Error(`${label}.sha256 must be sha256`);
-    if (canonicalizeFusionPublicUrl(url) !== canonical_url) throw new Error(`${label}.canonical_url mismatch`);
+    if (canonicalizeFusionPublicUrl(url) !== canonical_url)
+      throw new Error(`${label}.canonical_url mismatch`);
     if (url !== canonical_url) throw new Error(`${label}.url must equal canonical_url`);
     if (purpose.trim() !== purpose) throw new Error(`${label}.purpose must be trimmed`);
-    if (sha256Text(`${canonical_url}\u0000${purpose}`) !== sha256) throw new Error(`${label}.sha256 mismatch`);
+    if (sha256Text(`${canonical_url}\u0000${purpose}`) !== sha256)
+      throw new Error(`${label}.sha256 mismatch`);
     return { url, canonical_url, purpose, sha256 };
   });
   const seen = new Set<string>();
@@ -222,8 +237,14 @@ export function parseFusionSourcePolicy(value: unknown): FusionSourcePolicyV1 {
     }
     seen.add(source.canonical_url);
   }
-  const body = { schema_version: FUSION_SOURCE_POLICY_SCHEMA_VERSION, workflow: 'research' as const, cwd, sources } as const;
-  if (sha256Text(canonicalJson(body)) !== rootSha256) throw new Error('fusion source policy root_sha256 mismatch');
+  const body = {
+    schema_version: FUSION_SOURCE_POLICY_SCHEMA_VERSION,
+    workflow: 'research' as const,
+    cwd,
+    sources,
+  } as const;
+  if (sha256Text(canonicalJson(body)) !== rootSha256)
+    throw new Error('fusion source policy root_sha256 mismatch');
   return { ...body, root_sha256: rootSha256 };
 }
 
@@ -246,12 +267,17 @@ async function readRegularFileNoSymlink(path: string, label: string): Promise<Bu
   }
 }
 
-export async function readFusionSourcePolicyFile(path: string, expectedSha256: string): Promise<FusionSourcePolicyV1> {
-  if (!SHA256_HEX.test(expectedSha256)) throw new Error('fusion source policy expected hash is malformed');
+export async function readFusionSourcePolicyFile(
+  path: string,
+  expectedSha256: string,
+): Promise<FusionSourcePolicyV1> {
+  if (!SHA256_HEX.test(expectedSha256))
+    throw new Error('fusion source policy expected hash is malformed');
   const bytes = await readRegularFileNoSymlink(path, 'fusion source policy');
   const actual = createHash('sha256').update(bytes).digest('hex');
   if (actual !== expectedSha256) throw new Error('fusion source policy artifact hash mismatch');
   const text = bytes.toString('utf8');
-  if (!Buffer.from(text, 'utf8').equals(bytes)) throw new Error('fusion source policy is not UTF-8');
+  if (!Buffer.from(text, 'utf8').equals(bytes))
+    throw new Error('fusion source policy is not UTF-8');
   return parseFusionSourcePolicy(parseJsonText(text));
 }

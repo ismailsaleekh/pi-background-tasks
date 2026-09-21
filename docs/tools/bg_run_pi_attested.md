@@ -11,7 +11,9 @@ covers_sources: []
 
 <!-- pi-docs:begin name="tool-contract-bg_run_pi_attested" generator="scripts/docs/generate.mjs" -->
 - Label: **Attested Pi Run**
-- Source: `src/extension.ts:767`
+- Source: `src/extension.ts:1036`
+- Availability: `feature:attested`
+- Available by default: **yes**
 - Description: Opt-in evidence-oriented direct Pi spawn. Launches exactly one `pi --mode json` child, records raw Pi events/stderr, hashes prompt/report/output, observes OAuth through ModelRegistry, and emits a strict attestation sidecar only after successful completion.
 - Root schema: `object`
 

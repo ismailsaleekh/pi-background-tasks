@@ -34,40 +34,79 @@ void describe('core', () => {
       name: 'Build Docs',
       command: 'npm run docs',
       isAgent: false,
+      surviveReload: false,
     });
     assert.deepEqual(parseBgCommandArgs('--name=Build npm test'), {
       name: 'Build',
       command: 'npm test',
       isAgent: false,
+      surviveReload: false,
     });
     assert.deepEqual(parseBgCommandArgs("-n 'Quoted Name' printf ok"), {
       name: 'Quoted Name',
       command: 'printf ok',
       isAgent: false,
+      surviveReload: false,
     });
     assert.deepEqual(parseBgCommandArgs('-n=One printf one'), {
       name: 'One',
       command: 'printf one',
       isAgent: false,
+      surviveReload: false,
     });
     assert.deepEqual(parseBgCommandArgs('--agent --name Agent pi -p hi'), {
       name: 'Agent',
       command: 'pi -p hi',
       isAgent: true,
+      surviveReload: false,
     });
     assert.deepEqual(parseBgCommandArgs('--name Agent --script pi -p hi'), {
       name: 'Agent',
       command: 'pi -p hi',
       isAgent: false,
+      surviveReload: false,
     });
-    assert.deepEqual(parseBgCommandArgs('echo ok'), { command: 'echo ok', isAgent: false });
+    assert.deepEqual(parseBgCommandArgs('--survive-reload --name Keep node server.js'), {
+      name: 'Keep',
+      command: 'node server.js',
+      isAgent: false,
+      surviveReload: true,
+    });
+    assert.deepEqual(parseBgCommandArgs('--script --survive-reload printf ok'), {
+      command: 'printf ok',
+      isAgent: false,
+      surviveReload: true,
+    });
+    assert.deepEqual(parseBgCommandArgs('-- --survive-reload literal'), {
+      command: '--survive-reload literal',
+      isAgent: false,
+      surviveReload: false,
+    });
+    assert.deepEqual(parseBgCommandArgs('echo ok'), {
+      command: 'echo ok',
+      isAgent: false,
+      surviveReload: false,
+    });
     assert.deepEqual(parseBgCommandArgs("--name 'Only Name'"), {
       name: 'Only Name',
       command: '',
       isAgent: false,
+      surviveReload: false,
     });
     assert.throws(() => parseBgCommandArgs('--name'), /requires a task name/);
     assert.throws(() => parseBgCommandArgs('--name "unterminated'), /requires a task name/);
+    assert.throws(
+      () => parseBgCommandArgs('--survive-reload --survive-reload echo duplicate'),
+      /pi_bg_survive_reload_invalid/u,
+    );
+    assert.throws(
+      () => parseBgCommandArgs('--survive-reload=true echo assignment'),
+      /pi_bg_survive_reload_invalid/u,
+    );
+    assert.throws(
+      () => parseBgCommandArgs('--agent --survive-reload pi -p hi'),
+      /pi_bg_survive_reload_requires_non_agent/u,
+    );
   });
 
   void it('normalizes task names and derives stable fallbacks', () => {
@@ -162,6 +201,7 @@ void describe('core', () => {
           exitCode: 0,
           bytesWritten: 3,
           isAgent: true,
+          surviveReload: false,
           notified: true,
           notifyOnCompletion: true,
           triggerOnCompletion: false,
@@ -187,6 +227,7 @@ void describe('core', () => {
           exitCode: 1,
           bytesWritten: 0,
           isAgent: false,
+          surviveReload: false,
           error: 'x'.repeat(100),
           notified: false,
           notifyOnCompletion: true,

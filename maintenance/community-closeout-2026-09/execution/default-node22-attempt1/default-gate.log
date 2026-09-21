@@ -1,0 +1,3509 @@
+SOURCE e1c9da681a992261fbb87fafa3f852dd8a22c27b
+v22.19.0
+10.9.3
+
+> pi-background-tasks@2.5.0 test
+> npm run typecheck && npm run test:type-safety && npm run test:unit && npm run test:sdk && npm run test:rpc && npm run test:component && npm run test:package && npm run test:hook-contract
+
+
+> pi-background-tasks@2.5.0 typecheck
+> tsc --noEmit
+
+
+> pi-background-tasks@2.5.0 test:type-safety
+> tsx --test tests/package/type-safety.test.ts
+
+TAP version 13
+# Subtest: type-safety standard
+    # Subtest: classifies syntax and compiler directives without scanning inert text
+    ok 1 - classifies syntax and compiler directives without scanning inert text
+      ---
+      duration_ms: 5.304292
+      type: 'test'
+      ...
+    # Subtest: finds directly nested assertions through type-transparent wrappers only
+    ok 2 - finds directly nested assertions through type-transparent wrappers only
+      ---
+      duration_ms: 1.020916
+      type: 'test'
+      ...
+    # Subtest: has no explicit top-type escape, compiler suppressions, or double assertions in package TypeScript
+    ok 3 - has no explicit top-type escape, compiler suppressions, or double assertions in package TypeScript
+      ---
+      duration_ms: 227.8895
+      type: 'test'
+      ...
+    # Subtest: has no production non-null assertion bypasses
+    ok 4 - has no production non-null assertion bypasses
+      ---
+      duration_ms: 57.507417
+      type: 'test'
+      ...
+    1..4
+ok 1 - type-safety standard
+  ---
+  duration_ms: 292.467042
+  type: 'suite'
+  ...
+1..1
+# tests 4
+# suites 1
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 722.8695
+
+> pi-background-tasks@2.5.0 test:unit
+> tsx --test tests/unit/**/*.test.ts
+
+TAP version 13
+# Subtest: Anthropic attribution account config path (\#13)
+    # Subtest: retains the home file as the default when no override is selected
+    ok 1 - retains the home file as the default when no override is selected
+      ---
+      duration_ms: 46.726708
+      type: 'test'
+      ...
+    # Subtest: selects the absolute operator path ahead of the home default
+    ok 2 - selects the absolute operator path ahead of the home default
+      ---
+      duration_ms: 141.217625
+      type: 'test'
+      ...
+    # Subtest: gives a direct absolute loader path precedence over the operator environment
+    ok 3 - gives a direct absolute loader path precedence over the operator environment
+      ---
+      duration_ms: 53.517417
+      type: 'test'
+      ...
+    # Subtest: rejects a relative direct loader path even when the environment is absolute
+    ok 4 - rejects a relative direct loader path even when the environment is absolute
+      ---
+      duration_ms: 6.46725
+      type: 'test'
+      ...
+    # Subtest: rejects an empty operator path
+    ok 5 - rejects an empty operator path
+      ---
+      duration_ms: 10.543458
+      type: 'test'
+      ...
+    # Subtest: rejects a relative operator path
+    ok 6 - rejects a relative operator path
+      ---
+      duration_ms: 8.799875
+      type: 'test'
+      ...
+    # Subtest: reports the selected file for malformed JSON and required-field failures
+    ok 7 - reports the selected file for malformed JSON and required-field failures
+      ---
+      duration_ms: 13.98375
+      type: 'test'
+      ...
+    # Subtest: preserves the selected path in package-owned child environments
+    ok 8 - preserves the selected path in package-owned child environments
+      ---
+      duration_ms: 0.567709
+      type: 'test'
+      ...
+    1..8
+ok 1 - Anthropic attribution account config path (\#13)
+  ---
+  duration_ms: 283.605791
+  type: 'suite'
+  ...
+# Subtest: keeps the optional host fixture independent of absolute installation imports
+ok 2 - keeps the optional host fixture independent of absolute installation imports
+  ---
+  duration_ms: 1.951
+  type: 'test'
+  ...
+# Subtest: requires an explicit host package path and never selects a default host
+ok 3 - requires an explicit host package path and never selects a default host
+  ---
+  duration_ms: 0.227
+  type: 'test'
+  ...
+# Subtest: resolves the host public entry and its nested pi-ai by package resolution
+ok 4 - resolves the host public entry and its nested pi-ai by package resolution
+  ---
+  duration_ms: 15.227833
+  type: 'test'
+  ...
+# Subtest: resolves a valid hoisted pi-ai dependency without assuming a nested layout
+ok 5 - resolves a valid hoisted pi-ai dependency without assuming a nested layout
+  ---
+  duration_ms: 8.809458
+  type: 'test'
+  ...
+# Subtest: refuses missing, malformed, wrong-package, and wrong-line hosts before loading APIs
+ok 6 - refuses missing, malformed, wrong-package, and wrong-line hosts before loading APIs
+  ---
+  duration_ms: 17.455333
+  type: 'test'
+  ...
+# Subtest: non-target anthropic-messages forwarding (\#19)
+    # Subtest: uses the direct exported host adapter without a serialization bridge
+    ok 1 - uses the direct exported host adapter without a serialization bridge
+      ---
+      duration_ms: 19.319708
+      type: 'test'
+      ...
+    # Subtest: uses the supported host adapter once without target-only rewriting
+    ok 2 - uses the supported host adapter once without target-only rewriting
+      ---
+      duration_ms: 166.116042
+      type: 'test'
+      ...
+    # Subtest: preserves provider-reported reasoning usage and tool output fields
+    ok 3 - preserves provider-reported reasoning usage and tool output fields
+      ---
+      duration_ms: 4.270792
+      type: 'test'
+      ...
+    # Subtest: keeps one live partial and retains host-added optional fields and tool metadata
+    ok 4 - keeps one live partial and retains host-added optional fields and tool metadata
+      ---
+      duration_ms: 2.165166
+      type: 'test'
+      ...
+    # Subtest: settles an adapter error event and result with the same message
+    ok 5 - settles an adapter error event and result with the same message
+      ---
+      duration_ms: 22.639459
+      type: 'test'
+      ...
+    1..5
+ok 7 - non-target anthropic-messages forwarding (\#19)
+  ---
+  duration_ms: 215.320875
+  type: 'suite'
+  ...
+# Subtest: Anthropic attribution lineage recovery (\#14)
+    # Subtest: chains unchanged append-only requests and replays exact signed thinking
+    ok 1 - chains unchanged append-only requests and replays exact signed thinking
+      ---
+      duration_ms: 19.180666
+      type: 'test'
+      ...
+    # Subtest: resets system prompt, reanchors, and never resurrects old signatures
+    ok 2 - resets system prompt, reanchors, and never resurrects old signatures
+      ---
+      duration_ms: 11.962958
+      type: 'test'
+      ...
+    # Subtest: resets tool schema, reanchors, and never resurrects old signatures
+    ok 3 - resets tool schema, reanchors, and never resurrects old signatures
+      ---
+      duration_ms: 3.929167
+      type: 'test'
+      ...
+    # Subtest: resets thinking effort, reanchors, and never resurrects old signatures
+    ok 4 - resets thinking effort, reanchors, and never resurrects old signatures
+      ---
+      duration_ms: 12.274875
+      type: 'test'
+      ...
+    # Subtest: resets tool choice, reanchors, and never resurrects old signatures
+    ok 5 - resets tool choice, reanchors, and never resurrects old signatures
+      ---
+      duration_ms: 15.915416
+      type: 'test'
+      ...
+    # Subtest: resets rewritten user history, reanchors, and never resurrects old signatures
+    ok 6 - resets rewritten user history, reanchors, and never resurrects old signatures
+      ---
+      duration_ms: 10.634
+      type: 'test'
+      ...
+    # Subtest: resets shortened history, reanchors, and never resurrects old signatures
+    ok 7 - resets shortened history, reanchors, and never resurrects old signatures
+      ---
+      duration_ms: 2.909541
+      type: 'test'
+      ...
+    # Subtest: resets cache retention, reanchors, and never resurrects old signatures
+    ok 8 - resets cache retention, reanchors, and never resurrects old signatures
+      ---
+      duration_ms: 39.699709
+      type: 'test'
+      ...
+    # Subtest: resets disabled caching, reanchors, and never resurrects old signatures
+    ok 9 - resets disabled caching, reanchors, and never resurrects old signatures
+      ---
+      duration_ms: 2.527
+      type: 'test'
+      ...
+    # Subtest: recovers a reload that drops earlier thinking while retaining stale lineage
+    ok 10 - recovers a reload that drops earlier thinking while retaining stale lineage
+      ---
+      duration_ms: 1.29375
+      type: 'test'
+      ...
+    # Subtest: treats a changed latest assistant with a valid-shaped stale receipt as a boundary
+    ok 11 - treats a changed latest assistant with a valid-shaped stale receipt as a boundary
+      ---
+      duration_ms: 1.005
+      type: 'test'
+      ...
+    # Subtest: requires receipt binding to the containing assistant provider
+    ok 12 - requires receipt binding to the containing assistant provider
+      ---
+      duration_ms: 0.862209
+      type: 'test'
+      ...
+    # Subtest: requires receipt binding to the containing assistant API
+    ok 13 - requires receipt binding to the containing assistant API
+      ---
+      duration_ms: 0.764959
+      type: 'test'
+      ...
+    # Subtest: requires receipt binding to the containing assistant model
+    ok 14 - requires receipt binding to the containing assistant model
+      ---
+      duration_ms: 7.392917
+      type: 'test'
+      ...
+    # Subtest: requires receipt binding to the containing assistant successful terminal state
+    ok 15 - requires receipt binding to the containing assistant successful terminal state
+      ---
+      duration_ms: 1.153458
+      type: 'test'
+      ...
+    # Subtest: requires receipt binding to the containing assistant response ID
+    ok 16 - requires receipt binding to the containing assistant response ID
+      ---
+      duration_ms: 1.93775
+      type: 'test'
+      ...
+    # Subtest: requires receipt binding to the containing non-empty assistant response ID
+    ok 17 - requires receipt binding to the containing non-empty assistant response ID
+      ---
+      duration_ms: 0.893792
+      type: 'test'
+      ...
+    # Subtest: requires receipt binding to the containing non-empty receipt response ID
+    ok 18 - requires receipt binding to the containing non-empty receipt response ID
+      ---
+      duration_ms: 0.775459
+      type: 'test'
+      ...
+    # Subtest: requires receipt binding to the containing non-empty receipt previous response ID
+    ok 19 - requires receipt binding to the containing non-empty receipt previous response ID
+      ---
+      duration_ms: 0.7295
+      type: 'test'
+      ...
+    # Subtest: recovers again after a failed reset attempt without persisting a false anchor
+    ok 20 - recovers again after a failed reset attempt without persisting a false anchor
+      ---
+      duration_ms: 4.898209
+      type: 'test'
+      ...
+    # Subtest: opens another epoch for history drift under a retained compaction marker
+    ok 21 - opens another epoch for history drift under a retained compaction marker
+      ---
+      duration_ms: 3.918125
+      type: 'test'
+      ...
+    # Subtest: does not resurrect an old epoch when the latest reset receipt is missing
+    ok 22 - does not resurrect an old epoch when the latest reset receipt is missing
+      ---
+      duration_ms: 3.310375
+      type: 'test'
+      ...
+    # Subtest: does not resurrect an old epoch when the latest reset receipt is malformed
+    ok 23 - does not resurrect an old epoch when the latest reset receipt is malformed
+      ---
+      duration_ms: 2.856459
+      type: 'test'
+      ...
+    # Subtest: does not anchor a reset until strict SSE completion succeeds
+    ok 24 - does not anchor a reset until strict SSE completion succeeds
+      ---
+      duration_ms: 5.786458
+      type: 'test'
+      ...
+    # Subtest: still rejects middleware model mutations after a reset, before fetch
+    ok 25 - still rejects middleware model mutations after a reset, before fetch
+      ---
+      duration_ms: 1.705625
+      type: 'test'
+      ...
+    # Subtest: still rejects middleware stream mutations after a reset, before fetch
+    ok 26 - still rejects middleware stream mutations after a reset, before fetch
+      ---
+      duration_ms: 1.84
+      type: 'test'
+      ...
+    # Subtest: still rejects middleware metadata mutations after a reset, before fetch
+    ok 27 - still rejects middleware metadata mutations after a reset, before fetch
+      ---
+      duration_ms: 1.34825
+      type: 'test'
+      ...
+    # Subtest: still rejects middleware system mutations after a reset, before fetch
+    ok 28 - still rejects middleware system mutations after a reset, before fetch
+      ---
+      duration_ms: 1.498959
+      type: 'test'
+      ...
+    # Subtest: still rejects middleware messages mutations after a reset, before fetch
+    ok 29 - still rejects middleware messages mutations after a reset, before fetch
+      ---
+      duration_ms: 2.177208
+      type: 'test'
+      ...
+    # Subtest: still rejects middleware thinking mutations after a reset, before fetch
+    ok 30 - still rejects middleware thinking mutations after a reset, before fetch
+      ---
+      duration_ms: 3.925667
+      type: 'test'
+      ...
+    # Subtest: still rejects middleware diagnostics mutations after a reset, before fetch
+    ok 31 - still rejects middleware diagnostics mutations after a reset, before fetch
+      ---
+      duration_ms: 1.291542
+      type: 'test'
+      ...
+    # Subtest: still rejects middleware cache_control mutations after a reset, before fetch
+    ok 32 - still rejects middleware cache_control mutations after a reset, before fetch
+      ---
+      duration_ms: 1.269666
+      type: 'test'
+      ...
+    # Subtest: retains the in-flight guard during a reset and releases it after completion
+    ok 33 - retains the in-flight guard during a reset and releases it after completion
+      ---
+      duration_ms: 1.816875
+      type: 'test'
+      ...
+    1..33
+ok 8 - Anthropic attribution lineage recovery (\#14)
+  ---
+  duration_ms: 175.323875
+  type: 'suite'
+  ...
+# Subtest: global Anthropic attribution extension
+    # Subtest: matches all SPS exact-line variants while preserving unrelated blocks and cache controls
+    ok 1 - matches all SPS exact-line variants while preserving unrelated blocks and cache controls
+      ---
+      duration_ms: 1.416917
+      type: 'test'
+      ...
+    # Subtest: BUG-192 strips Codex/ZAI opaque and redacted reasoning before Anthropic transport
+    ok 2 - BUG-192 strips Codex/ZAI opaque and redacted reasoning before Anthropic transport
+      ---
+      duration_ms: 0.781542
+      type: 'test'
+      ...
+    # Subtest: BUG-193 owns hookless compaction attribution from request-scoped sessionId
+    ok 3 - BUG-193 owns hookless compaction attribution from request-scoped sessionId
+      ---
+      duration_ms: 24.315125
+      type: 'test'
+      ...
+    # Subtest: normalizes observed cross-provider tool-call IDs while preserving valid IDs and images
+    ok 4 - normalizes observed cross-provider tool-call IDs while preserving valid IDs and images
+      ---
+      duration_ms: 2.774334
+      type: 'test'
+      ...
+    # Subtest: leaves non-Anthropic payloads untouched
+    ok 5 - leaves non-Anthropic payloads untouched
+      ---
+      duration_ms: 0.110375
+      type: 'test'
+      ...
+    # Subtest: adds package attribution to attested Anthropic argv only
+    ok 6 - adds package attribution to attested Anthropic argv only
+      ---
+      duration_ms: 0.255625
+      type: 'test'
+      ...
+    # Subtest: allows exactly one independently loaded copy to own global registration
+    ok 7 - allows exactly one independently loaded copy to own global registration
+      ---
+      duration_ms: 0.237625
+      type: 'test'
+      ...
+    1..7
+ok 9 - global Anthropic attribution extension
+  ---
+  duration_ms: 31.177834
+  type: 'suite'
+  ...
+# Subtest: core
+    # Subtest: parses /bg names, aliases, equals forms, quotes, and empty commands
+    ok 1 - parses /bg names, aliases, equals forms, quotes, and empty commands
+      ---
+      duration_ms: 2.280792
+      type: 'test'
+      ...
+    # Subtest: normalizes task names and derives stable fallbacks
+    ok 2 - normalizes task names and derives stable fallbacks
+      ---
+      duration_ms: 0.643709
+      type: 'test'
+      ...
+    # Subtest: derives truthful completion delivery for every notification and wake combination
+    ok 3 - derives truthful completion delivery for every notification and wake combination
+      ---
+      duration_ms: 0.453667
+      type: 'test'
+      ...
+    # Subtest: formats durations, paths, snapshots, and byte limits
+    ok 4 - formats durations, paths, snapshots, and byte limits
+      ---
+      duration_ms: 0.910292
+      type: 'test'
+      ...
+    # Subtest: parses and compares semver including prerelease precedence
+    ok 5 - parses and compares semver including prerelease precedence
+      ---
+      duration_ms: 0.577667
+      type: 'test'
+      ...
+    # Subtest: derives newer-version flags and footer update segments
+    ok 6 - derives newer-version flags and footer update segments
+      ---
+      duration_ms: 0.267375
+      type: 'test'
+      ...
+    # Subtest: applies the Windows shell dialect policy
+    ok 7 - applies the Windows shell dialect policy
+      ---
+      duration_ms: 51.288166
+      type: 'test'
+      ...
+    # Subtest: parses and formats agent activity transcript lines
+    ok 8 - parses and formats agent activity transcript lines
+      ---
+      duration_ms: 0.607042
+      type: 'test'
+      ...
+    # Subtest: boundedRead supports head, tail, truncation, and empty files
+    ok 9 - boundedRead supports head, tail, truncation, and empty files
+      ---
+      duration_ms: 33.957
+      type: 'test'
+      ...
+    1..9
+ok 10 - core
+  ---
+  duration_ms: 93.039209
+  type: 'suite'
+  ...
+# Subtest: delegate artifact store
+    # Subtest: creates a private task-owned directory with a spill subdirectory
+    ok 1 - creates a private task-owned directory with a spill subdirectory
+      ---
+      duration_ms: 55.105458
+      type: 'test'
+      ...
+    # Subtest: refuses to reuse an existing task directory
+    ok 2 - refuses to reuse an existing task directory
+      ---
+      duration_ms: 37.181167
+      type: 'test'
+      ...
+    # Subtest: gives concurrent delegates non-colliding directories
+    ok 3 - gives concurrent delegates non-colliding directories
+      ---
+      duration_ms: 37.48025
+      type: 'test'
+      ...
+    # Subtest: persists the seed bytes exactly as given
+    ok 4 - persists the seed bytes exactly as given
+      ---
+      duration_ms: 81.288542
+      type: 'test'
+      ...
+    # Subtest: readCommittedResult advertises only control artifacts that exist
+    ok 5 - readCommittedResult advertises only control artifacts that exist
+      ---
+      duration_ms: 23.443166
+      type: 'test'
+      ...
+    # Subtest: spills an oversized payload and returns a receipt naming its coordinates
+    ok 6 - spills an oversized payload and returns a receipt naming its coordinates
+      ---
+      duration_ms: 104.550542
+      type: 'test'
+      ...
+    # Subtest: associates parallel spills with the right call even when they interleave
+    ok 7 - associates parallel spills with the right call even when they interleave
+      ---
+      duration_ms: 123.808375
+      type: 'test'
+      ...
+    # Subtest: refuses a spill that would exceed the aggregate cap, and emits no receipt
+    ok 8 - refuses a spill that would exceed the aggregate cap, and emits no receipt
+      ---
+      duration_ms: 49.411792
+      type: 'test'
+      ...
+    # Subtest: returns exactly the requested byte range
+    ok 9 - returns exactly the requested byte range
+      ---
+      duration_ms: 30.927875
+      type: 'test'
+      ...
+    # Subtest: refuses a range past end-of-file instead of silently shortening it
+    ok 10 - refuses a range past end-of-file instead of silently shortening it
+      ---
+      duration_ms: 33.044666
+      type: 'test'
+      ...
+    # Subtest: refuses a range read that escapes the artifact directory
+    ok 11 - refuses a range read that escapes the artifact directory
+      ---
+      duration_ms: 22.044167
+      type: 'test'
+      ...
+    # Subtest: refuses non-positive lengths and negative offsets
+    ok 12 - refuses non-positive lengths and negative offsets
+      ---
+      duration_ms: 20.936541
+      type: 'test'
+      ...
+    1..12
+ok 11 - delegate artifact store
+  ---
+  duration_ms: 621.566959
+  type: 'suite'
+  ...
+# Subtest: delegate terminal evaluation
+    # Subtest: accepts a committed package and reports verified answer facts
+    ok 1 - accepts a committed package and reports verified answer facts
+      ---
+      duration_ms: 51.51025
+      type: 'test'
+      ...
+    # Subtest: treats a zero-exit child with no committed package as a typed failure
+    ok 2 - treats a zero-exit child with no committed package as a typed failure
+      ---
+      duration_ms: 67.722334
+      type: 'test'
+      ...
+    # Subtest: does not advertise a configured merged output path that does not exist
+    ok 3 - does not advertise a configured merged output path that does not exist
+      ---
+      duration_ms: 23.094125
+      type: 'test'
+      ...
+    # Subtest: reports only a real merged task output path as preserved diagnostics
+    ok 4 - reports only a real merged task output path as preserved diagnostics
+      ---
+      duration_ms: 22.538083
+      type: 'test'
+      ...
+    # Subtest: reports the child-recorded terminal reason when one exists
+    ok 5 - reports the child-recorded terminal reason when one exists
+      ---
+      duration_ms: 30.69725
+      type: 'test'
+      ...
+    # Subtest: records the parent adjudication separately from the child package
+    ok 6 - records the parent adjudication separately from the child package
+      ---
+      duration_ms: 46.601166
+      type: 'test'
+      ...
+    # Subtest: records a typed adjudication for a child that never committed
+    ok 7 - records a typed adjudication for a child that never committed
+      ---
+      duration_ms: 23.047291
+      type: 'test'
+      ...
+    # Subtest: classifies a killed task as cancelled
+    ok 8 - classifies a killed task as cancelled
+      ---
+      duration_ms: 24.081958
+      type: 'test'
+      ...
+    # Subtest: detects a corrupted committed package rather than returning its bytes
+    ok 9 - detects a corrupted committed package rather than returning its bytes
+      ---
+      duration_ms: 24.162583
+      type: 'test'
+      ...
+    1..9
+ok 12 - delegate terminal evaluation
+  ---
+  duration_ms: 314.388125
+  type: 'suite'
+  ...
+# Subtest: delegate delivery decisions
+    # Subtest: inlines at exactly the cap and degrades one byte past it
+    ok 1 - inlines at exactly the cap and degrades one byte past it
+      ---
+      duration_ms: 0.249791
+      type: 'test'
+      ...
+    # Subtest: honours an explicit artifact request for a small answer
+    ok 2 - honours an explicit artifact request for a small answer
+      ---
+      duration_ms: 0.092041
+      type: 'test'
+      ...
+    # Subtest: never truncates: an explicit oversized inline request is a typed failure
+    ok 3 - never truncates: an explicit oversized inline request is a typed failure
+      ---
+      duration_ms: 0.263459
+      type: 'test'
+      ...
+    1..3
+ok 13 - delegate delivery decisions
+  ---
+  duration_ms: 0.712041
+  type: 'suite'
+  ...
+# Subtest: delegate route capacity
+    # Subtest: subtracts every documented reserve from the context window
+    ok 1 - subtracts every documented reserve from the context window
+      ---
+      duration_ms: 0.343583
+      type: 'test'
+      ...
+    # Subtest: accepts exactly the documented minimum window and rejects one token below
+    ok 2 - accepts exactly the documented minimum window and rejects one token below
+      ---
+      duration_ms: 0.306875
+      type: 'test'
+      ...
+    # Subtest: never assumes a default window for unusable capacity
+    ok 3 - never assumes a default window for unusable capacity
+      ---
+      duration_ms: 0.108875
+      type: 'test'
+      ...
+    1..3
+ok 14 - delegate route capacity
+  ---
+  duration_ms: 1.111125
+  type: 'suite'
+  ...
+# Subtest: delegate launch admission
+    # Subtest: fits when the seed is comfortably under the route allowance
+    ok 1 - fits when the seed is comfortably under the route allowance
+      ---
+      duration_ms: 1.133416
+      type: 'test'
+      ...
+    # Subtest: accepts exactly at the affine boundary and rejects one byte past it
+    ok 2 - accepts exactly at the affine boundary and rejects one byte past it
+      ---
+      duration_ms: 25.793458
+      type: 'test'
+      ...
+    # Subtest: counts the child system prompt as input, not as free framing
+    ok 3 - counts the child system prompt as input, not as free framing
+      ---
+      duration_ms: 8.910417
+      type: 'test'
+      ...
+    # Subtest: measures multi-byte UTF-8 by bytes and persists the provable advisory ceiling
+    ok 4 - measures multi-byte UTF-8 by bytes and persists the provable advisory ceiling
+      ---
+      duration_ms: 1.67675
+      type: 'test'
+      ...
+    # Subtest: scope guard refuses the codex 23,674-byte delegate floor case
+    ok 5 - scope guard refuses the codex 23,674-byte delegate floor case
+      ---
+      duration_ms: 3.590709
+      type: 'test'
+      ...
+    # Subtest: scope guard refuses the anthropic 13,286-byte delegate zero-headroom case
+    ok 6 - scope guard refuses the anthropic 13,286-byte delegate zero-headroom case
+      ---
+      duration_ms: 6.732875
+      type: 'test'
+      ...
+    # Subtest: replays the incident byte-class contract with calibrated runway and a provable counter-forecast
+    ok 7 - replays the incident byte-class contract with calibrated runway and a provable counter-forecast
+      ---
+      duration_ms: 2.837916
+      type: 'test'
+      ...
+    # Subtest: publishes the provable ceiling for multibyte-heavy conservative forecasts
+    ok 8 - publishes the provable ceiling for multibyte-heavy conservative forecasts
+      ---
+      duration_ms: 1.688708
+      type: 'test'
+      ...
+    # Subtest: unknown family is loud and no looser than calibrated families
+    ok 9 - unknown family is loud and no looser than calibrated families
+      ---
+      duration_ms: 2.3215
+      type: 'test'
+      ...
+    # Subtest: states what was preserved and how to remediate, and never clamps
+    ok 10 - states what was preserved and how to remediate, and never clamps
+      ---
+      duration_ms: 9.906
+      type: 'test'
+      ...
+    1..10
+ok 15 - delegate launch admission
+  ---
+  duration_ms: 66.498833
+  type: 'suite'
+  ...
+# Subtest: delegate runtime governor
+    # Subtest: is total and never throws from inside a hook
+    ok 1 - is total and never throws from inside a hook
+      ---
+      duration_ms: 0.167583
+      type: 'test'
+      ...
+    # Subtest: permits exactly the allowance and refuses one token past it
+    ok 2 - permits exactly the allowance and refuses one token past it
+      ---
+      duration_ms: 0.229958
+      type: 'test'
+      ...
+    1..2
+ok 16 - delegate runtime governor
+  ---
+  duration_ms: 0.473625
+  type: 'suite'
+  ...
+# Subtest: delegate limits
+    # Subtest: applies documented defaults and derives the route allowance
+    ok 1 - applies documented defaults and derives the route allowance
+      ---
+      duration_ms: 0.233458
+      type: 'test'
+      ...
+    # Subtest: rejects non-positive and non-integer overrides loudly
+    ok 2 - rejects non-positive and non-integer overrides loudly
+      ---
+      duration_ms: 0.695834
+      type: 'test'
+      ...
+    # Subtest: keeps the inline answer cap strictly below the answer capture cap
+    ok 3 - keeps the inline answer cap strictly below the answer capture cap
+      ---
+      duration_ms: 0.054333
+      type: 'test'
+      ...
+    1..3
+ok 17 - delegate limits
+  ---
+  duration_ms: 1.066
+  type: 'suite'
+  ...
+# Subtest: delegate route pinning
+    # Subtest: defaults to the parent current model and records that origin
+    ok 1 - defaults to the parent current model and records that origin
+      ---
+      duration_ms: 1.087834
+      type: 'test'
+      ...
+    # Subtest: pins an explicit route exactly
+    ok 2 - pins an explicit route exactly
+      ---
+      duration_ms: 0.371125
+      type: 'test'
+      ...
+    # Subtest: never substitutes an unavailable route
+    ok 3 - never substitutes an unavailable route
+      ---
+      duration_ms: 0.398125
+      type: 'test'
+      ...
+    # Subtest: refuses a route with no declared context window rather than assuming one
+    ok 4 - refuses a route with no declared context window rather than assuming one
+      ---
+      duration_ms: 0.481291
+      type: 'test'
+      ...
+    # Subtest: refuses when there is neither an explicit route nor a current model
+    ok 5 - refuses when there is neither an explicit route nor a current model
+      ---
+      duration_ms: 0.460291
+      type: 'test'
+      ...
+    1..5
+ok 18 - delegate route pinning
+  ---
+  duration_ms: 4.079958
+  type: 'suite'
+  ...
+# Subtest: delegate child isolation
+    # Subtest: gives the child its own session id and task-owned session directory
+    ok 1 - gives the child its own session id and task-owned session directory
+      ---
+      duration_ms: 0.267375
+      type: 'test'
+      ...
+    # Subtest: enables only the inspect tool set by argv, not by prompt
+    ok 2 - enables only the inspect tool set by argv, not by prompt
+      ---
+      duration_ms: 0.652959
+      type: 'test'
+      ...
+    # Subtest: explicitly denies every forbidden tool
+    ok 3 - explicitly denies every forbidden tool
+      ---
+      duration_ms: 0.330042
+      type: 'test'
+      ...
+    # Subtest: disables ambient discovery and loads attribution before the package guard
+    ok 4 - disables ambient discovery and loads attribution before the package guard
+      ---
+      duration_ms: 0.303041
+      type: 'test'
+      ...
+    # Subtest: keeps non-Anthropic argv at one explicit guard and requires attribution for Anthropic
+    ok 5 - keeps non-Anthropic argv at one explicit guard and requires attribution for Anthropic
+      ---
+      duration_ms: 0.331583
+      type: 'test'
+      ...
+    # Subtest: ambient mode enables extension discovery but preserves every other boundary
+    ok 6 - ambient mode enables extension discovery but preserves every other boundary
+      ---
+      duration_ms: 0.241958
+      type: 'test'
+      ...
+    # Subtest: refuses an unknown extension mode
+    ok 7 - refuses an unknown extension mode
+      ---
+      duration_ms: 0.14175
+      type: 'test'
+      ...
+    # Subtest: pins provider and model explicitly and passes no api key
+    ok 8 - pins provider and model explicitly and passes no api key
+      ---
+      duration_ms: 0.101458
+      type: 'test'
+      ...
+    # Subtest: refuses an unsupported capability
+    ok 9 - refuses an unsupported capability
+      ---
+      duration_ms: 0.138167
+      type: 'test'
+      ...
+    # Subtest: strips parent session identity from the child environment
+    ok 10 - strips parent session identity from the child environment
+      ---
+      duration_ms: 0.168875
+      type: 'test'
+      ...
+    # Subtest: tells the child the directive is authoritative and history is untrusted
+    ok 11 - tells the child the directive is authoritative and history is untrusted
+      ---
+      duration_ms: 0.211208
+      type: 'test'
+      ...
+    1..11
+ok 19 - delegate child isolation
+  ---
+  duration_ms: 3.418416
+  type: 'suite'
+  ...
+# Subtest: delegate hook contract gate
+    # Subtest: accepts the observed evidence
+    ok 1 - accepts the observed evidence
+      ---
+      duration_ms: 0.252292
+      type: 'test'
+      ...
+    # Subtest: refuses to spawn when a required guarantee is absent
+    ok 2 - refuses to spawn when a required guarantee is absent
+      ---
+      duration_ms: 0.399875
+      type: 'test'
+      ...
+    # Subtest: does not require guarantees Pi 0.83 demonstrably lacks
+    ok 3 - does not require guarantees Pi 0.83 demonstrably lacks
+      ---
+      duration_ms: 0.087834
+      type: 'test'
+      ...
+    # Subtest: refuses malformed or partial evidence rather than defaulting to allow
+    ok 4 - refuses malformed or partial evidence rather than defaulting to allow
+      ---
+      duration_ms: 0.49825
+      type: 'test'
+      ...
+    # Subtest: ships evidence identical to the recorded characterisation output
+    ok 5 - ships evidence identical to the recorded characterisation output
+      ---
+      duration_ms: 49.712083
+      type: 'test'
+      ...
+    1..5
+ok 20 - delegate hook contract gate
+  ---
+  duration_ms: 51.150417
+  type: 'suite'
+  ...
+# Subtest: delegate task identity
+    # Subtest: produces 128-bit random task ids
+    ok 1 - produces 128-bit random task ids
+      ---
+      duration_ms: 1.763458
+      type: 'test'
+      ...
+    # Subtest: produces child session ids unrelated to the parent
+    ok 2 - produces child session ids unrelated to the parent
+      ---
+      duration_ms: 0.763416
+      type: 'test'
+      ...
+    1..2
+ok 21 - delegate task identity
+  ---
+  duration_ms: 2.608792
+  type: 'suite'
+  ...
+# Subtest: delegate preflight ordering
+    # Subtest: checks the hook contract before doing anything else
+    ok 1 - checks the hook contract before doing anything else
+      ---
+      duration_ms: 3.094666
+      type: 'test'
+      ...
+    # Subtest: produces a complete plan when everything admits
+    ok 2 - produces a complete plan when everything admits
+      ---
+      duration_ms: 1.89075
+      type: 'test'
+      ...
+    # Subtest: refuses a too-small route before constructing a seed
+    ok 3 - refuses a too-small route before constructing a seed
+      ---
+      duration_ms: 0.12075
+      type: 'test'
+      ...
+    1..3
+ok 22 - delegate preflight ordering
+  ---
+  duration_ms: 5.170417
+  type: 'suite'
+  ...
+# Subtest: delegate launch preparation creates nothing on refusal
+    # Subtest: creates zero artifacts when the hook contract is unsupported
+    ok 1 - creates zero artifacts when the hook contract is unsupported
+      ---
+      duration_ms: 11.774292
+      type: 'test'
+      ...
+    # Subtest: creates zero artifacts when the seed exceeds the route allowance
+    ok 2 - creates zero artifacts when the seed exceeds the route allowance
+      ---
+      duration_ms: 129.078291
+      type: 'test'
+      ...
+    # Subtest: creates zero artifacts when the prompt is blank
+    ok 3 - creates zero artifacts when the prompt is blank
+      ---
+      duration_ms: 1.352458
+      type: 'test'
+      ...
+    # Subtest: delivers the seed to the child as its prompt, not merely on disk
+    ok 4 - delivers the seed to the child as its prompt, not merely on disk
+      ---
+      duration_ms: 161.719333
+      type: 'test'
+      ...
+    # Subtest: writes a complete, self-consistent launch when everything admits
+    ok 5 - writes a complete, self-consistent launch when everything admits
+      ---
+      duration_ms: 112.027083
+      type: 'test'
+      ...
+    # Subtest: leaves no half-formed run when a post-directory step fails
+    ok 6 - leaves no half-formed run when a post-directory step fails
+      ---
+      duration_ms: 120.632833
+      type: 'test'
+      ...
+    1..6
+ok 23 - delegate launch preparation creates nothing on refusal
+  ---
+  duration_ms: 537.050125
+  type: 'suite'
+  ...
+# Subtest: delegate result package
+    # Subtest: round-trips a single-block answer with verified hashes
+    ok 1 - round-trips a single-block answer with verified hashes
+      ---
+      duration_ms: 1.09475
+      type: 'test'
+      ...
+    # Subtest: round-trips a multi-block answer preserving exact concatenation
+    ok 2 - round-trips a multi-block answer preserving exact concatenation
+      ---
+      duration_ms: 0.237917
+      type: 'test'
+      ...
+    # Subtest: preserves U+2028, U+2029, emoji, and unnormalized sequences exactly
+    ok 3 - preserves U+2028, U+2029, emoji, and unnormalized sequences exactly
+      ---
+      duration_ms: 0.104958
+      type: 'test'
+      ...
+    # Subtest: rejects a lone surrogate rather than substituting U+FFFD
+    ok 4 - rejects a lone surrogate rather than substituting U+FFFD
+      ---
+      duration_ms: 0.198459
+      type: 'test'
+      ...
+    # Subtest: detects a corrupted answer block and never returns a prefix
+    ok 5 - detects a corrupted answer block and never returns a prefix
+      ---
+      duration_ms: 0.132333
+      type: 'test'
+      ...
+    # Subtest: detects an aggregate hash mismatch even when every block hash is valid
+    ok 6 - detects an aggregate hash mismatch even when every block hash is valid
+      ---
+      duration_ms: 0.091917
+      type: 'test'
+      ...
+    # Subtest: detects a declared length that disagrees with the carried bytes
+    ok 7 - detects a declared length that disagrees with the carried bytes
+      ---
+      duration_ms: 0.436792
+      type: 'test'
+      ...
+    # Subtest: rejects non-strict base64 rather than absorbing it
+    ok 8 - rejects non-strict base64 rather than absorbing it
+      ---
+      duration_ms: 1.11925
+      type: 'test'
+      ...
+    # Subtest: rejects a package produced from a different seed
+    ok 9 - rejects a package produced from a different seed
+      ---
+      duration_ms: 1.966166
+      type: 'test'
+      ...
+    # Subtest: rejects a package carrying a foreign task identity or launch nonce
+    ok 10 - rejects a package carrying a foreign task identity or launch nonce
+      ---
+      duration_ms: 1.0445
+      type: 'test'
+      ...
+    # Subtest: rejects a route that does not match the pinned route
+    ok 11 - rejects a route that does not match the pinned route
+      ---
+      duration_ms: 0.121209
+      type: 'test'
+      ...
+    # Subtest: rejects an attestation from a substituted route
+    ok 12 - rejects an attestation from a substituted route
+      ---
+      duration_ms: 0.08025
+      type: 'test'
+      ...
+    # Subtest: refuses a package with no route attestation at all
+    ok 13 - refuses a package with no route attestation at all
+      ---
+      duration_ms: 0.072792
+      type: 'test'
+      ...
+    # Subtest: reports unavailable usage explicitly rather than as zero
+    ok 14 - reports unavailable usage explicitly rather than as zero
+      ---
+      duration_ms: 0.131959
+      type: 'test'
+      ...
+    # Subtest: rejects a usage record missing cost components
+    ok 15 - rejects a usage record missing cost components
+      ---
+      duration_ms: 0.080958
+      type: 'test'
+      ...
+    # Subtest: rejects malformed JSON and a wrong schema version
+    ok 16 - rejects malformed JSON and a wrong schema version
+      ---
+      duration_ms: 0.081708
+      type: 'test'
+      ...
+    # Subtest: accepts a historical v1 spill receipt without content_format
+    ok 17 - accepts a historical v1 spill receipt without content_format
+      ---
+      duration_ms: 0.223875
+      type: 'test'
+      ...
+    # Subtest: preserves spill receipts with their call coordinates
+    ok 18 - preserves spill receipts with their call coordinates
+      ---
+      duration_ms: 0.095958
+      type: 'test'
+      ...
+    1..18
+ok 24 - delegate result package
+  ---
+  duration_ms: 9.375417
+  type: 'suite'
+  ...
+# Subtest: delegate seed construction
+    # Subtest: preserves visible user and assistant text verbatim
+    ok 1 - preserves visible user and assistant text verbatim
+      ---
+      duration_ms: 6.003125
+      type: 'test'
+      ...
+    # Subtest: excludes thinking and tool payloads from the seed entirely
+    ok 2 - excludes thinking and tool payloads from the seed entirely
+      ---
+      duration_ms: 1.16225
+      type: 'test'
+      ...
+    # Subtest: accounts for every omitted payload with a hash rather than dropping it
+    ok 3 - accounts for every omitted payload with a hash rather than dropping it
+      ---
+      duration_ms: 1.686584
+      type: 'test'
+      ...
+    # Subtest: represents images as markers and never as raw bytes
+    ok 4 - represents images as markers and never as raw bytes
+      ---
+      duration_ms: 0.33025
+      type: 'test'
+      ...
+    # Subtest: excludes the in-flight delegate call and every sibling call in that message
+    ok 5 - excludes the in-flight delegate call and every sibling call in that message
+      ---
+      duration_ms: 0.272916
+      type: 'test'
+      ...
+    # Subtest: gives sibling delegates in one message byte-identical projected history
+    ok 6 - gives sibling delegates in one message byte-identical projected history
+      ---
+      duration_ms: 0.238083
+      type: 'test'
+      ...
+    # Subtest: treats the prompt as authoritative and preserves it exactly
+    ok 7 - treats the prompt as authoritative and preserves it exactly
+      ---
+      duration_ms: 0.249417
+      type: 'test'
+      ...
+    # Subtest: is byte-identical across repeated construction from one session
+    ok 8 - is byte-identical across repeated construction from one session
+      ---
+      duration_ms: 1.056959
+      type: 'test'
+      ...
+    # Subtest: is byte-identical across separate processes
+    ok 9 - is byte-identical across separate processes
+      ---
+      duration_ms: 6346.395459
+      type: 'test'
+      ...
+    # Subtest: binds the seed to the exact parent leaf it was projected from
+    ok 10 - binds the seed to the exact parent leaf it was projected from
+      ---
+      duration_ms: 1.200042
+      type: 'test'
+      ...
+    # Subtest: uses the delegate policy id and never claims Fusion provenance
+    ok 11 - uses the delegate policy id and never claims Fusion provenance
+      ---
+      duration_ms: 0.292875
+      type: 'test'
+      ...
+    # Subtest: never emits a payload preview
+    ok 12 - never emits a payload preview
+      ---
+      duration_ms: 0.157125
+      type: 'test'
+      ...
+    # Subtest: refuses a blank prompt loudly with zero side effects
+    ok 13 - refuses a blank prompt loudly with zero side effects
+      ---
+      duration_ms: 0.489167
+      type: 'test'
+      ...
+    1..13
+ok 25 - delegate seed construction
+  ---
+  duration_ms: 6360.474584
+  type: 'suite'
+  ...
+# Subtest: delegate seed receive-side verification
+    # Subtest: accepts the exact persisted bytes
+    ok 1 - accepts the exact persisted bytes
+      ---
+      duration_ms: 0.703875
+      type: 'test'
+      ...
+    # Subtest: rejects a single mutated byte
+    ok 2 - rejects a single mutated byte
+      ---
+      duration_ms: 0.227292
+      type: 'test'
+      ...
+    # Subtest: rejects a seed carrying another task identity
+    ok 3 - rejects a seed carrying another task identity
+      ---
+      duration_ms: 0.192208
+      type: 'test'
+      ...
+    # Subtest: rejects a structurally malformed seed even when its hash matches
+    ok 4 - rejects a structurally malformed seed even when its hash matches
+      ---
+      duration_ms: 0.126417
+      type: 'test'
+      ...
+    # Subtest: rejects a directive whose hash does not match its text
+    ok 5 - rejects a directive whose hash does not match its text
+      ---
+      duration_ms: 0.221542
+      type: 'test'
+      ...
+    # Subtest: binds the selected extension mode into the verified seed
+    ok 6 - binds the selected extension mode into the verified seed
+      ---
+      duration_ms: 0.194708
+      type: 'test'
+      ...
+    # Subtest: rejects an unknown extension mode even when its hash matches
+    ok 7 - rejects an unknown extension mode even when its hash matches
+      ---
+      duration_ms: 0.251375
+      type: 'test'
+      ...
+    # Subtest: rejects a capability the child cannot enforce
+    ok 8 - rejects a capability the child cannot enforce
+      ---
+      duration_ms: 0.267041
+      type: 'test'
+      ...
+    1..8
+ok 26 - delegate seed receive-side verification
+  ---
+  duration_ms: 2.297208
+  type: 'suite'
+  ...
+# Subtest: docs freshness gate mutation fixtures
+    # Subtest: fails closed for malformed docs, stale coverage, stale receipts, payload gaps, unsupported extraction, and nondeterminism
+    ok 1 - fails closed for malformed docs, stale coverage, stale receipts, payload gaps, unsupported extraction, and nondeterminism
+      ---
+      duration_ms: 2077.9585
+      type: 'test'
+      ...
+    # Subtest: current docs verify deterministically with advisory receipt state
+    ok 2 - current docs verify deterministically with advisory receipt state
+      ---
+      duration_ms: 4130.47275
+      type: 'test'
+      ...
+    # Subtest: optional strict mode still fails closed for missing or stale receipts
+    ok 3 - optional strict mode still fails closed for missing or stale receipts
+      ---
+      duration_ms: 2126.957875
+      type: 'test'
+      ...
+    1..3
+ok 27 - docs freshness gate mutation fixtures
+  ---
+  duration_ms: 8336.065542
+  type: 'suite'
+  ...
+# Subtest: durable file writer operation sequencing
+    # Subtest: direct write opens exactly once with write flag and inherited mode
+    ok 1 - direct write opens exactly once with write flag and inherited mode
+      ---
+      duration_ms: 0.564125
+      type: 'test'
+      ...
+    # Subtest: atomic replace opens the temp exactly once with exclusive create mode
+    ok 2 - atomic replace opens the temp exactly once with exclusive create mode
+      ---
+      duration_ms: 0.19425
+      type: 'test'
+      ...
+    # Subtest: atomic replace records write, file sync, close, rename, and directory sync in order
+    ok 3 - atomic replace records write, file sync, close, rename, and directory sync in order
+      ---
+      duration_ms: 0.302167
+      type: 'test'
+      ...
+    # Subtest: does not reopen the data file after writing or use read flags for sync
+    ok 4 - does not reopen the data file after writing or use read flags for sync
+      ---
+      duration_ms: 0.07825
+      type: 'test'
+      ...
+    # Subtest: write flag overwrites existing content on the real filesystem
+    ok 5 - write flag overwrites existing content on the real filesystem
+      ---
+      duration_ms: 10.738125
+      type: 'test'
+      ...
+    # Subtest: exclusive temp collision fails without removing the pre-existing temp path
+    ok 6 - exclusive temp collision fails without removing the pre-existing temp path
+      ---
+      duration_ms: 1.819875
+      type: 'test'
+      ...
+    # Subtest: write failure still closes the handle
+    ok 7 - write failure still closes the handle
+      ---
+      duration_ms: 0.186917
+      type: 'test'
+      ...
+    # Subtest: sync failure still closes the handle
+    ok 8 - sync failure still closes the handle
+      ---
+      duration_ms: 0.151625
+      type: 'test'
+      ...
+    # Subtest: successful write followed by close failure reports close as the primary operation
+    ok 9 - successful write followed by close failure reports close as the primary operation
+      ---
+      duration_ms: 0.177792
+      type: 'test'
+      ...
+    # Subtest: write failure plus close failure keeps write primary and records close cleanup
+    ok 10 - write failure plus close failure keeps write primary and records close cleanup
+      ---
+      duration_ms: 0.761125
+      type: 'test'
+      ...
+    # Subtest: sync failure plus close failure keeps sync primary and records close cleanup
+    ok 11 - sync failure plus close failure keeps sync primary and records close cleanup
+      ---
+      duration_ms: 0.459334
+      type: 'test'
+      ...
+    # Subtest: temp write, sync, and close failures remove the owned temp path
+    ok 12 - temp write, sync, and close failures remove the owned temp path
+      ---
+      duration_ms: 0.675041
+      type: 'test'
+      ...
+    # Subtest: temp cleanup failure is attached without replacing the primary operation
+    ok 13 - temp cleanup failure is attached without replacing the primary operation
+      ---
+      duration_ms: 0.45925
+      type: 'test'
+      ...
+    # Subtest: rename failure removes the owned temp path
+    ok 14 - rename failure removes the owned temp path
+      ---
+      duration_ms: 0.317916
+      type: 'test'
+      ...
+    # Subtest: rename failure plus cleanup failure preserves both failures
+    ok 15 - rename failure plus cleanup failure preserves both failures
+      ---
+      duration_ms: 0.389959
+      type: 'test'
+      ...
+    # Subtest: directory open, directory sync, and directory close failures are loud
+    ok 16 - directory open, directory sync, and directory close failures are loud
+      ---
+      duration_ms: 0.669166
+      type: 'test'
+      ...
+    # Subtest: directory sync failure plus directory close failure preserves both failures
+    ok 17 - directory sync failure plus directory close failure preserves both failures
+      ---
+      duration_ms: 0.3925
+      type: 'test'
+      ...
+    # Subtest: post-rename directory failure marks the replacement as completed
+    ok 18 - post-rename directory failure marks the replacement as completed
+      ---
+      duration_ms: 0.278083
+      type: 'test'
+      ...
+    # Subtest: win32 replacement skips directory opens
+    ok 19 - win32 replacement skips directory opens
+      ---
+      duration_ms: 0.215
+      type: 'test'
+      ...
+    # Subtest: successful atomic replacement leaves no temp residue on the real filesystem
+    ok 20 - successful atomic replacement leaves no temp residue on the real filesystem
+      ---
+      duration_ms: 62.48575
+      type: 'test'
+      ...
+    # Subtest: DurableFileError exposes operation, path, native code, and primary cause
+    ok 21 - DurableFileError exposes operation, path, native code, and primary cause
+      ---
+      duration_ms: 0.233167
+      type: 'test'
+      ...
+    # Subtest: file sync failure is never tolerated
+    ok 22 - file sync failure is never tolerated
+      ---
+      duration_ms: 0.102292
+      type: 'test'
+      ...
+    1..22
+ok 28 - durable file writer operation sequencing
+  ---
+  duration_ms: 82.616209
+  type: 'suite'
+  ...
+# Subtest: durable file writer real filesystem integration
+    # Subtest: writeFileDurable overwrites content with writeFile mode parity
+    ok 1 - writeFileDurable overwrites content with writeFile mode parity
+      ---
+      duration_ms: 14.767208
+      type: 'test'
+      ...
+    # Subtest: replaceFileDurable installs a private complete replacement
+    ok 2 - replaceFileDurable installs a private complete replacement
+      ---
+      duration_ms: 56.513625
+      type: 'test'
+      ...
+    # Subtest: concurrent replaceFileDurable calls leave one complete payload
+    ok 3 - concurrent replaceFileDurable calls leave one complete payload
+      ---
+      duration_ms: 86.572209
+      type: 'test'
+      ...
+    1..3
+ok 29 - durable file writer real filesystem integration
+  ---
+  duration_ms: 158.145667
+  type: 'suite'
+  ...
+# Subtest: background EventBus protocol
+    # Subtest: handshakes capabilities and rejects malformed, duplicate, and unavailable requests
+    ok 1 - handshakes capabilities and rejects malformed, duplicate, and unavailable requests
+      ---
+      duration_ms: 48.407334
+      type: 'test'
+      ...
+    # Subtest: publishes exactly one correlated terminal after the run response for every terminal path
+    ok 2 - publishes exactly one correlated terminal after the run response for every terminal path
+      ---
+      duration_ms: 2500.790417
+      type: 'test'
+      ...
+    # Subtest: unsubscribes cleanly when the service closes
+    ok 3 - unsubscribes cleanly when the service closes
+      ---
+      duration_ms: 531.0225
+      type: 'test'
+      ...
+    1..3
+ok 30 - background EventBus protocol
+  ---
+  duration_ms: 3081.205666
+  type: 'suite'
+  ...
+# Subtest: fusion artifacts
+    # Subtest: preserves and aggregates one-hour cache writes and reasoning subsets
+    ok 1 - preserves and aggregates one-hour cache writes and reasoning subsets
+      ---
+      duration_ms: 8.090333
+      type: 'test'
+      ...
+    # Subtest: creates private run files and records child attempt artifacts
+    ok 2 - creates private run files and records child attempt artifacts
+      ---
+      duration_ms: 256.555333
+      type: 'test'
+      ...
+    # Subtest: records same-session output recovery without putting original text in the manifest
+    ok 3 - records same-session output recovery without putting original text in the manifest
+      ---
+      duration_ms: 1900.67125
+      type: 'test'
+      ...
+    # Subtest: records completed child tool-call logs and summaries on attempts
+    ok 4 - records completed child tool-call logs and summaries on attempts
+      ---
+      duration_ms: 182.297
+      type: 'test'
+      ...
+    # Subtest: enforces lifecycle ordering and durable merge before completion
+    ok 5 - enforces lifecycle ordering and durable merge before completion
+      ---
+      duration_ms: 105.2005
+      type: 'test'
+      ...
+    # Subtest: writes a canonical manifest-bound failure summary without stage-output bodies
+    ok 6 - writes a canonical manifest-bound failure summary without stage-output bodies
+      ---
+      duration_ms: 373.660292
+      type: 'test'
+      ...
+    # Subtest: rejects invalid summary lifecycle, identity, no-answer, and duplicate-write inputs at runtime
+    ok 7 - rejects invalid summary lifecycle, identity, no-answer, and duplicate-write inputs at runtime
+      ---
+      duration_ms: 389.638917
+      type: 'test'
+      ...
+    # Subtest: keeps failure summaries deterministic and records exact source caps
+    ok 8 - keeps failure summaries deterministic and records exact source caps
+      ---
+      duration_ms: 2.337042
+      type: 'test'
+      ...
+    # Subtest: returns verified failed/cancelled evidence without reading stage-output bodies
+    ok 9 - returns verified failed/cancelled evidence without reading stage-output bodies
+      ---
+      duration_ms: 385.954375
+      type: 'test'
+      ...
+    # Subtest: fails closed for summary corruption, divergence, unsafe refs, and legacy manifests
+    ok 10 - fails closed for summary corruption, divergence, unsafe refs, and legacy manifests
+      ---
+      duration_ms: 5531.8535
+      type: 'test'
+      ...
+    # Subtest: bounds the actual failure view with whole-row omission receipts for multibyte diagnostics
+    ok 11 - bounds the actual failure view with whole-row omission receipts for multibyte diagnostics
+      ---
+      duration_ms: 4195.104041
+      type: 'test'
+      ...
+    # Subtest: writes terminal failure evidence loudly
+    ok 12 - writes terminal failure evidence loudly
+      ---
+      duration_ms: 507.64825
+      type: 'test'
+      ...
+    1..12
+ok 31 - fusion artifacts
+  ---
+  duration_ms: 13842.790833
+  type: 'suite'
+  ...
+# Subtest: fusion stage budgets
+    # Subtest: ships the calibrated affine table with strict provenance guards
+    ok 1 - ships the calibrated affine table with strict provenance guards
+      ---
+      duration_ms: 1.19625
+      type: 'test'
+      ...
+    # Subtest: uses additive segment accounting rather than an unsafe blended divisor
+    ok 2 - uses additive segment accounting rather than an unsafe blended divisor
+      ---
+      duration_ms: 0.183083
+      type: 'test'
+      ...
+    # Subtest: keeps adversarial forecasts at or below bytes plus F while remaining deterministic
+    ok 3 - keeps adversarial forecasts at or below bytes plus F while remaining deterministic
+      ---
+      duration_ms: 9.164916
+      type: 'test'
+      ...
+    # Subtest: is byte-identical across separate estimator processes
+    ok 4 - is byte-identical across separate estimator processes
+      ---
+      duration_ms: 2474.358708
+      type: 'test'
+      ...
+    # Subtest: ceilings once per rate bucket so segmentation cannot add phantom tokens
+    ok 5 - ceilings once per rate bucket so segmentation cannot add phantom tokens
+      ---
+      duration_ms: 1.442333
+      type: 'test'
+      ...
+    # Subtest: scope guard keeps calibrated codex rates out of small prompts and small windows
+    ok 6 - scope guard keeps calibrated codex rates out of small prompts and small windows
+      ---
+      duration_ms: 6.444458
+      type: 'test'
+      ...
+    # Subtest: falls back for low-whitespace dense ASCII before a calibrated codex under-forecast can be admitted
+    ok 7 - falls back for low-whitespace dense ASCII before a calibrated codex under-forecast can be admitted
+      ---
+      duration_ms: 42.162541
+      type: 'test'
+      ...
+    # Subtest: splits input-only fatal checks from reservation warnings
+    ok 8 - splits input-only fatal checks from reservation warnings
+      ---
+      duration_ms: 220.554292
+      type: 'test'
+      ...
+    # Subtest: bases safety on the smallest configured byte capacity, not the largest token window
+    ok 9 - bases safety on the smallest configured byte capacity, not the largest token window
+      ---
+      duration_ms: 0.251333
+      type: 'test'
+      ...
+    # Subtest: reserves each route configured maximum output instead of assuming the smaller Fusion response contract
+    ok 10 - reserves each route configured maximum output instead of assuming the smaller Fusion response contract
+      ---
+      duration_ms: 1.207792
+      type: 'test'
+      ...
+    # Subtest: selects the byte-capacity limiting route when token ordering flips
+    ok 11 - selects the byte-capacity limiting route when token ordering flips
+      ---
+      duration_ms: 2.861709
+      type: 'test'
+      ...
+    # Subtest: rejects routes whose capacity is unknown or too small to hold input
+    ok 12 - rejects routes whose capacity is unknown or too small to hold input
+      ---
+      duration_ms: 7.391041
+      type: 'test'
+      ...
+    # Subtest: forecasts each concrete stage against its assigned route
+    ok 13 - forecasts each concrete stage against its assigned route
+      ---
+      duration_ms: 1.65225
+      type: 'test'
+      ...
+    # Subtest: accepts a safe prompt at the affine boundary and rejects one byte past it
+    ok 14 - accepts a safe prompt at the affine boundary and rejects one byte past it
+      ---
+      duration_ms: 27.691375
+      type: 'test'
+      ...
+    # Subtest: counts the child system prompt as input, not free space
+    ok 15 - counts the child system prompt as input, not free space
+      ---
+      duration_ms: 5.531583
+      type: 'test'
+      ...
+    # Subtest: uses conservative multibyte fatal accounting while persisting the provable advisory ceiling
+    ok 16 - uses conservative multibyte fatal accounting while persisting the provable advisory ceiling
+      ---
+      duration_ms: 8.594667
+      type: 'test'
+      ...
+    # Subtest: rejects an oversized candidate stage before spawning a child
+    ok 17 - rejects an oversized candidate stage before spawning a child
+      ---
+      duration_ms: 701.279917
+      type: 'test'
+      ...
+    # Subtest: allows the reported input-only incident while warning on reservation
+    ok 18 - allows the reported input-only incident while warning on reservation
+      ---
+      duration_ms: 1551.224834
+      type: 'test'
+      ...
+    # Subtest: bounds each child response so downstream stages cannot be overrun
+    ok 19 - bounds each child response so downstream stages cannot be overrun
+      ---
+      duration_ms: 1234.956125
+      type: 'test'
+      ...
+    # Subtest: rejects evaluator, repair, and merger expansion before those children spawn
+    ok 20 - rejects evaluator, repair, and merger expansion before those children spawn
+      ---
+      duration_ms: 12.311291
+      type: 'test'
+      ...
+    # Subtest: states the minimum viable route capacity instead of accepting a route that must fail
+    ok 21 - states the minimum viable route capacity instead of accepting a route that must fail
+      ---
+      duration_ms: 0.253416
+      type: 'test'
+      ...
+    # Subtest: bounds output contracts in JSON-rendered bytes so escaping cannot bypass them
+    ok 22 - bounds output contracts in JSON-rendered bytes so escaping cannot bypass them
+      ---
+      duration_ms: 2.32675
+      type: 'test'
+      ...
+    # Subtest: adds upstream output contracts to real empty-slot renderings
+    ok 23 - adds upstream output contracts to real empty-slot renderings
+      ---
+      duration_ms: 48.288667
+      type: 'test'
+      ...
+    # Subtest: forecasts tool-enabled candidate stages with capability-specific system prompt bytes
+    ok 24 - forecasts tool-enabled candidate stages with capability-specific system prompt bytes
+      ---
+      duration_ms: 2.638833
+      type: 'test'
+      ...
+    # Subtest: gives each clean workflow distinct request-budget remediation
+    ok 25 - gives each clean workflow distinct request-budget remediation
+      ---
+      duration_ms: 315.504584
+      type: 'test'
+      ...
+    # Subtest: reproduces the compact incident plan as fitting with utilization warnings
+    ok 26 - reproduces the compact incident plan as fitting with utilization warnings
+      ---
+      duration_ms: 33.674959
+      type: 'test'
+      ...
+    # Subtest: emits one advisory utilization progress event on a tight fitting plan
+    ok 27 - emits one advisory utilization progress event on a tight fitting plan
+      ---
+      duration_ms: 2207.66
+      type: 'test'
+      ...
+    # Subtest: lets safe prompts proceed through all five calls and persists the budget plan
+    ok 28 - lets safe prompts proceed through all five calls and persists the budget plan
+      ---
+      duration_ms: 2132.805083
+      type: 'test'
+      ...
+    # Subtest: does not let an unrecognised model inherit a known provider calibration
+    ok 29 - does not let an unrecognised model inherit a known provider calibration
+      ---
+      duration_ms: 0.21875
+      type: 'test'
+      ...
+    # Subtest: surfaces unknown provider calibration in completed result details
+    ok 30 - surfaces unknown provider calibration in completed result details
+      ---
+      duration_ms: 2037.042625
+      type: 'test'
+      ...
+    # Subtest: writes and surfaces a calibration violation without aborting success
+    ok 31 - writes and surfaces a calibration violation without aborting success
+      ---
+      duration_ms: 1586.674667
+      type: 'test'
+      ...
+    # Subtest: does not compare a one-request forecast with cumulative agent-loop cache usage
+    ok 32 - does not compare a one-request forecast with cumulative agent-loop cache usage
+      ---
+      duration_ms: 1325.195167
+      type: 'test'
+      ...
+    # Subtest: writes the budget plan before rejecting so the decision stays auditable
+    ok 33 - writes the budget plan before rejecting so the decision stays auditable
+      ---
+      duration_ms: 328.405084
+      type: 'test'
+      ...
+    # Subtest: keeps a real 1 MB tool-heavy session within the smallest configured budget
+    ok 34 - keeps a real 1 MB tool-heavy session within the smallest configured budget
+      ---
+      duration_ms: 6.97525
+      type: 'test'
+      ...
+    1..34
+ok 32 - fusion stage budgets
+  ---
+  duration_ms: 16343.795084
+  type: 'suite'
+  ...
+# Subtest: Fusion Claude cache policy
+    # Subtest: defaults to one hour and upgrades only Pi-selected native breakpoints
+    ok 1 - defaults to one hour and upgrades only Pi-selected native breakpoints
+      ---
+      duration_ms: 2.466334
+      type: 'test'
+      ...
+    # Subtest: upgrades the exact four breakpoints emitted by Pi's OAuth Anthropic adapter
+    ok 2 - upgrades the exact four breakpoints emitted by Pi's OAuth Anthropic adapter
+      ---
+      duration_ms: 36.294
+      type: 'test'
+      ...
+    # Subtest: has Pi create one-hour breakpoints when Fusion sets the child policy env
+    ok 3 - has Pi create one-hour breakpoints when Fusion sets the child policy env
+      ---
+      duration_ms: 115.935667
+      type: 'test'
+      ...
+    # Subtest: preserves the provider call-level none posture through attribution rewrite
+    ok 4 - preserves the provider call-level none posture through attribution rewrite
+      ---
+      duration_ms: 2.031667
+      type: 'test'
+      ...
+    # Subtest: adds the subscription prompt-caching scope beta exactly once
+    ok 5 - adds the subscription prompt-caching scope beta exactly once
+      ---
+      duration_ms: 0.113416
+      type: 'test'
+      ...
+    # Subtest: supports explicit short and none without adding new breakpoints
+    ok 6 - supports explicit short and none without adding new breakpoints
+      ---
+      duration_ms: 0.269334
+      type: 'test'
+      ...
+    # Subtest: falls back to short when the active model rejects long retention
+    ok 7 - falls back to short when the active model rejects long retention
+      ---
+      duration_ms: 0.651875
+      type: 'test'
+      ...
+    # Subtest: rejects malformed policy, controls, ordinals, and excess breakpoints
+    ok 8 - rejects malformed policy, controls, ordinals, and excess breakpoints
+      ---
+      duration_ms: 0.299166
+      type: 'test'
+      ...
+    # Subtest: emits a closed not-applicable observation for non-Anthropic routes
+    ok 9 - emits a closed not-applicable observation for non-Anthropic routes
+      ---
+      duration_ms: 0.45975
+      type: 'test'
+      ...
+    1..9
+ok 33 - Fusion Claude cache policy
+  ---
+  duration_ms: 161.035584
+  type: 'suite'
+  ...
+# Subtest: fusion model config
+    # Subtest: defaults only when the config file is absent
+    ok 1 - defaults only when the config file is absent
+      ---
+      duration_ms: 1322.459
+      type: 'test'
+      ...
+    # Subtest: parses the closed five-slot schema and rejects invalid shapes
+    ok 2 - parses the closed five-slot schema and rejects invalid shapes
+      ---
+      duration_ms: 0.430541
+      type: 'test'
+      ...
+    # Subtest: resolves current, duplicate, and slash-containing model keys exactly
+    ok 3 - resolves current, duplicate, and slash-containing model keys exactly
+      ---
+      duration_ms: 0.392166
+      type: 'test'
+      ...
+    # Subtest: caps Anthropic route capacity to the attributed 200K subscription transport
+    ok 4 - caps Anthropic route capacity to the attributed 200K subscription transport
+      ---
+      duration_ms: 0.200541
+      type: 'test'
+      ...
+    # Subtest: rejects frontier models unless they use a supported subscription OAuth route
+    ok 5 - rejects frontier models unless they use a supported subscription OAuth route
+      ---
+      duration_ms: 0.562
+      type: 'test'
+      ...
+    # Subtest: binds subscription OAuth routes to trusted endpoints and provider authentication
+    ok 6 - binds subscription OAuth routes to trusted endpoints and provider authentication
+      ---
+      duration_ms: 0.203042
+      type: 'test'
+      ...
+    # Subtest: fails loudly for missing current or unavailable configured models
+    ok 7 - fails loudly for missing current or unavailable configured models
+      ---
+      duration_ms: 0.440834
+      type: 'test'
+      ...
+    # Subtest: saves atomically with a revision guard and private file mode
+    ok 8 - saves atomically with a revision guard and private file mode
+      ---
+      duration_ms: 121.814666
+      type: 'test'
+      ...
+    # Subtest: serializes concurrent saves so one stale writer fails instead of replacing the other
+    ok 9 - serializes concurrent saves so one stale writer fails instead of replacing the other
+      ---
+      duration_ms: 42.498
+      type: 'test'
+      ...
+    1..9
+ok 34 - fusion model config
+  ---
+  duration_ms: 1492.877542
+  type: 'suite'
+  ...
+# Subtest: fusion context projection and prompts
+    # Subtest: makes the validation candidate bare-JSON contract explicit
+    ok 1 - makes the validation candidate bare-JSON contract explicit
+      ---
+      duration_ms: 0.469166
+      type: 'test'
+      ...
+    # Subtest: discloses the exact candidate hard cap in every candidate profile
+    ok 2 - discloses the exact candidate hard cap in every candidate profile
+      ---
+      duration_ms: 0.161375
+      type: 'test'
+      ...
+    # Subtest: trims only command edges and preserves internal whitespace
+    ok 3 - trims only command edges and preserves internal whitespace
+      ---
+      duration_ms: 0.048625
+      type: 'test'
+      ...
+    # Subtest: builds deterministic v5 canonical command input with an authoritative request
+    ok 4 - builds deterministic v5 canonical command input with an authoritative request
+      ---
+      duration_ms: 3.73625
+      type: 'test'
+      ...
+    # Subtest: marks the tool entry point as explicitly authoritative under its own policy id
+    ok 5 - marks the tool entry point as explicitly authoritative under its own policy id
+      ---
+      duration_ms: 0.804625
+      type: 'test'
+      ...
+    # Subtest: keeps a >1 MB tool-heavy session bounded while preserving all conversational text
+    ok 6 - keeps a >1 MB tool-heavy session bounded while preserving all conversational text
+      ---
+      duration_ms: 6.750042
+      type: 'test'
+      ...
+    # Subtest: produces byte-identical canonical input and stable hashes across repeated construction
+    ok 7 - produces byte-identical canonical input and stable hashes across repeated construction
+      ---
+      duration_ms: 56.568416
+      type: 'test'
+      ...
+    # Subtest: round-trips compact tuples without losing roles, ordinals, or exact text
+    ok 8 - round-trips compact tuples without losing roles, ordinals, or exact text
+      ---
+      duration_ms: 0.830625
+      type: 'test'
+      ...
+    # Subtest: keeps the ledger root unchanged by compact tuple encoding
+    ok 9 - keeps the ledger root unchanged by compact tuple encoding
+      ---
+      duration_ms: 0.914625
+      type: 'test'
+      ...
+    # Subtest: is byte-identical across separate processes
+    ok 10 - is byte-identical across separate processes
+      ---
+      duration_ms: 5609.166709
+      type: 'test'
+      ...
+    # Subtest: materially shrinks a many-entry canonical input versus the verbose object encoding
+    ok 11 - materially shrinks a many-entry canonical input versus the verbose object encoding
+      ---
+      duration_ms: 31.56475
+      type: 'test'
+      ...
+    # Subtest: changes only the affected hashes when an omitted payload byte changes
+    ok 12 - changes only the affected hashes when an omitted payload byte changes
+      ---
+      duration_ms: 0.786042
+      type: 'test'
+      ...
+    # Subtest: records omitted payload hashes that match the exact omitted bytes
+    ok 13 - records omitted payload hashes that match the exact omitted bytes
+      ---
+      duration_ms: 0.152
+      type: 'test'
+      ...
+    # Subtest: collapses contiguous omissions into deterministic source-ordered runs
+    ok 14 - collapses contiguous omissions into deterministic source-ordered runs
+      ---
+      duration_ms: 0.250333
+      type: 'test'
+      ...
+    # Subtest: never carries a head, tail, or preview of omitted tool payloads
+    ok 15 - never carries a head, tail, or preview of omitted tool payloads
+      ---
+      duration_ms: 0.166875
+      type: 'test'
+      ...
+    # Subtest: keeps user and tool-result images marker-only or ledger-only without raw bytes
+    ok 16 - keeps user and tool-result images marker-only or ledger-only without raw bytes
+      ---
+      duration_ms: 0.284041
+      type: 'test'
+      ...
+    # Subtest: excludes the active tool-call leaf and its sibling calls from tool context
+    ok 17 - excludes the active tool-call leaf and its sibling calls from tool context
+      ---
+      duration_ms: 0.145959
+      type: 'test'
+      ...
+    # Subtest: rejects a blank request before doing projection work
+    ok 18 - rejects a blank request before doing projection work
+      ---
+      duration_ms: 0.220916
+      type: 'test'
+      ...
+    # Subtest: keeps model metadata out of blind evaluator and merger inputs
+    ok 19 - keeps model metadata out of blind evaluator and merger inputs
+      ---
+      duration_ms: 0.227792
+      type: 'test'
+      ...
+    # Subtest: tells children how to read the projection and its explicit omissions
+    ok 20 - tells children how to read the projection and its explicit omissions
+      ---
+      duration_ms: 0.038459
+      type: 'test'
+      ...
+    # Subtest: selects capability-specific candidate system prompts without changing reason bytes
+    ok 21 - selects capability-specific candidate system prompts without changing reason bytes
+      ---
+      duration_ms: 0.156
+      type: 'test'
+      ...
+    # Subtest: gives the evaluation repair child the full closed schema and blind constraints
+    ok 22 - gives the evaluation repair child the full closed schema and blind constraints
+      ---
+      duration_ms: 0.051958
+      type: 'test'
+      ...
+    # Subtest: still throws the typed unsupported-block error for unknown block types
+    ok 23 - still throws the typed unsupported-block error for unknown block types
+      ---
+      duration_ms: 0.103709
+      type: 'test'
+      ...
+    # Subtest: gives every retained block exactly one disposition
+    ok 24 - gives every retained block exactly one disposition
+      ---
+      duration_ms: 0.356792
+      type: 'test'
+      ...
+    1..24
+ok 35 - fusion context projection and prompts
+  ---
+  duration_ms: 5715.143292
+  type: 'suite'
+  ...
+# Subtest: fusion evaluation schema
+    # Subtest: accepts a closed valid evaluation object
+    ok 1 - accepts a closed valid evaluation object
+      ---
+      duration_ms: 2.685
+      type: 'test'
+      ...
+    # Subtest: rejects wrappers and invalid JSON without substring extraction
+    ok 2 - rejects wrappers and invalid JSON without substring extraction
+      ---
+      duration_ms: 1.044333
+      type: 'test'
+      ...
+    # Subtest: rejects unknown fields, duplicate IDs, and blank strings
+    ok 3 - rejects unknown fields, duplicate IDs, and blank strings
+      ---
+      duration_ms: 1.750333
+      type: 'test'
+      ...
+    # Subtest: requires conflict positions from distinct candidates without duplicate IDs
+    ok 4 - requires conflict positions from distinct candidates without duplicate IDs
+      ---
+      duration_ms: 0.21975
+      type: 'test'
+      ...
+    # Subtest: keeps validation parsing strict while narrowly recovering one audited JSON fence
+    ok 5 - keeps validation parsing strict while narrowly recovering one audited JSON fence
+      ---
+      duration_ms: 0.302083
+      type: 'test'
+      ...
+    # Subtest: validates validation finding singleton, duplicate, and exclusion contracts
+    ok 6 - validates validation finding singleton, duplicate, and exclusion contracts
+      ---
+      duration_ms: 0.715
+      type: 'test'
+      ...
+    # Subtest: merges distinct duplicate source findings into one resolved group
+    ok 7 - merges distinct duplicate source findings into one resolved group
+      ---
+      duration_ms: 0.138
+      type: 'test'
+      ...
+    # Subtest: rejects validation merger dropped and invented group IDs
+    ok 8 - rejects validation merger dropped and invented group IDs
+      ---
+      duration_ms: 0.20475
+      type: 'test'
+      ...
+    # Subtest: bounds validation errors for repair prompts and user-facing failures
+    ok 9 - bounds validation errors for repair prompts and user-facing failures
+      ---
+      duration_ms: 0.183209
+      type: 'test'
+      ...
+    # Subtest: throws a typed error for invalid parsed content
+    ok 10 - throws a typed error for invalid parsed content
+      ---
+      duration_ms: 0.243875
+      type: 'test'
+      ...
+    1..10
+ok 36 - fusion evaluation schema
+  ---
+  duration_ms: 8.667583
+  type: 'suite'
+  ...
+# Subtest: fusion v5 context boundaries
+    # Subtest: keeps reason as the only workflow that projects parent conversation
+    ok 1 - keeps reason as the only workflow that projects parent conversation
+      ---
+      duration_ms: 3.814167
+      type: 'test'
+      ...
+    # Subtest: clean canonical input is byte-identical across unrelated parent sessions with same request and cwd
+    ok 2 - clean canonical input is byte-identical across unrelated parent sessions with same request and cwd
+      ---
+      duration_ms: 5.336292
+      type: 'test'
+      ...
+    # Subtest: refuses old parent-session projection fallback before touching throwing clean accessors
+    ok 3 - refuses old parent-session projection fallback before touching throwing clean accessors
+      ---
+      duration_ms: 0.510375
+      type: 'test'
+      ...
+    1..3
+ok 37 - fusion v5 context boundaries
+  ---
+  duration_ms: 10.328458
+  type: 'suite'
+  ...
+# Subtest: fusion historical and v5 canonical fixtures
+    # Subtest: keeps historical v4 golden fixtures explicitly historical
+    ok 1 - keeps historical v4 golden fixtures explicitly historical
+      ---
+      duration_ms: 88.803125
+      type: 'test'
+      ...
+    # Subtest: pins a reviewed v5 clean canonical input shape without parent context
+    ok 2 - pins a reviewed v5 clean canonical input shape without parent context
+      ---
+      duration_ms: 0.578334
+      type: 'test'
+      ...
+    1..2
+ok 38 - fusion historical and v5 canonical fixtures
+  ---
+  duration_ms: 90.925625
+  type: 'suite'
+  ...
+# Subtest: fusion high-cardinality tool activity
+    # Subtest: keeps receipt metadata small when omitted events are numerous and short
+    ok 1 - keeps receipt metadata small when omitted events are numerous and short
+      ---
+      duration_ms: 43.050959
+      type: 'test'
+      ...
+    # Subtest: emits only the compact model-facing receipt tuple
+    ok 2 - emits only the compact model-facing receipt tuple
+      ---
+      duration_ms: 1.121541
+      type: 'test'
+      ...
+    # Subtest: reconciles every receipt against the ledger it summarizes
+    ok 3 - reconciles every receipt against the ledger it summarizes
+      ---
+      duration_ms: 0.74075
+      type: 'test'
+      ...
+    # Subtest: preserves all conversational text and forwards no tool payload
+    ok 4 - preserves all conversational text and forwards no tool payload
+      ---
+      duration_ms: 5.35725
+      type: 'test'
+      ...
+    # Subtest: keeps input-only workflow preflight inside a real route budget
+    ok 5 - keeps input-only workflow preflight inside a real route budget
+      ---
+      duration_ms: 151.461167
+      type: 'test'
+      ...
+    # Subtest: produces byte-identical output for repeated construction
+    ok 6 - produces byte-identical output for repeated construction
+      ---
+      duration_ms: 7.337792
+      type: 'test'
+      ...
+    1..6
+ok 39 - fusion high-cardinality tool activity
+  ---
+  duration_ms: 212.688542
+  type: 'suite'
+  ...
+# Subtest: fusion orchestrator
+    # Subtest: runs parallel candidates, schema repair, and final merge
+    ok 1 - runs parallel candidates, schema repair, and final merge
+      ---
+      duration_ms: 2612.345375
+      type: 'test'
+      ...
+    # Subtest: rejects validation accounting from non-validation evaluators instead of replacing the merge
+    ok 2 - rejects validation accounting from non-validation evaluators instead of replacing the merge
+      ---
+      duration_ms: 2546.095958
+      type: 'test'
+      ...
+    # Subtest: keeps evaluator and merger reasoning-only when candidates research
+    ok 3 - keeps evaluator and merger reasoning-only when candidates research
+      ---
+      duration_ms: 2070.85475
+      type: 'test'
+      ...
+    # Subtest: does not launch candidates when the workflow signal is already aborted
+    ok 4 - does not launch candidates when the workflow signal is already aborted
+      ---
+      duration_ms: 424.075041
+      type: 'test'
+      ...
+    # Subtest: writes one manifest-bound summary for a stored cancellation
+    ok 5 - writes one manifest-bound summary for a stored cancellation
+      ---
+      duration_ms: 405.724875
+      type: 'test'
+      ...
+    # Subtest: cancels sibling candidates on first failure and never degrades to evaluation
+    ok 6 - cancels sibling candidates on first failure and never degrades to evaluation
+      ---
+      duration_ms: 1069.98175
+      type: 'test'
+      ...
+    # Subtest: aggregates observed usage exactly once for failed and cancelled candidate attempts
+    ok 7 - aggregates observed usage exactly once for failed and cancelled candidate attempts
+      ---
+      duration_ms: 951.77625
+      type: 'test'
+      ...
+    # Subtest: aggregates observed usage exactly once for failed evaluator, repair, and merger attempts
+    ok 8 - aggregates observed usage exactly once for failed evaluator, repair, and merger attempts
+      ---
+      duration_ms: 2209.163375
+      type: 'test'
+      ...
+    # Subtest: persists usage and bounded schema errors when both evaluator attempts fail
+    ok 9 - persists usage and bounded schema errors when both evaluator attempts fail
+      ---
+      duration_ms: 598.129833
+      type: 'test'
+      ...
+    # Subtest: reports durable completed, failed, and not-started stage truth on late budget failures
+    ok 10 - reports durable completed, failed, and not-started stage truth on late budget failures
+      ---
+      duration_ms: 1460.00575
+      type: 'test'
+      ...
+    # Subtest: keeps terminal publication when one subordinate summary write fails
+    ok 11 - keeps terminal publication when one subordinate summary write fails
+      ---
+      duration_ms: 395.844666
+      type: 'test'
+      ...
+    # Subtest: preserves writeError failure semantics and never attempts a summary afterward
+    ok 12 - preserves writeError failure semantics and never attempts a summary afterward
+      ---
+      duration_ms: 398.224916
+      type: 'test'
+      ...
+    # Subtest: retries only transient pre-creation spawn failures and supports concurrent workflows
+    ok 13 - retries only transient pre-creation spawn failures and supports concurrent workflows
+      ---
+      duration_ms: 1246.615083
+      type: 'test'
+      ...
+    1..13
+ok 40 - fusion orchestrator
+  ---
+  duration_ms: 16390.708166
+  type: 'suite'
+  ...
+# Subtest: fusion Pi child runner
+    # Subtest: pins the expanded child execution envelope
+    ok 1 - pins the expanded child execution envelope
+      ---
+      duration_ms: 1.610791
+      type: 'test'
+      ...
+    # Subtest: BUG-185 never rejects a provider request by subtracting possible output from context
+    ok 2 - BUG-185 never rejects a provider request by subtracting possible output from context
+      ---
+      duration_ms: 5.5235
+      type: 'test'
+      ...
+    # Subtest: stably clones provider payloads and preserves only explicit execution-limit guards
+    ok 3 - stably clones provider payloads and preserves only explicit execution-limit guards
+      ---
+      duration_ms: 3.603542
+      type: 'test'
+      ...
+    # Subtest: fails closed for provider/tool loops and malformed provider payloads
+    ok 4 - fails closed for provider/tool loops and malformed provider payloads
+      ---
+      duration_ms: 0.431
+      type: 'test'
+      ...
+    # Subtest: aborts and seals failed when the actual child hook sees tool call 601
+    ok 5 - aborts and seals failed when the actual child hook sees tool call 601
+      ---
+      duration_ms: 100.2145
+      type: 'test'
+      ...
+    # Subtest: fails the child audit when aggregate tool results cross 32 MiB
+    ok 6 - fails the child audit when aggregate tool results cross 32 MiB
+      ---
+      duration_ms: 222.443084
+      type: 'test'
+      ...
+    # Subtest: applies and records the default one-hour Claude cache policy before runtime governance
+    ok 7 - applies and records the default one-hour Claude cache policy before runtime governance
+      ---
+      duration_ms: 2.046
+      type: 'test'
+      ...
+    # Subtest: preserves a pre-transport provider error instead of masking it as a cache-policy error
+    ok 8 - preserves a pre-transport provider error instead of masking it as a cache-policy error
+      ---
+      duration_ms: 0.290333
+      type: 'test'
+      ...
+    # Subtest: queues exactly one same-session no-tool compression turn and seals both records
+    ok 9 - queues exactly one same-session no-tool compression turn and seals both records
+      ---
+      duration_ms: 37.12975
+      type: 'test'
+      ...
+    # Subtest: aborts an invalid Claude cache policy before provider transport
+    ok 10 - aborts an invalid Claude cache policy before provider transport
+      ---
+      duration_ms: 0.721916
+      type: 'test'
+      ...
+    # Subtest: BUG-182 preserves the complete Pi Usage cost contract in compact metadata
+    ok 11 - BUG-182 preserves the complete Pi Usage cost contract in compact metadata
+      ---
+      duration_ms: 0.287958
+      type: 'test'
+      ...
+    # Subtest: BUG-180 launches a final-text child with only the private compact metadata extension
+    ok 12 - BUG-180 launches a final-text child with only the private compact metadata extension
+      ---
+      duration_ms: 0.322084
+      type: 'test'
+      ...
+    # Subtest: sets native Anthropic cache retention to long before child provider serialization
+    ok 13 - sets native Anthropic cache retention to long before child provider serialization
+      ---
+      duration_ms: 0.065542
+      type: 'test'
+      ...
+    # Subtest: scrubs inherited fusion tool-call log env var before launch-specific wiring
+    ok 14 - scrubs inherited fusion tool-call log env var before launch-specific wiring
+      ---
+      duration_ms: 0.038917
+      type: 'test'
+      ...
+    # Subtest: builds byte-identical reasoning argv with no tools
+    ok 15 - builds byte-identical reasoning argv with no tools
+      ---
+      duration_ms: 0.037583
+      type: 'test'
+      ...
+    # Subtest: builds byte-identical inspect argv with exact read-only allowlist and denylist
+    ok 16 - builds byte-identical inspect argv with exact read-only allowlist and denylist
+      ---
+      duration_ms: 0.056166
+      type: 'test'
+      ...
+    # Subtest: builds research argv with read-only tools plus fusion_web_fetch
+    ok 17 - builds research argv with read-only tools plus fusion_web_fetch
+      ---
+      duration_ms: 0.042875
+      type: 'test'
+      ...
+    # Subtest: loads package-owned Anthropic attribution/sanitization before the runtime governor
+    ok 18 - loads package-owned Anthropic attribution/sanitization before the runtime governor
+      ---
+      duration_ms: 0.054667
+      type: 'test'
+      ...
+    # Subtest: keeps non-Anthropic child argv byte-identical and never resolves attribution
+    ok 19 - keeps non-Anthropic child argv byte-identical and never resolves attribution
+      ---
+      duration_ms: 0.099833
+      type: 'test'
+      ...
+    # Subtest: resolves the package-owned global attribution extension and fails loudly if absent
+    ok 20 - resolves the package-owned global attribution extension and fails loudly if absent
+      ---
+      duration_ms: 0.125792
+      type: 'test'
+      ...
+    # Subtest: rejects fusion tool policy intersections loudly
+    ok 21 - rejects fusion tool policy intersections loudly
+      ---
+      duration_ms: 0.069042
+      type: 'test'
+      ...
+    # Subtest: round-trips and summarizes a complete 3-call tool log
+    ok 22 - round-trips and summarizes a complete 3-call tool log
+      ---
+      duration_ms: 0.219375
+      type: 'test'
+      ...
+    # Subtest: round-trips fusion_web_fetch audit metadata without raw page content
+    ok 23 - round-trips fusion_web_fetch audit metadata without raw page content
+      ---
+      duration_ms: 0.080166
+      type: 'test'
+      ...
+    # Subtest: rejects a trailing partial tool-log line loudly
+    ok 24 - rejects a trailing partial tool-log line loudly
+      ---
+      duration_ms: 0.043542
+      type: 'test'
+      ...
+    # Subtest: rejects tool-log ordinal gaps loudly
+    ok 25 - rejects tool-log ordinal gaps loudly
+      ---
+      duration_ms: 0.056792
+      type: 'test'
+      ...
+    # Subtest: rejects duplicate tool-log ordinals loudly
+    ok 26 - rejects duplicate tool-log ordinals loudly
+      ---
+      duration_ms: 0.051291
+      type: 'test'
+      ...
+    # Subtest: rejects wrong tool-log schema versions loudly
+    ok 27 - rejects wrong tool-log schema versions loudly
+      ---
+      duration_ms: 0.046125
+      type: 'test'
+      ...
+    # Subtest: logs completed tool calls without raw arguments or results
+    ok 28 - logs completed tool calls without raw arguments or results
+      ---
+      duration_ms: 79.25275
+      type: 'test'
+      ...
+    # Subtest: waits through repeated low-level agent endings and seals the complete 46-call audit only at settlement
+    ok 29 - waits through repeated low-level agent endings and seals the complete 46-call audit only at settlement
+      ---
+      duration_ms: 588.468208
+      type: 'test'
+      ...
+    # Subtest: writes failed evidence and latches process failure when shutdown precedes settlement
+    ok 30 - writes failed evidence and latches process failure when shutdown precedes settlement
+      ---
+      duration_ms: 38.414584
+      type: 'test'
+      ...
+    # Subtest: seals unmatched tool starts as failed evidence at settlement
+    ok 31 - seals unmatched tool starts as failed evidence at settlement
+      ---
+      duration_ms: 31.744917
+      type: 'test'
+      ...
+    # Subtest: refuses a pre-existing audit log before registering lifecycle handlers
+    ok 32 - refuses a pre-existing audit log before registering lifecycle handlers
+      ---
+      duration_ms: 15.796625
+      type: 'test'
+      ...
+    # Subtest: rejects undeclared fusion_web_fetch before network and audits only the attempted URL hash
+    ok 33 - rejects undeclared fusion_web_fetch before network and audits only the attempted URL hash
+      ---
+      duration_ms: 50.028625
+      type: 'test'
+      ...
+    # Subtest: keeps reasoning and full response text out of compact child metadata
+    ok 34 - keeps reasoning and full response text out of compact child metadata
+      ---
+      duration_ms: 0.209458
+      type: 'test'
+      ...
+    # Subtest: pipes the prompt through stdin and returns the exact full text with compact metadata
+    ok 35 - pipes the prompt through stdin and returns the exact full text with compact metadata
+      ---
+      duration_ms: 24.767125
+      type: 'test'
+      ...
+    # Subtest: passes tool-call audit env vars only for tool-enabled children
+    ok 36 - passes tool-call audit env vars only for tool-enabled children
+      ---
+      duration_ms: 35.833625
+      type: 'test'
+      ...
+    # Subtest: passes the research env var only for research children
+    ok 37 - passes the research env var only for research children
+      ---
+      duration_ms: 38.769792
+      type: 'test'
+      ...
+    # Subtest: fails inspect children loudly when their tool-call log was never created
+    ok 38 - fails inspect children loudly when their tool-call log was never created
+      ---
+      duration_ms: 10.289417
+      type: 'test'
+      ...
+    # Subtest: fails a syntactically complete tool log without its terminal audit seal
+    ok 39 - fails a syntactically complete tool log without its terminal audit seal
+      ---
+      duration_ms: 28.570875
+      type: 'test'
+      ...
+    # Subtest: independently enforces the tool-call count from the sealed log
+    ok 40 - independently enforces the tool-call count from the sealed log
+      ---
+      duration_ms: 49.011375
+      type: 'test'
+      ...
+    # Subtest: independently enforces the aggregate tool-result limit from the sealed log
+    ok 41 - independently enforces the aggregate tool-result limit from the sealed log
+      ---
+      duration_ms: 48.919459
+      type: 'test'
+      ...
+    # Subtest: rejects every completion-seal integrity mismatch
+    ok 42 - rejects every completion-seal integrity mismatch
+      ---
+      duration_ms: 157.088708
+      type: 'test'
+      ...
+    # Subtest: fails tool-enabled children when the durable audit names a non-allowlisted tool
+    ok 43 - fails tool-enabled children when the durable audit names a non-allowlisted tool
+      ---
+      duration_ms: 52.285833
+      type: 'test'
+      ...
+    # Subtest: fails research children when a successful fetch audit URL was not declared
+    ok 44 - fails research children when a successful fetch audit URL was not declared
+      ---
+      duration_ms: 58.118875
+      type: 'test'
+      ...
+    # Subtest: fails inspect children loudly when their tool-call log is partial
+    ok 45 - fails inspect children loudly when their tool-call log is partial
+      ---
+      duration_ms: 45.365041
+      type: 'test'
+      ...
+    # Subtest: fails stalled children with child_timeout and terminates them
+    ok 46 - fails stalled children with child_timeout and terminates them
+      ---
+      duration_ms: 49.215416
+      type: 'test'
+      ...
+    # Subtest: resets the stalled-child watchdog on stderr activity and completes successfully
+    ok 47 - resets the stalled-child watchdog on stderr activity and completes successfully
+      ---
+      duration_ms: 99.434917
+      type: 'test'
+      ...
+    # Subtest: keeps the absolute timeout distinct from the stalled-child watchdog
+    ok 48 - keeps the absolute timeout distinct from the stalled-child watchdog
+      ---
+      duration_ms: 43.233125
+      type: 'test'
+      ...
+    # Subtest: launches Windows Pi through Node and preserves adversarial argv without a shell
+    ok 49 - launches Windows Pi through Node and preserves adversarial argv without a shell
+      ---
+      duration_ms: 1.573625
+      type: 'test'
+      ...
+    # Subtest: rejects malformed compact metadata loudly
+    ok 50 - rejects malformed compact metadata loudly
+      ---
+      duration_ms: 0.548667
+      type: 'test'
+      ...
+    # Subtest: fails before spawn when Windows Pi launch resolution fails
+    ok 51 - fails before spawn when Windows Pi launch resolution fails
+      ---
+      duration_ms: 0.350417
+      type: 'test'
+      ...
+    # Subtest: fails before spawn when Windows Pi argv exceeds the command line limit
+    ok 52 - fails before spawn when Windows Pi argv exceeds the command line limit
+      ---
+      duration_ms: 0.733417
+      type: 'test'
+      ...
+    # Subtest: fails before spawn when the abort signal is already set
+    ok 53 - fails before spawn when the abort signal is already set
+      ---
+      duration_ms: 0.086791
+      type: 'test'
+      ...
+    # Subtest: catches an abort that fires during spawn before listener attachment
+    ok 54 - catches an abort that fires during spawn before listener attachment
+      ---
+      duration_ms: 4.044125
+      type: 'test'
+      ...
+    # Subtest: accepts a multi-message tool loop and sums usage across all records
+    ok 55 - accepts a multi-message tool loop and sums usage across all records
+      ---
+      duration_ms: 0.302875
+      type: 'test'
+      ...
+    # Subtest: accepts a settled zero-usage provider retry marker bound to the terminal metadata stream
+    ok 56 - accepts a settled zero-usage provider retry marker bound to the terminal metadata stream
+      ---
+      duration_ms: 0.439792
+      type: 'test'
+      ...
+    # Subtest: publishes exactly one terminal settlement from the actual agent_settled hook
+    ok 57 - publishes exactly one terminal settlement from the actual agent_settled hook
+      ---
+      duration_ms: 3.767625
+      type: 'test'
+      ...
+    # Subtest: rejects child extension diagnostics even when compact metadata and final text are valid
+    ok 58 - rejects child extension diagnostics even when compact metadata and final text are valid
+      ---
+      duration_ms: 0.144792
+      type: 'test'
+      ...
+    # Subtest: rejects invalid transcript stop reasons loudly
+    ok 59 - rejects invalid transcript stop reasons loudly
+      ---
+      duration_ms: 1.574958
+      type: 'test'
+      ...
+    # Subtest: reconstructs multiple print-mode text blocks without compacting the final answer
+    ok 60 - reconstructs multiple print-mode text blocks without compacting the final answer
+      ---
+      duration_ms: 0.300125
+      type: 'test'
+      ...
+    # Subtest: rejects non-stop final reasons, model mismatch, and unterminated metadata
+    ok 61 - rejects non-stop final reasons, model mismatch, and unterminated metadata
+      ---
+      duration_ms: 0.908666
+      type: 'test'
+      ...
+    # Subtest: verifies and returns a same-session compressed candidate plus its original artifact
+    ok 62 - verifies and returns a same-session compressed candidate plus its original artifact
+      ---
+      duration_ms: 35.866291
+      type: 'test'
+      ...
+    # Subtest: rejects a tampered oversized-original artifact before accepting the replacement
+    ok 63 - rejects a tampered oversized-original artifact before accepting the replacement
+      ---
+      duration_ms: 32.777292
+      type: 'test'
+      ...
+    # Subtest: hard-fails after one still-oversized replacement and preserves both responses
+    ok 64 - hard-fails after one still-oversized replacement and preserves both responses
+      ---
+      duration_ms: 37.794417
+      type: 'test'
+      ...
+    # Subtest: retains a hash-verified oversized original when cancellation interrupts compression
+    ok 65 - retains a hash-verified oversized original when cancellation interrupts compression
+      ---
+      duration_ms: 32.924833
+      type: 'test'
+      ...
+    # Subtest: rejects stdin write failures and terminates the child loudly
+    ok 66 - rejects stdin write failures and terminates the child loudly
+      ---
+      duration_ms: 1.4545
+      type: 'test'
+      ...
+    # Subtest: surfaces cleanup failures even when child kill fallback succeeds
+    ok 67 - surfaces cleanup failures even when child kill fallback succeeds
+      ---
+      duration_ms: 0.488042
+      type: 'test'
+      ...
+    # Subtest: fails instead of reporting completion when a killed child never closes
+    ok 68 - fails instead of reporting completion when a killed child never closes
+      ---
+      duration_ms: 22.917375
+      type: 'test'
+      ...
+    # Subtest: surfaces a typed runtime request-limit refusal instead of a generic exit code
+    ok 69 - surfaces a typed runtime request-limit refusal instead of a generic exit code
+      ---
+      duration_ms: 3.088292
+      type: 'test'
+      ...
+    # Subtest: surfaces an invalid Claude cache policy distinctly from an execution-limit refusal
+    ok 70 - surfaces an invalid Claude cache policy distinctly from an execution-limit refusal
+      ---
+      duration_ms: 1.315834
+      type: 'test'
+      ...
+    # Subtest: carries observed usage on child exit failures
+    ok 71 - carries observed usage on child exit failures
+      ---
+      duration_ms: 1.570084
+      type: 'test'
+      ...
+    # Subtest: rejects output caps and keeps captured prefixes
+    ok 72 - rejects output caps and keeps captured prefixes
+      ---
+      duration_ms: 1.046125
+      type: 'test'
+      ...
+    1..72
+ok 41 - fusion Pi child runner
+  ---
+  duration_ms: 2111.575666
+  type: 'suite'
+  ...
+# Subtest: fusion v5 core workflow contracts
+    # Subtest: exports four fixed immutable workflow profiles and public names
+    ok 1 - exports four fixed immutable workflow profiles and public names
+      ---
+      duration_ms: 1.065583
+      type: 'test'
+      ...
+    # Subtest: retains legacy and current fusion workflow names only in the child recursion denylist
+    ok 2 - retains legacy and current fusion workflow names only in the child recursion denylist
+      ---
+      duration_ms: 0.070084
+      type: 'test'
+      ...
+    # Subtest: builds session projection only for reason and clean bytes independent of parent accessors
+    ok 3 - builds session projection only for reason and clean bytes independent of parent accessors
+      ---
+      duration_ms: 5.140958
+      type: 'test'
+      ...
+    # Subtest: normalizes and hashes research declared-source policies
+    ok 4 - normalizes and hashes research declared-source policies
+      ---
+      duration_ms: 6.251167
+      type: 'test'
+      ...
+    # Subtest: builds exact v5 child argv and run-id manifest metadata
+    ok 5 - builds exact v5 child argv and run-id manifest metadata
+      ---
+      duration_ms: 118.271792
+      type: 'test'
+      ...
+    # Subtest: validates validation finding accounting and merger coverage mechanically
+    ok 6 - validates validation finding accounting and merger coverage mechanically
+      ---
+      duration_ms: 1.2525
+      type: 'test'
+      ...
+    1..6
+ok 42 - fusion v5 core workflow contracts
+  ---
+  duration_ms: 133.022
+  type: 'suite'
+  ...
+# Subtest: fusion validate orchestration
+    # Subtest: uses clean input, inspect candidates, no-tool adjudicators, and deterministic validated rendering
+    ok 1 - uses clean input, inspect candidates, no-tool adjudicators, and deterministic validated rendering
+      ---
+      duration_ms: 2167.60325
+      type: 'test'
+      ...
+    # Subtest: audits and recovers the narrowly supported fenced-JSON violation
+    ok 2 - audits and recovers the narrowly supported fenced-JSON violation
+      ---
+      duration_ms: 2170.188375
+      type: 'test'
+      ...
+    # Subtest: continues with an explicit limitation when one report is irrecoverable
+    ok 3 - continues with an explicit limitation when one report is irrecoverable
+      ---
+      duration_ms: 1967.923333
+      type: 'test'
+      ...
+    # Subtest: fails loudly for two invalid reports while preserving the anonymous map
+    ok 4 - fails loudly for two invalid reports while preserving the anonymous map
+      ---
+      duration_ms: 1189.457333
+      type: 'test'
+      ...
+    # Subtest: rejects validate runs that attempt to carry a parent ledger
+    ok 5 - rejects validate runs that attempt to carry a parent ledger
+      ---
+      duration_ms: 292.7065
+      type: 'test'
+      ...
+    1..5
+ok 43 - fusion validate orchestration
+  ---
+  duration_ms: 7789.329417
+  type: 'suite'
+  ...
+# Subtest: fusion_web_fetch core
+    # Subtest: pins the expanded research fetch envelope
+    ok 1 - pins the expanded research fetch envelope
+      ---
+      duration_ms: 0.413959
+      type: 'test'
+      ...
+    # Subtest: rejects unsupported schemes before network access
+    ok 2 - rejects unsupported schemes before network access
+      ---
+      duration_ms: 0.342333
+      type: 'test'
+      ...
+    # Subtest: rejects URL credentials before network access
+    ok 3 - rejects URL credentials before network access
+      ---
+      duration_ms: 0.065416
+      type: 'test'
+      ...
+    # Subtest: rejects blocked address classes from DNS answers
+    ok 4 - rejects blocked address classes from DNS answers
+      ---
+      duration_ms: 4.1715
+      type: 'test'
+      ...
+    # Subtest: consults the resolver exactly once and pins the connection to that vetted address
+    ok 5 - consults the resolver exactly once and pins the connection to that vetted address
+      ---
+      duration_ms: 12.439208
+      type: 'test'
+      ...
+    # Subtest: rejects a DNS result that mixes public and blocked answers
+    ok 6 - rejects a DNS result that mixes public and blocked answers
+      ---
+      duration_ms: 0.40475
+      type: 'test'
+      ...
+    # Subtest: follows a redirect chain
+    ok 7 - follows a redirect chain
+      ---
+      duration_ms: 6.930459
+      type: 'test'
+      ...
+    # Subtest: destroys redirect responses without consuming unbounded bodies
+    ok 8 - destroys redirect responses without consuming unbounded bodies
+      ---
+      duration_ms: 4.405209
+      type: 'test'
+      ...
+    # Subtest: rejects a redirect to a blocked host
+    ok 9 - rejects a redirect to a blocked host
+      ---
+      duration_ms: 1.167583
+      type: 'test'
+      ...
+    # Subtest: rejects a redirect loop at the configured limit
+    ok 10 - rejects a redirect loop at the configured limit
+      ---
+      duration_ms: 5.13325
+      type: 'test'
+      ...
+    # Subtest: rejects an oversized Content-Length before reading body bytes
+    ok 11 - rejects an oversized Content-Length before reading body bytes
+      ---
+      duration_ms: 2.0415
+      type: 'test'
+      ...
+    # Subtest: aborts loudly when a streamed body crosses the response cap
+    ok 12 - aborts loudly when a streamed body crosses the response cap
+      ---
+      duration_ms: 2.7525
+      type: 'test'
+      ...
+    # Subtest: rejects unsupported content types
+    ok 13 - rejects unsupported content types
+      ---
+      duration_ms: 2.062542
+      type: 'test'
+      ...
+    # Subtest: converts HTML to markdown with links, headings, tables, and code blocks
+    ok 14 - converts HTML to markdown with links, headings, tables, and code blocks
+      ---
+      duration_ms: 59.243875
+      type: 'test'
+      ...
+    # Subtest: strips script and style content before extraction
+    ok 15 - strips script and style content before extraction
+      ---
+      duration_ms: 6.917959
+      type: 'test'
+      ...
+    # Subtest: passes text/plain through and reports hash and byte count
+    ok 16 - passes text/plain through and reports hash and byte count
+      ---
+      duration_ms: 5.565834
+      type: 'test'
+      ...
+    # Subtest: caps output without splitting UTF-8 characters
+    ok 17 - caps output without splitting UTF-8 characters
+      ---
+      duration_ms: 2.218542
+      type: 'test'
+      ...
+    # Subtest: includes content extraction inside the fetch deadline
+    ok 18 - includes content extraction inside the fetch deadline
+      ---
+      duration_ms: 25.232583
+      type: 'test'
+      ...
+    # Subtest: includes DNS resolution inside the fetch deadline
+    ok 19 - includes DNS resolution inside the fetch deadline
+      ---
+      duration_ms: 22.157625
+      type: 'test'
+      ...
+    # Subtest: subtracts delayed successful DNS time from the HTTP deadline
+    ok 20 - subtracts delayed successful DNS time from the HTTP deadline
+      ---
+      duration_ms: 51.120667
+      type: 'test'
+      ...
+    # Subtest: fails with a typed timeout
+    ok 21 - fails with a typed timeout
+      ---
+      duration_ms: 20.779166
+      type: 'test'
+      ...
+    1..21
+ok 44 - fusion_web_fetch core
+  ---
+  duration_ms: 237.149375
+  type: 'suite'
+  ...
+# Subtest: fusion fixed v1 workflows
+    # Subtest: exports exactly four public workflow profiles with fixed policies
+    ok 1 - exports exactly four public workflow profiles with fixed policies
+      ---
+      duration_ms: 1.788667
+      type: 'test'
+      ...
+    # Subtest: pins context and tool policies by workflow
+    ok 2 - pins context and tool policies by workflow
+      ---
+      duration_ms: 0.402833
+      type: 'test'
+      ...
+    # Subtest: rejects mismatched caller capabilities instead of substituting
+    ok 3 - rejects mismatched caller capabilities instead of substituting
+      ---
+      duration_ms: 0.502708
+      type: 'test'
+      ...
+    # Subtest: resolves every declared workflow id and fails closed on unknown ids
+    ok 4 - resolves every declared workflow id and fails closed on unknown ids
+      ---
+      duration_ms: 0.203292
+      type: 'test'
+      ...
+    1..4
+ok 45 - fusion fixed v1 workflows
+  ---
+  duration_ms: 3.972584
+  type: 'suite'
+  ...
+# Subtest: Pi launch resolution
+    # Subtest: returns the canonical executable admitted from POSIX PATH
+    ok 1 - returns the canonical executable admitted from POSIX PATH
+      ---
+      duration_ms: 24.536875
+      type: 'test'
+      ...
+    # Subtest: skips non-executable and non-file PATH entries before a later valid candidate
+    ok 2 - skips non-executable and non-file PATH entries before a later valid candidate
+      ---
+      duration_ms: 85.210916
+      type: 'test'
+      ...
+    # Subtest: canonicalizes a symlinked executable PATH candidate
+    ok 3 - canonicalizes a symlinked executable PATH candidate
+      ---
+      duration_ms: 56.177125
+      type: 'test'
+      ...
+    # Subtest: cannot reselect PATH after admission when child cwd or environment changes
+    ok 4 - cannot reselect PATH after admission when child cwd or environment changes
+      ---
+      duration_ms: 1020.543084
+      type: 'test'
+      ...
+    # Subtest: falls back to the exact named host package bin on POSIX when PATH has no pi
+    ok 5 - falls back to the exact named host package bin on POSIX when PATH has no pi
+      ---
+      duration_ms: 106.334625
+      type: 'test'
+      ...
+    # Subtest: rejects arbitrary JavaScript hosts and a host file other than declared bin.pi
+    ok 6 - rejects arbitrary JavaScript hosts and a host file other than declared bin.pi
+      ---
+      duration_ms: 76.102208
+      type: 'test'
+      ...
+    # Subtest: walks past a valid nameless sub-manifest but stops at named package boundaries
+    ok 7 - walks past a valid nameless sub-manifest but stops at named package boundaries
+      ---
+      duration_ms: 110.519292
+      type: 'test'
+      ...
+    # Subtest: fails closed at malformed, non-object, malformed-name, and unreadable host manifests
+    ok 8 - fails closed at malformed, non-object, malformed-name, and unreadable host manifests
+      ---
+      duration_ms: 130.774625
+      type: 'test'
+      ...
+    # Subtest: uses an exact installed Pi module from a foreign POSIX SDK host
+    ok 9 - uses an exact installed Pi module from a foreign POSIX SDK host
+      ---
+      duration_ms: 135.31625
+      type: 'test'
+      ...
+    # Subtest: rejects a foreign package returned by the POSIX SDK module route
+    ok 10 - rejects a foreign package returned by the POSIX SDK module route
+      ---
+      duration_ms: 171.223208
+      type: 'test'
+      ...
+    # Subtest: uses the named running host package before a different Windows module installation
+    ok 11 - uses the named running host package before a different Windows module installation
+      ---
+      duration_ms: 151.854542
+      type: 'test'
+      ...
+    # Subtest: falls through from a foreign Windows host to an exact named module package
+    ok 12 - falls through from a foreign Windows host to an exact named module package
+      ---
+      duration_ms: 136.77575
+      type: 'test'
+      ...
+    # Subtest: does not substitute a module when Windows host source realpath has an I/O failure
+    ok 13 - does not substitute a module when Windows host source realpath has an I/O failure
+      ---
+      duration_ms: 127.928167
+      type: 'test'
+      ...
+    # Subtest: does not silently fall back when a named Windows Pi host has an invalid bin
+    ok 14 - does not silently fall back when a named Windows Pi host has an invalid bin
+      ---
+      duration_ms: 133.941542
+      type: 'test'
+      ...
+    # Subtest: uses the Windows host walk when package module lookups are unavailable
+    ok 15 - uses the Windows host walk when package module lookups are unavailable
+      ---
+      duration_ms: 71.208542
+      type: 'test'
+      ...
+    # Subtest: resolves a named manifest by walking from a Windows package entry fallback
+    ok 16 - resolves a named manifest by walking from a Windows package entry fallback
+      ---
+      duration_ms: 87.611916
+      type: 'test'
+      ...
+    # Subtest: requires the exact Pi package name for direct Windows module manifests
+    ok 17 - requires the exact Pi package name for direct Windows module manifests
+      ---
+      duration_ms: 80.195167
+      type: 'test'
+      ...
+    # Subtest: resolves Windows string and object JavaScript bins through a generic runtime
+    ok 18 - resolves Windows string and object JavaScript bins through a generic runtime
+      ---
+      duration_ms: 199.041167
+      type: 'test'
+      ...
+    # Subtest: retains direct Windows native package bins without a shell or argv prefix
+    ok 19 - retains direct Windows native package bins without a shell or argv prefix
+      ---
+      duration_ms: 128.8365
+      type: 'test'
+      ...
+    # Subtest: uses a direct compiled route only for an executable explicitly named Pi
+    ok 20 - uses a direct compiled route only for an executable explicitly named Pi
+      ---
+      duration_ms: 151.034125
+      type: 'test'
+      ...
+    # Subtest: rejects command shims, shell scripts, extensionless targets, and unknown extensions
+    ok 21 - rejects command shims, shell scripts, extensionless targets, and unknown extensions
+      ---
+      duration_ms: 341.970291
+      type: 'test'
+      ...
+    # Subtest: rejects absolute, lexical, and symlink bin escapes from the package root
+    ok 22 - rejects absolute, lexical, and symlink bin escapes from the package root
+      ---
+      duration_ms: 317.312791
+      type: 'test'
+      ...
+    # Subtest: accepts canonical in-package bin symlinks and a symlinked package path
+    ok 23 - accepts canonical in-package bin symlinks and a symlinked package path
+      ---
+      duration_ms: 62.084041
+      type: 'test'
+      ...
+    # Subtest: rejects malformed/missing manifests, malformed bins, non-files, and JS under a non-runtime
+    ok 24 - rejects malformed/missing manifests, malformed bins, non-files, and JS under a non-runtime
+      ---
+      duration_ms: 406.5465
+      type: 'test'
+      ...
+    # Subtest: keeps spaced paths and quoted arguments as distinct Windows argv values
+    ok 25 - keeps spaced paths and quoted arguments as distinct Windows argv values
+      ---
+      duration_ms: 94.927708
+      type: 'test'
+      ...
+    # Subtest: rejects oversized Windows command lines without leaking argument text
+    ok 26 - rejects oversized Windows command lines without leaking argument text
+      ---
+      duration_ms: 0.322292
+      type: 'test'
+      ...
+    1..26
+ok 46 - Pi launch resolution
+  ---
+  duration_ms: 4411.002666
+  type: 'suite'
+  ...
+# Subtest: posix invariance
+    # Subtest: keeps the default POSIX shell invocation exactly as before
+    ok 1 - keeps the default POSIX shell invocation exactly as before
+      ---
+      duration_ms: 1.512416
+      type: 'test'
+      ...
+    # Subtest: still honours SHELL on POSIX
+    ok 2 - still honours SHELL on POSIX
+      ---
+      duration_ms: 0.1015
+      type: 'test'
+      ...
+    # Subtest: never applies cmd.exe quoting or verbatim arguments on POSIX
+    ok 3 - never applies cmd.exe quoting or verbatim arguments on POSIX
+      ---
+      duration_ms: 0.08025
+      type: 'test'
+      ...
+    # Subtest: ignores the Windows-only shell override on POSIX
+    ok 4 - ignores the Windows-only shell override on POSIX
+      ---
+      duration_ms: 0.051334
+      type: 'test'
+      ...
+    # Subtest: never uses a login shell, so profile banners cannot pollute output
+    ok 5 - never uses a login shell, so profile banners cannot pollute output
+      ---
+      duration_ms: 0.200166
+      type: 'test'
+      ...
+    # Subtest: keeps POSIX durable-write file modes unchanged
+    ok 6 - keeps POSIX durable-write file modes unchanged
+      ---
+      duration_ms: 84.0215
+      type: 'test'
+      ...
+    # Subtest: still syncs the parent directory after rename on POSIX
+    ok 7 - still syncs the parent directory after rename on POSIX
+      ---
+      duration_ms: 2.080375
+      type: 'test'
+      ...
+    1..7
+ok 47 - posix invariance
+  ---
+  duration_ms: 89.173542
+  type: 'suite'
+  ...
+# Subtest: BackgroundTaskRegistry
+    # Subtest: preserves full shell command bytes except surrounding whitespace
+    ok 1 - preserves full shell command bytes except surrounding whitespace
+      ---
+      duration_ms: 110.794875
+      type: 'test'
+      ...
+    # Subtest: uses explicit isAgent to decide Pi telemetry wrapping
+    ok 2 - uses explicit isAgent to decide Pi telemetry wrapping
+      ---
+      duration_ms: 246.182375
+      type: 'test'
+      ...
+    # Subtest: leaves Pi agent commands unchanged under Windows cmd and records telemetry unavailability
+    ok 3 - leaves Pi agent commands unchanged under Windows cmd and records telemetry unavailability
+      ---
+      duration_ms: 115.938208
+      type: 'test'
+      ...
+    # Subtest: rejects unresolved Windows bash before creating a task
+    ok 4 - rejects unresolved Windows bash before creating a task
+      ---
+      duration_ms: 19.196625
+      type: 'test'
+      ...
+    # Subtest: uses POSIX process-group kill before child fallback
+    ok 5 - uses POSIX process-group kill before child fallback
+      ---
+      duration_ms: 108.859584
+      type: 'test'
+      ...
+    # Subtest: falls back to child.kill when process-group kill fails and reports when both fail
+    ok 6 - falls back to child.kill when process-group kill fails and reports when both fail
+      ---
+      duration_ms: 197.977333
+      type: 'test'
+      ...
+    # Subtest: uses taskkill tree termination on Windows and never falls back to child.kill
+    ok 7 - uses taskkill tree termination on Windows and never falls back to child.kill
+      ---
+      duration_ms: 131.005916
+      type: 'test'
+      ...
+    # Subtest: shares duplicate Windows graceful stops and aborts soft taskkill when force starts
+    ok 8 - shares duplicate Windows graceful stops and aborts soft taskkill when force starts
+      ---
+      duration_ms: 137.923083
+      type: 'test'
+      ...
+    # Subtest: treats explicit Windows force as terminal and does not arm escalation
+    ok 9 - treats explicit Windows force as terminal and does not arm escalation
+      ---
+      duration_ms: 162.966583
+      type: 'test'
+      ...
+    # Subtest: records Windows taskkill exit 128 as an already-exited race
+    ok 10 - records Windows taskkill exit 128 as an already-exited race
+      ---
+      duration_ms: 114.063917
+      type: 'test'
+      ...
+    # Subtest: persists a Windows soft failure and still escalates to force after grace
+    ok 11 - persists a Windows soft failure and still escalates to force after grace
+      ---
+      duration_ms: 137.605875
+      type: 'test'
+      ...
+    # Subtest: surfaces Windows force failure loudly without root-only fallback
+    ok 12 - surfaces Windows force failure loudly without root-only fallback
+      ---
+      duration_ms: 100.0725
+      type: 'test'
+      ...
+    # Subtest: keeps terminal metadata running until in-flight Windows force settles
+    ok 13 - keeps terminal metadata running until in-flight Windows force settles
+      ---
+      duration_ms: 164.115917
+      type: 'test'
+      ...
+    # Subtest: keeps duplicate stop requests idempotent and escalates to SIGKILL after grace
+    ok 14 - keeps duplicate stop requests idempotent and escalates to SIGKILL after grace
+      ---
+      duration_ms: 139.724666
+      type: 'test'
+      ...
+    # Subtest: schedules exactly one SIGKILL escalation for concurrent stop requests
+    ok 15 - schedules exactly one SIGKILL escalation for concurrent stop requests
+      ---
+      duration_ms: 309.7615
+      type: 'test'
+      ...
+    # Subtest: finalizes and notifies once under error/close and output-cap races
+    ok 16 - finalizes and notifies once under error/close and output-cap races
+      ---
+      duration_ms: 204.984458
+      type: 'test'
+      ...
+    # Subtest: publishes terminal snapshots exactly once after durable metadata
+    ok 17 - publishes terminal snapshots exactly once after durable metadata
+      ---
+      duration_ms: 118.055959
+      type: 'test'
+      ...
+    # Subtest: keeps failed terminal EventBus delivery loud and retriable
+    ok 18 - keeps failed terminal EventBus delivery loud and retriable
+      ---
+      duration_ms: 230.162834
+      type: 'test'
+      ...
+    # Subtest: resets notified when completion notification delivery fails and records loud metadata errors
+    ok 19 - resets notified when completion notification delivery fails and records loud metadata errors
+      ---
+      duration_ms: 199.866459
+      type: 'test'
+      ...
+    # Subtest: ingests split, malformed, and large telemetry records without losing task state
+    ok 20 - ingests split, malformed, and large telemetry records without losing task state
+      ---
+      duration_ms: 154.816375
+      type: 'test'
+      ...
+    # Subtest: renders wrapped Pi-agent activity transcripts and keeps telemetry out of the output file
+    ok 21 - renders wrapped Pi-agent activity transcripts and keeps telemetry out of the output file
+      ---
+      duration_ms: 137.864208
+      type: 'test'
+      ...
+    # Subtest: preserves split multiline XML context telemetry across newline boundaries
+    ok 22 - preserves split multiline XML context telemetry across newline boundaries
+      ---
+      duration_ms: 163.941625
+      type: 'test'
+      ...
+    # Subtest: produces a direct-spawn attested Pi sidecar with raw events, stderr, hashes, and exact argv
+    not ok 23 - produces a direct-spawn attested Pi sidecar with raw events, stderr, hashes, and exact argv
+      ---
+      duration_ms: 885.99875
+      type: 'test'
+      location: '/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/unit/registry.test.ts:1:32176'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        + actual - expected
+        
+        + '/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/node_modules/@earendil-works/pi-coding-agent/dist/cli.js'
+        - 'pi'
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 'pi'
+      actual: '/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/node_modules/@earendil-works/pi-coding-agent/dist/cli.js'
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/unit/registry.test.ts:1231:16)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:744:7)
+      ...
+    # Subtest: rejects duplicate thinking in attested Pi extra args before spawn
+    ok 24 - rejects duplicate thinking in attested Pi extra args before spawn
+      ---
+      duration_ms: 661.514208
+      type: 'test'
+      ...
+    # Subtest: launches attested Pi on Windows through Node while preserving logical argv
+    ok 25 - launches attested Pi on Windows through Node while preserving logical argv
+      ---
+      duration_ms: 977.378625
+      type: 'test'
+      ...
+    # Subtest: strips metered API environment from attested Pi child process
+    ok 26 - strips metered API environment from attested Pi child process
+      ---
+      duration_ms: 970.892625
+      type: 'test'
+      ...
+    # Subtest: rejects malformed attested Pi events and does not emit a sidecar
+    ok 27 - rejects malformed attested Pi events and does not emit a sidecar
+      ---
+      duration_ms: 544.875417
+      type: 'test'
+      ...
+    # Subtest: keeps ordinary bg_run tasks free of attestation sidecars
+    ok 28 - keeps ordinary bg_run tasks free of attestation sidecars
+      ---
+      duration_ms: 77.656083
+      type: 'test'
+      ...
+    # Subtest: tracks managed Fusion completion, durable progress, once-only usage, and cancellation
+    ok 29 - tracks managed Fusion completion, durable progress, once-only usage, and cancellation
+      ---
+      duration_ms: 195.147666
+      type: 'test'
+      ...
+    # Subtest: prunes oldest finished tasks while preserving running tasks
+    ok 30 - prunes oldest finished tasks while preserving running tasks
+      ---
+      duration_ms: 247.1205
+      type: 'test'
+      ...
+    1..30
+not ok 48 - BackgroundTaskRegistry
+  ---
+  duration_ms: 7968.894917
+  type: 'suite'
+  location: '/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/unit/registry.test.ts:1:7526'
+  failureType: 'subtestsFailed'
+  error: '1 subtest failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: update-check
+    # Subtest: narrows npm latest payloads to a version string
+    ok 1 - narrows npm latest payloads to a version string
+      ---
+      duration_ms: 0.408875
+      type: 'test'
+      ...
+    # Subtest: narrows package.json payloads to name/version
+    ok 2 - narrows package.json payloads to name/version
+      ---
+      duration_ms: 0.304291
+      type: 'test'
+      ...
+    # Subtest: fetches and parses the latest version through an injected fetch
+    ok 3 - fetches and parses the latest version through an injected fetch
+      ---
+      duration_ms: 0.283
+      type: 'test'
+      ...
+    # Subtest: returns undefined for non-ok status without throwing
+    ok 4 - returns undefined for non-ok status without throwing
+      ---
+      duration_ms: 0.099458
+      type: 'test'
+      ...
+    # Subtest: returns undefined and reports the error when fetch throws
+    ok 5 - returns undefined and reports the error when fetch throws
+      ---
+      duration_ms: 0.115625
+      type: 'test'
+      ...
+    # Subtest: silently skips only the AbortError owned by the internal timeout
+    ok 6 - silently skips only the AbortError owned by the internal timeout
+      ---
+      duration_ms: 11.31475
+      type: 'test'
+      ...
+    # Subtest: reports an AbortError not initiated by the internal timeout
+    ok 7 - reports an AbortError not initiated by the internal timeout
+      ---
+      duration_ms: 0.385667
+      type: 'test'
+      ...
+    # Subtest: reads name/version from a local package.json and degrades on failure
+    ok 8 - reads name/version from a local package.json and degrades on failure
+      ---
+      duration_ms: 40.023584
+      type: 'test'
+      ...
+    1..8
+ok 49 - update-check
+  ---
+  duration_ms: 53.653208
+  type: 'suite'
+  ...
+# Subtest: windows taskkill helper
+    # Subtest: resolves taskkill from System32 and never PATH
+    ok 1 - resolves taskkill from System32 and never PATH
+      ---
+      duration_ms: 0.497791
+      type: 'test'
+      ...
+    # Subtest: uses structured argv for terminate and force phases
+    ok 2 - uses structured argv for terminate and force phases
+      ---
+      duration_ms: 1.331958
+      type: 'test'
+      ...
+    # Subtest: rejects invalid pid and unresolved taskkill before spawn
+    ok 3 - rejects invalid pid and unresolved taskkill before spawn
+      ---
+      duration_ms: 0.24425
+      type: 'test'
+      ...
+    # Subtest: bounds stdout and stderr capture and sets truncation flags
+    ok 4 - bounds stdout and stderr capture and sets truncation flags
+      ---
+      duration_ms: 0.606875
+      type: 'test'
+      ...
+    # Subtest: supports external abort and helper timeout without blocking
+    ok 5 - supports external abort and helper timeout without blocking
+      ---
+      duration_ms: 11.106416
+      type: 'test'
+      ...
+    1..5
+ok 50 - windows taskkill helper
+  ---
+  duration_ms: 14.384875
+  type: 'suite'
+  ...
+1..50
+# tests 517
+# suites 45
+# pass 516
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 27860.545708

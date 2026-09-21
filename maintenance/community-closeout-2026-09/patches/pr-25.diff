@@ -1,0 +1,101 @@
+diff --git a/src/core/registry.ts b/src/core/registry.ts
+index cfbf133..4ed7ab0 100644
+--- a/src/core/registry.ts
++++ b/src/core/registry.ts
+@@ -2277,8 +2277,30 @@ export class BackgroundTaskRegistry {
+   }
+ 
+   private handleTerminalPublishFailure(task: BgTask, error: unknown): void {
+-    this.logger.error(`[background-tasks] terminal publication failed for ${task.id}:`, error);
+     task.terminalPublishInFlight = false;
++    // A closed EventBus is unrecoverable: no consumer can ever receive this
++    // snapshot, so every retry is guaranteed to fail the same way. The retry
++    // below is only gated on `!task.terminalPublished`, which never becomes
++    // true because `publishTerminal` throws before it is set -- so retrying a
++    // closed bus is an unbounded 100ms log loop that outlives the session
++    // (`unref()` keeps it from holding the process open at exit, but the pi
++    // process is long-lived). Log once and stop, mirroring the `shuttingDown`
++    // short-circuit `notifyCompletion` already has. `terminalPublished` is the
++    // flag every publish path checks, so setting it here is what actually ends
++    // the loop: it means "no further attempts", not "delivered".
++    const message = error instanceof Error ? error.message : String(error);
++    if (this.shuttingDown || message.includes('EventBus service is closed')) {
++      this.logger.error(
++        `[background-tasks] terminal publication abandoned for ${task.id} (event bus closed); not retrying.`,
++      );
++      task.terminalPublished = true;
++      if (task.terminalPublishRetryHandle) {
++        clearTimeout(task.terminalPublishRetryHandle);
++        task.terminalPublishRetryHandle = undefined;
++      }
++      return;
++    }
++    this.logger.error(`[background-tasks] terminal publication failed for ${task.id}:`, error);
+     if (!task.terminalPublished && task.terminalPublishRetryHandle === undefined) {
+       task.terminalPublishRetryHandle = setTimeout(() => {
+         task.terminalPublishRetryHandle = undefined;
+diff --git a/tests/unit/registry.test.ts b/tests/unit/registry.test.ts
+index 9dd0c16..c47d323 100644
+--- a/tests/unit/registry.test.ts
++++ b/tests/unit/registry.test.ts
+@@ -987,6 +987,60 @@ void describe('BackgroundTaskRegistry', () => {
+     }
+   });
+ 
++  void it('stops retrying terminal publication once the EventBus is closed', async () => {
++    let attempts = 0;
++    const h = await createHarness({
++      publishTerminal: () => {
++        attempts += 1;
++        throw new Error('pi-background-tasks EventBus service is closed');
++      },
++    });
++    try {
++      const { task, child } = await startFakeTask(h, 'Terminal Bus Closed');
++      child.close(0, null);
++      await waitFor(() => task.status === 'completed', 'closed-bus task completion');
++      await waitFor(
++        () => h.errors.flat().join(' ').includes('terminal publication abandoned'),
++        'closed-bus abandonment log',
++      );
++      // A closed bus can never accept the snapshot, so the failure must not be
++      // rescheduled: the retry interval is 100ms, and anything that re-arms
++      // here floods the terminal for the life of the process.
++      await new Promise((resolve) => setTimeout(resolve, 350));
++      assert.equal(attempts, 1);
++      assert.equal(task.terminalPublished, true);
++      assert.equal(task.terminalPublishRetryHandle, undefined);
++      assert.equal(task.terminalPublishInFlight, false);
++    } finally {
++      await cleanup(h.root);
++    }
++  });
++
++  void it('stops retrying terminal publication while shutting down', async () => {
++    let attempts = 0;
++    const h = await createHarness({
++      publishTerminal: () => {
++        attempts += 1;
++        throw new Error('terminal bus unavailable');
++      },
++    });
++    try {
++      const { task, child } = await startFakeTask(h, 'Terminal Shutdown');
++      h.registry.setShuttingDown(true);
++      child.close(0, null);
++      await waitFor(() => task.status === 'completed', 'shutdown task completion');
++      await waitFor(
++        () => h.errors.flat().join(' ').includes('terminal publication abandoned'),
++        'shutdown abandonment log',
++      );
++      await new Promise((resolve) => setTimeout(resolve, 350));
++      assert.equal(attempts, 1);
++      assert.equal(task.terminalPublishRetryHandle, undefined);
++    } finally {
++      await cleanup(h.root);
++    }
++  });
++
+   void it('resets notified when completion notification delivery fails and records loud metadata errors', async () => {
+     const failingNotify = await createHarness({
+       sendCompletionNotification: () => {

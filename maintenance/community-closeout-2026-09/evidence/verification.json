@@ -1,0 +1,232 @@
+{
+  "baseline_commit": "14aa4ef382952f073bd4d540f57d6e8e3c2789a2",
+  "mechanical_environment": {
+    "PI_OFFLINE": "1",
+    "PI_SKIP_VERSION_CHECK": "1",
+    "PI_TELEMETRY": "0",
+    "CI": "1",
+    "HOME": "per-variant temp HOME",
+    "PI_CODING_AGENT_DIR": "per-variant temp agent dir"
+  },
+  "method": "Trusted local git archive copied per variant; inspected frozen PR diff applied in temporary copy; existing node_modules symlinked read-only; no dependency installs or live inference. red17/red25 apply tests only to baseline source. Logs normalized only by replacing review/package absolute path roots. Top-level driver exit zero means checks finished, NOT every check passed.",
+  "results": {
+    "baseline": [
+      {
+        "command": [
+          "npm",
+          "run",
+          "typecheck"
+        ],
+        "exit": 0,
+        "log": "evidence/check-baseline-0.log"
+      },
+      {
+        "command": [
+          "npm",
+          "run",
+          "docs:verify"
+        ],
+        "exit": 0,
+        "log": "evidence/check-baseline-1.log"
+      },
+      {
+        "command": [
+          "npm",
+          "run",
+          "test:type-safety"
+        ],
+        "exit": 1,
+        "log": "evidence/check-baseline-2.log"
+      }
+    ],
+    "pr9": [
+      {
+        "command": [
+          "npm",
+          "run",
+          "typecheck"
+        ],
+        "exit": 0,
+        "log": "evidence/check-pr9-0.log"
+      },
+      {
+        "command": [
+          "./node_modules/.bin/tsx",
+          "--test",
+          "tests/unit/pi-launch.test.ts"
+        ],
+        "exit": 0,
+        "log": "evidence/check-pr9-1.log"
+      }
+    ],
+    "pr12": [
+      {
+        "command": [
+          "npm",
+          "run",
+          "typecheck"
+        ],
+        "exit": 0,
+        "log": "evidence/check-pr12-0.log"
+      },
+      {
+        "command": [
+          "./node_modules/.bin/tsx",
+          "--test",
+          "tests/unit/anthropic-attribution.test.ts"
+        ],
+        "exit": 0,
+        "log": "evidence/check-pr12-1.log"
+      }
+    ],
+    "pr17": [
+      {
+        "command": [
+          "npm",
+          "run",
+          "typecheck"
+        ],
+        "exit": 0,
+        "log": "evidence/check-pr17-0.log"
+      },
+      {
+        "command": [
+          "npm",
+          "run",
+          "docs:verify"
+        ],
+        "exit": 0,
+        "log": "evidence/check-pr17-1.log"
+      },
+      {
+        "command": [
+          "./node_modules/.bin/tsx",
+          "--test",
+          "tests/unit/anthropic-attribution.test.ts",
+          "tests/unit/anthropic-attribution-lineage.test.ts"
+        ],
+        "exit": 0,
+        "log": "evidence/check-pr17-2.log"
+      }
+    ],
+    "pr22": [
+      {
+        "command": [
+          "npm",
+          "run",
+          "typecheck"
+        ],
+        "exit": 0,
+        "log": "evidence/check-pr22-0.log"
+      },
+      {
+        "command": [
+          "npm",
+          "run",
+          "docs:verify"
+        ],
+        "exit": 0,
+        "log": "evidence/check-pr22-1.log"
+      },
+      {
+        "command": [
+          "npm",
+          "run",
+          "test:package"
+        ],
+        "exit": 1,
+        "log": "evidence/check-pr22-2.log"
+      },
+      {
+        "command": [
+          "npm",
+          "run",
+          "test:sdk"
+        ],
+        "exit": 0,
+        "log": "evidence/check-pr22-3.log"
+      }
+    ],
+    "pr23": [
+      {
+        "command": [
+          "npm",
+          "run",
+          "typecheck"
+        ],
+        "exit": 0,
+        "log": "evidence/check-pr23-0.log"
+      },
+      {
+        "command": [
+          "npm",
+          "run",
+          "docs:verify"
+        ],
+        "exit": 0,
+        "log": "evidence/check-pr23-1.log"
+      },
+      {
+        "command": [
+          "./node_modules/.bin/tsx",
+          "--test",
+          "tests/unit/pi-launch.test.ts"
+        ],
+        "exit": 0,
+        "log": "evidence/check-pr23-2.log"
+      }
+    ],
+    "pr25": [
+      {
+        "command": [
+          "npm",
+          "run",
+          "typecheck"
+        ],
+        "exit": 0,
+        "log": "evidence/check-pr25-0.log"
+      },
+      {
+        "command": [
+          "npm",
+          "run",
+          "docs:verify"
+        ],
+        "exit": 0,
+        "log": "evidence/check-pr25-1.log"
+      },
+      {
+        "command": [
+          "./node_modules/.bin/tsx",
+          "--test",
+          "tests/unit/registry.test.ts"
+        ],
+        "exit": 0,
+        "log": "evidence/check-pr25-2.log"
+      }
+    ],
+    "red17": [
+      {
+        "command": [
+          "./node_modules/.bin/tsx",
+          "--test",
+          "tests/unit/anthropic-attribution-lineage.test.ts"
+        ],
+        "exit": 1,
+        "log": "evidence/check-red17-0.log"
+      }
+    ],
+    "red25": [
+      {
+        "command": [
+          "./node_modules/.bin/tsx",
+          "--test",
+          "--test-name-pattern=stops retrying terminal publication",
+          "tests/unit/registry.test.ts"
+        ],
+        "exit": 1,
+        "log": "evidence/check-red25-0.log"
+      }
+    ]
+  }
+}

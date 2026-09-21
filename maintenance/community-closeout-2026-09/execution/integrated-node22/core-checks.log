@@ -1,0 +1,621 @@
+SOURCE 4219d9a9d2ec61eee3334cbb4816fc5c394e559d
+v22.19.0
+TAP version 13
+# Subtest: Fusion model-role documentation
+    # Subtest: keeps the user-facing role, tradeoff, and invocation contract visible
+    ok 1 - keeps the user-facing role, tradeoff, and invocation contract visible
+      ---
+      duration_ms: 4.076875
+      type: 'test'
+      ...
+    # Subtest: parses the documented repeated-route example with the production config parser
+    ok 2 - parses the documented repeated-route example with the production config parser
+      ---
+      duration_ms: 0.54475
+      type: 'test'
+      ...
+    # Subtest: anchors fan-in, closed evaluation, and tool policy claims in pure runtime contracts
+    ok 3 - anchors fan-in, closed evaluation, and tool policy claims in pure runtime contracts
+      ---
+      duration_ms: 0.84
+      type: 'test'
+      ...
+    1..3
+ok 1 - Fusion model-role documentation
+  ---
+  duration_ms: 5.878416
+  type: 'suite'
+  ...
+# Subtest: type-safety standard
+    # Subtest: classifies syntax and compiler directives without scanning inert text
+    ok 1 - classifies syntax and compiler directives without scanning inert text
+      ---
+      duration_ms: 5.124709
+      type: 'test'
+      ...
+    # Subtest: finds directly nested assertions through type-transparent wrappers only
+    ok 2 - finds directly nested assertions through type-transparent wrappers only
+      ---
+      duration_ms: 1.01975
+      type: 'test'
+      ...
+    # Subtest: has no explicit top-type escape, compiler suppressions, or double assertions in package TypeScript
+    ok 3 - has no explicit top-type escape, compiler suppressions, or double assertions in package TypeScript
+      ---
+      duration_ms: 205.299541
+      type: 'test'
+      ...
+    # Subtest: has no production non-null assertion bypasses
+    ok 4 - has no production non-null assertion bypasses
+      ---
+      duration_ms: 54.315375
+      type: 'test'
+      ...
+    1..4
+ok 2 - type-safety standard
+  ---
+  duration_ms: 266.281583
+  type: 'suite'
+  ...
+# Subtest: Anthropic attribution through Pi reload and resume (\#14)
+    # Subtest: reconstructs a drifted JSONL session, reanchors once, and chains the next turn
+    ok 1 - reconstructs a drifted JSONL session, reanchors once, and chains the next turn
+      ---
+      duration_ms: 199.407125
+      type: 'test'
+      ...
+    1..1
+ok 3 - Anthropic attribution through Pi reload and resume (\#14)
+  ---
+  duration_ms: 199.831041
+  type: 'suite'
+  ...
+# Subtest: Anthropic attribution account config path (\#13)
+    # Subtest: retains the home file as the default when no override is selected
+    ok 1 - retains the home file as the default when no override is selected
+      ---
+      duration_ms: 3.414125
+      type: 'test'
+      ...
+    # Subtest: selects the absolute operator path ahead of the home default
+    ok 2 - selects the absolute operator path ahead of the home default
+      ---
+      duration_ms: 1.247709
+      type: 'test'
+      ...
+    # Subtest: gives a direct absolute loader path precedence over the operator environment
+    ok 3 - gives a direct absolute loader path precedence over the operator environment
+      ---
+      duration_ms: 0.797375
+      type: 'test'
+      ...
+    # Subtest: rejects a relative direct loader path even when the environment is absolute
+    ok 4 - rejects a relative direct loader path even when the environment is absolute
+      ---
+      duration_ms: 0.849625
+      type: 'test'
+      ...
+    # Subtest: rejects an empty operator path
+    ok 5 - rejects an empty operator path
+      ---
+      duration_ms: 0.960375
+      type: 'test'
+      ...
+    # Subtest: rejects a relative operator path
+    ok 6 - rejects a relative operator path
+      ---
+      duration_ms: 0.69925
+      type: 'test'
+      ...
+    # Subtest: reports the selected file for malformed JSON and required-field failures
+    ok 7 - reports the selected file for malformed JSON and required-field failures
+      ---
+      duration_ms: 1.278209
+      type: 'test'
+      ...
+    # Subtest: preserves the selected path in package-owned child environments
+    ok 8 - preserves the selected path in package-owned child environments
+      ---
+      duration_ms: 0.212791
+      type: 'test'
+      ...
+    1..8
+ok 4 - Anthropic attribution account config path (\#13)
+  ---
+  duration_ms: 10.063833
+  type: 'suite'
+  ...
+# Subtest: keeps the optional host fixture independent of absolute installation imports
+ok 5 - keeps the optional host fixture independent of absolute installation imports
+  ---
+  duration_ms: 1.5165
+  type: 'test'
+  ...
+# Subtest: requires an explicit host package path and never selects a default host
+ok 6 - requires an explicit host package path and never selects a default host
+  ---
+  duration_ms: 0.184709
+  type: 'test'
+  ...
+# Subtest: resolves the host public entry and its nested pi-ai by package resolution
+ok 7 - resolves the host public entry and its nested pi-ai by package resolution
+  ---
+  duration_ms: 3.984542
+  type: 'test'
+  ...
+# Subtest: resolves a valid hoisted pi-ai dependency without assuming a nested layout
+ok 8 - resolves a valid hoisted pi-ai dependency without assuming a nested layout
+  ---
+  duration_ms: 2.083667
+  type: 'test'
+  ...
+# Subtest: refuses missing, malformed, wrong-package, and wrong-line hosts before loading APIs
+ok 9 - refuses missing, malformed, wrong-package, and wrong-line hosts before loading APIs
+  ---
+  duration_ms: 4.0435
+  type: 'test'
+  ...
+# Subtest: non-target anthropic-messages forwarding (\#19)
+    # Subtest: uses the direct exported host adapter without a serialization bridge
+    ok 1 - uses the direct exported host adapter without a serialization bridge
+      ---
+      duration_ms: 2.036083
+      type: 'test'
+      ...
+    # Subtest: uses the supported host adapter once without target-only rewriting
+    ok 2 - uses the supported host adapter once without target-only rewriting
+      ---
+      duration_ms: 42.420083
+      type: 'test'
+      ...
+    # Subtest: preserves provider-reported reasoning usage and tool output fields
+    ok 3 - preserves provider-reported reasoning usage and tool output fields
+      ---
+      duration_ms: 2.053083
+      type: 'test'
+      ...
+    # Subtest: keeps one live partial and retains host-added optional fields and tool metadata
+    ok 4 - keeps one live partial and retains host-added optional fields and tool metadata
+      ---
+      duration_ms: 1.139167
+      type: 'test'
+      ...
+    # Subtest: settles an adapter error event and result with the same message
+    ok 5 - settles an adapter error event and result with the same message
+      ---
+      duration_ms: 1.217916
+      type: 'test'
+      ...
+    1..5
+ok 10 - non-target anthropic-messages forwarding (\#19)
+  ---
+  duration_ms: 49.445209
+  type: 'suite'
+  ...
+# Subtest: Anthropic attribution lineage recovery (\#14)
+    # Subtest: chains unchanged append-only requests and replays exact signed thinking
+    ok 1 - chains unchanged append-only requests and replays exact signed thinking
+      ---
+      duration_ms: 8.283375
+      type: 'test'
+      ...
+    # Subtest: resets system prompt, reanchors, and never resurrects old signatures
+    ok 2 - resets system prompt, reanchors, and never resurrects old signatures
+      ---
+      duration_ms: 2.895584
+      type: 'test'
+      ...
+    # Subtest: resets tool schema, reanchors, and never resurrects old signatures
+    ok 3 - resets tool schema, reanchors, and never resurrects old signatures
+      ---
+      duration_ms: 2.707833
+      type: 'test'
+      ...
+    # Subtest: resets thinking effort, reanchors, and never resurrects old signatures
+    ok 4 - resets thinking effort, reanchors, and never resurrects old signatures
+      ---
+      duration_ms: 1.541125
+      type: 'test'
+      ...
+    # Subtest: resets tool choice, reanchors, and never resurrects old signatures
+    ok 5 - resets tool choice, reanchors, and never resurrects old signatures
+      ---
+      duration_ms: 1.419875
+      type: 'test'
+      ...
+    # Subtest: resets rewritten user history, reanchors, and never resurrects old signatures
+    ok 6 - resets rewritten user history, reanchors, and never resurrects old signatures
+      ---
+      duration_ms: 2.7695
+      type: 'test'
+      ...
+    # Subtest: resets shortened history, reanchors, and never resurrects old signatures
+    ok 7 - resets shortened history, reanchors, and never resurrects old signatures
+      ---
+      duration_ms: 1.390625
+      type: 'test'
+      ...
+    # Subtest: resets cache retention, reanchors, and never resurrects old signatures
+    ok 8 - resets cache retention, reanchors, and never resurrects old signatures
+      ---
+      duration_ms: 1.255334
+      type: 'test'
+      ...
+    # Subtest: resets disabled caching, reanchors, and never resurrects old signatures
+    ok 9 - resets disabled caching, reanchors, and never resurrects old signatures
+      ---
+      duration_ms: 1.313875
+      type: 'test'
+      ...
+    # Subtest: recovers a reload that drops earlier thinking while retaining stale lineage
+    ok 10 - recovers a reload that drops earlier thinking while retaining stale lineage
+      ---
+      duration_ms: 1.110333
+      type: 'test'
+      ...
+    # Subtest: treats a changed latest assistant with a valid-shaped stale receipt as a boundary
+    ok 11 - treats a changed latest assistant with a valid-shaped stale receipt as a boundary
+      ---
+      duration_ms: 0.868709
+      type: 'test'
+      ...
+    # Subtest: requires receipt binding to the containing assistant provider
+    ok 12 - requires receipt binding to the containing assistant provider
+      ---
+      duration_ms: 0.762417
+      type: 'test'
+      ...
+    # Subtest: requires receipt binding to the containing assistant API
+    ok 13 - requires receipt binding to the containing assistant API
+      ---
+      duration_ms: 0.720958
+      type: 'test'
+      ...
+    # Subtest: requires receipt binding to the containing assistant model
+    ok 14 - requires receipt binding to the containing assistant model
+      ---
+      duration_ms: 0.743208
+      type: 'test'
+      ...
+    # Subtest: requires receipt binding to the containing assistant successful terminal state
+    ok 15 - requires receipt binding to the containing assistant successful terminal state
+      ---
+      duration_ms: 0.860792
+      type: 'test'
+      ...
+    # Subtest: requires receipt binding to the containing assistant response ID
+    ok 16 - requires receipt binding to the containing assistant response ID
+      ---
+      duration_ms: 0.817333
+      type: 'test'
+      ...
+    # Subtest: requires receipt binding to the containing non-empty assistant response ID
+    ok 17 - requires receipt binding to the containing non-empty assistant response ID
+      ---
+      duration_ms: 0.937625
+      type: 'test'
+      ...
+    # Subtest: requires receipt binding to the containing non-empty receipt response ID
+    ok 18 - requires receipt binding to the containing non-empty receipt response ID
+      ---
+      duration_ms: 2.767917
+      type: 'test'
+      ...
+    # Subtest: requires receipt binding to the containing non-empty receipt previous response ID
+    ok 19 - requires receipt binding to the containing non-empty receipt previous response ID
+      ---
+      duration_ms: 0.782833
+      type: 'test'
+      ...
+    # Subtest: recovers again after a failed reset attempt without persisting a false anchor
+    ok 20 - recovers again after a failed reset attempt without persisting a false anchor
+      ---
+      duration_ms: 0.97
+      type: 'test'
+      ...
+    # Subtest: opens another epoch for history drift under a retained compaction marker
+    ok 21 - opens another epoch for history drift under a retained compaction marker
+      ---
+      duration_ms: 0.747375
+      type: 'test'
+      ...
+    # Subtest: does not resurrect an old epoch when the latest reset receipt is missing
+    ok 22 - does not resurrect an old epoch when the latest reset receipt is missing
+      ---
+      duration_ms: 0.738917
+      type: 'test'
+      ...
+    # Subtest: does not resurrect an old epoch when the latest reset receipt is malformed
+    ok 23 - does not resurrect an old epoch when the latest reset receipt is malformed
+      ---
+      duration_ms: 0.654458
+      type: 'test'
+      ...
+    # Subtest: does not anchor a reset until strict SSE completion succeeds
+    ok 24 - does not anchor a reset until strict SSE completion succeeds
+      ---
+      duration_ms: 0.981417
+      type: 'test'
+      ...
+    # Subtest: still rejects middleware model mutations after a reset, before fetch
+    ok 25 - still rejects middleware model mutations after a reset, before fetch
+      ---
+      duration_ms: 0.521583
+      type: 'test'
+      ...
+    # Subtest: still rejects middleware stream mutations after a reset, before fetch
+    ok 26 - still rejects middleware stream mutations after a reset, before fetch
+      ---
+      duration_ms: 0.409
+      type: 'test'
+      ...
+    # Subtest: still rejects middleware metadata mutations after a reset, before fetch
+    ok 27 - still rejects middleware metadata mutations after a reset, before fetch
+      ---
+      duration_ms: 0.379
+      type: 'test'
+      ...
+    # Subtest: still rejects middleware system mutations after a reset, before fetch
+    ok 28 - still rejects middleware system mutations after a reset, before fetch
+      ---
+      duration_ms: 0.3875
+      type: 'test'
+      ...
+    # Subtest: still rejects middleware messages mutations after a reset, before fetch
+    ok 29 - still rejects middleware messages mutations after a reset, before fetch
+      ---
+      duration_ms: 0.381667
+      type: 'test'
+      ...
+    # Subtest: still rejects middleware thinking mutations after a reset, before fetch
+    ok 30 - still rejects middleware thinking mutations after a reset, before fetch
+      ---
+      duration_ms: 0.405334
+      type: 'test'
+      ...
+    # Subtest: still rejects middleware diagnostics mutations after a reset, before fetch
+    ok 31 - still rejects middleware diagnostics mutations after a reset, before fetch
+      ---
+      duration_ms: 0.387208
+      type: 'test'
+      ...
+    # Subtest: still rejects middleware cache_control mutations after a reset, before fetch
+    ok 32 - still rejects middleware cache_control mutations after a reset, before fetch
+      ---
+      duration_ms: 0.418208
+      type: 'test'
+      ...
+    # Subtest: retains the in-flight guard during a reset and releases it after completion
+    ok 33 - retains the in-flight guard during a reset and releases it after completion
+      ---
+      duration_ms: 0.6475
+      type: 'test'
+      ...
+    1..33
+ok 11 - Anthropic attribution lineage recovery (\#14)
+  ---
+  duration_ms: 42.872833
+  type: 'suite'
+  ...
+# Subtest: global Anthropic attribution extension
+    # Subtest: matches all SPS exact-line variants while preserving unrelated blocks and cache controls
+    ok 1 - matches all SPS exact-line variants while preserving unrelated blocks and cache controls
+      ---
+      duration_ms: 1.175375
+      type: 'test'
+      ...
+    # Subtest: BUG-192 strips Codex/ZAI opaque and redacted reasoning before Anthropic transport
+    ok 2 - BUG-192 strips Codex/ZAI opaque and redacted reasoning before Anthropic transport
+      ---
+      duration_ms: 0.671584
+      type: 'test'
+      ...
+    # Subtest: BUG-193 owns hookless compaction attribution from request-scoped sessionId
+    ok 3 - BUG-193 owns hookless compaction attribution from request-scoped sessionId
+      ---
+      duration_ms: 7.636791
+      type: 'test'
+      ...
+    # Subtest: normalizes observed cross-provider tool-call IDs while preserving valid IDs and images
+    ok 4 - normalizes observed cross-provider tool-call IDs while preserving valid IDs and images
+      ---
+      duration_ms: 1.55375
+      type: 'test'
+      ...
+    # Subtest: leaves non-Anthropic payloads untouched
+    ok 5 - leaves non-Anthropic payloads untouched
+      ---
+      duration_ms: 0.068583
+      type: 'test'
+      ...
+    # Subtest: adds package attribution to attested Anthropic argv only
+    ok 6 - adds package attribution to attested Anthropic argv only
+      ---
+      duration_ms: 0.211125
+      type: 'test'
+      ...
+    # Subtest: allows exactly one independently loaded copy to own global registration
+    ok 7 - allows exactly one independently loaded copy to own global registration
+      ---
+      duration_ms: 0.224583
+      type: 'test'
+      ...
+    1..7
+ok 12 - global Anthropic attribution extension
+  ---
+  duration_ms: 12.00725
+  type: 'suite'
+  ...
+# Subtest: Pi launch resolution
+    # Subtest: returns the canonical executable admitted from POSIX PATH
+    ok 1 - returns the canonical executable admitted from POSIX PATH
+      ---
+      duration_ms: 3.901667
+      type: 'test'
+      ...
+    # Subtest: skips non-executable and non-file PATH entries before a later valid candidate
+    ok 2 - skips non-executable and non-file PATH entries before a later valid candidate
+      ---
+      duration_ms: 1.586125
+      type: 'test'
+      ...
+    # Subtest: canonicalizes a symlinked executable PATH candidate
+    ok 3 - canonicalizes a symlinked executable PATH candidate
+      ---
+      duration_ms: 1.212708
+      type: 'test'
+      ...
+    # Subtest: cannot reselect PATH after admission when child cwd or environment changes
+    ok 4 - cannot reselect PATH after admission when child cwd or environment changes
+      ---
+      duration_ms: 278.022167
+      type: 'test'
+      ...
+    # Subtest: falls back to the exact named host package bin on POSIX when PATH has no pi
+    ok 5 - falls back to the exact named host package bin on POSIX when PATH has no pi
+      ---
+      duration_ms: 2.330792
+      type: 'test'
+      ...
+    # Subtest: rejects arbitrary JavaScript hosts and a host file other than declared bin.pi
+    ok 6 - rejects arbitrary JavaScript hosts and a host file other than declared bin.pi
+      ---
+      duration_ms: 2.833792
+      type: 'test'
+      ...
+    # Subtest: walks past a valid nameless sub-manifest but stops at named package boundaries
+    ok 7 - walks past a valid nameless sub-manifest but stops at named package boundaries
+      ---
+      duration_ms: 2.233708
+      type: 'test'
+      ...
+    # Subtest: fails closed at malformed, non-object, malformed-name, and unreadable host manifests
+    ok 8 - fails closed at malformed, non-object, malformed-name, and unreadable host manifests
+      ---
+      duration_ms: 2.165833
+      type: 'test'
+      ...
+    # Subtest: uses an exact installed Pi module from a foreign POSIX SDK host
+    ok 9 - uses an exact installed Pi module from a foreign POSIX SDK host
+      ---
+      duration_ms: 2.846458
+      type: 'test'
+      ...
+    # Subtest: rejects a foreign package returned by the POSIX SDK module route
+    ok 10 - rejects a foreign package returned by the POSIX SDK module route
+      ---
+      duration_ms: 3.197459
+      type: 'test'
+      ...
+    # Subtest: uses the named running host package before a different Windows module installation
+    ok 11 - uses the named running host package before a different Windows module installation
+      ---
+      duration_ms: 2.333708
+      type: 'test'
+      ...
+    # Subtest: falls through from a foreign Windows host to an exact named module package
+    ok 12 - falls through from a foreign Windows host to an exact named module package
+      ---
+      duration_ms: 2.188833
+      type: 'test'
+      ...
+    # Subtest: does not substitute a module when Windows host source realpath has an I/O failure
+    ok 13 - does not substitute a module when Windows host source realpath has an I/O failure
+      ---
+      duration_ms: 4.474208
+      type: 'test'
+      ...
+    # Subtest: does not silently fall back when a named Windows Pi host has an invalid bin
+    ok 14 - does not silently fall back when a named Windows Pi host has an invalid bin
+      ---
+      duration_ms: 2.550375
+      type: 'test'
+      ...
+    # Subtest: uses the Windows host walk when package module lookups are unavailable
+    ok 15 - uses the Windows host walk when package module lookups are unavailable
+      ---
+      duration_ms: 1.473125
+      type: 'test'
+      ...
+    # Subtest: resolves a named manifest by walking from a Windows package entry fallback
+    ok 16 - resolves a named manifest by walking from a Windows package entry fallback
+      ---
+      duration_ms: 3.172375
+      type: 'test'
+      ...
+    # Subtest: requires the exact Pi package name for direct Windows module manifests
+    ok 17 - requires the exact Pi package name for direct Windows module manifests
+      ---
+      duration_ms: 2.186166
+      type: 'test'
+      ...
+    # Subtest: resolves Windows string and object JavaScript bins through a generic runtime
+    ok 18 - resolves Windows string and object JavaScript bins through a generic runtime
+      ---
+      duration_ms: 7.471041
+      type: 'test'
+      ...
+    # Subtest: retains direct Windows native package bins without a shell or argv prefix
+    ok 19 - retains direct Windows native package bins without a shell or argv prefix
+      ---
+      duration_ms: 3.660292
+      type: 'test'
+      ...
+    # Subtest: uses a direct compiled route only for an executable explicitly named Pi
+    ok 20 - uses a direct compiled route only for an executable explicitly named Pi
+      ---
+      duration_ms: 3.188875
+      type: 'test'
+      ...
+    # Subtest: rejects command shims, shell scripts, extensionless targets, and unknown extensions
+    ok 21 - rejects command shims, shell scripts, extensionless targets, and unknown extensions
+      ---
+      duration_ms: 5.3485
+      type: 'test'
+      ...
+    # Subtest: rejects absolute, lexical, and symlink bin escapes from the package root
+    ok 22 - rejects absolute, lexical, and symlink bin escapes from the package root
+      ---
+      duration_ms: 5.353542
+      type: 'test'
+      ...
+    # Subtest: accepts canonical in-package bin symlinks and a symlinked package path
+    ok 23 - accepts canonical in-package bin symlinks and a symlinked package path
+      ---
+      duration_ms: 1.297209
+      type: 'test'
+      ...
+    # Subtest: rejects malformed/missing manifests, malformed bins, non-files, and JS under a non-runtime
+    ok 24 - rejects malformed/missing manifests, malformed bins, non-files, and JS under a non-runtime
+      ---
+      duration_ms: 5.406334
+      type: 'test'
+      ...
+    # Subtest: keeps spaced paths and quoted arguments as distinct Windows argv values
+    ok 25 - keeps spaced paths and quoted arguments as distinct Windows argv values
+      ---
+      duration_ms: 1.491458
+      type: 'test'
+      ...
+    # Subtest: rejects oversized Windows command lines without leaking argument text
+    ok 26 - rejects oversized Windows command lines without leaking argument text
+      ---
+      duration_ms: 0.192958
+      type: 'test'
+      ...
+    1..26
+ok 13 - Pi launch resolution
+  ---
+  duration_ms: 353.21875
+  type: 'suite'
+  ...
+1..13
+# tests 92
+# suites 8
+# pass 92
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5893.700625
+FINAL_SOURCE 4219d9a9d2ec61eee3334cbb4816fc5c394e559d

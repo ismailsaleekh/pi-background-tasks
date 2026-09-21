@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { Message } from '@earendil-works/pi-ai';
-import { canonicalJson } from '../attested-pi-run.js';
+import { canonicalJson } from '../canonical-json.js';
 
 /**
  * Frozen `visible-conversation-ledger-v2` transform.
@@ -22,8 +22,7 @@ import { canonicalJson } from '../attested-pi-run.js';
  */
 export const VISIBLE_CONVERSATION_TRANSFORM_ID = 'visible-conversation-ledger-v2';
 
-export const CONVERSATION_IMAGE_OMISSION_PREFIX =
-  '[Image omitted from fusion text transcript: ';
+export const CONVERSATION_IMAGE_OMISSION_PREFIX = '[Image omitted from fusion text transcript: ';
 
 export const OMITTED_EVENT_KINDS = [
   'assistant_thinking',
@@ -141,9 +140,7 @@ export class UnsupportedConversationBlockError extends Error {
   readonly label: string;
 
   constructor(label: string) {
-    super(
-      `fusion context projection encountered an unsupported conversation block: ${label}`,
-    );
+    super(`fusion context projection encountered an unsupported conversation block: ${label}`);
     this.name = 'UnsupportedConversationBlockError';
     this.label = label;
   }

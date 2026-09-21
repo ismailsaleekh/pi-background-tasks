@@ -1,0 +1,32 @@
+▶ BackgroundTaskRegistry
+  ✖ stops retrying terminal publication once the EventBus is closed (1050.673875ms)
+  ✖ stops retrying terminal publication while shutting down (1029.998041ms)
+✖ BackgroundTaskRegistry (2081.635459ms)
+ℹ tests 2
+ℹ suites 1
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2971.919542
+
+✖ failing tests:
+
+test at tests/unit/registry.test.ts:1:25321
+✖ stops retrying terminal publication once the EventBus is closed (1050.673875ms)
+  Error: Timed out waiting for closed-bus abandonment log
+      at waitFor (<REVIEW_ROOT>/red25/tests/unit/registry.test.ts:271:9)
+      at async TestContext.<anonymous> (<REVIEW_ROOT>/red25/tests/unit/registry.test.ts:1002:7)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Promise.all (index 18)
+      at async Suite.run (node:internal/test_runner/test:1771:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+
+test at tests/unit/registry.test.ts:1:26109
+✖ stops retrying terminal publication while shutting down (1029.998041ms)
+  Error: Timed out waiting for shutdown abandonment log
+      at waitFor (<REVIEW_ROOT>/red25/tests/unit/registry.test.ts:271:9)
+      at async TestContext.<anonymous> (<REVIEW_ROOT>/red25/tests/unit/registry.test.ts:1032:7)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7)

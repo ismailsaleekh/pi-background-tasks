@@ -15,11 +15,24 @@ import {
   type TokenBudgetRateSource,
 } from '../context/token-budget.js';
 import {
+  DELEGATE_DEFAULT_MAX_TOOL_CALLS,
+  DELEGATE_DEFAULT_MAX_TURNS,
+  DELEGATE_DEFAULT_TIMEOUT_SECONDS,
+  DELEGATE_INLINE_ANSWER_BYTES,
+} from './facade-contract.js';
+import {
   DELEGATE_BUDGET_PLAN_SCHEMA_VERSION,
   DelegateError,
   type DelegateLimits,
   type DelegatePinnedRoute,
 } from './types.js';
+
+export {
+  DELEGATE_DEFAULT_MAX_TOOL_CALLS,
+  DELEGATE_DEFAULT_MAX_TURNS,
+  DELEGATE_DEFAULT_TIMEOUT_SECONDS,
+  DELEGATE_INLINE_ANSWER_BYTES,
+} from './facade-contract.js';
 
 /**
  * Delegate budgeting.
@@ -51,9 +64,6 @@ export const DELEGATE_MIN_CONTEXT_WINDOW_TOKENS =
   DELEGATE_FRAMING_RESERVE_TOKENS +
   DELEGATE_SAFETY_RESERVE_TOKENS;
 
-export const DELEGATE_DEFAULT_MAX_TURNS = 24;
-export const DELEGATE_DEFAULT_MAX_TOOL_CALLS = 120;
-export const DELEGATE_DEFAULT_TIMEOUT_SECONDS = 1200;
 export const DELEGATE_MAX_TOOL_RESULT_BYTES = 64 * 1024;
 export const DELEGATE_MAX_TOTAL_TOOL_OUTPUT_BYTES = 64 * 1024 * 1024;
 export const DELEGATE_MAX_ANSWER_BYTES = 4 * 1024 * 1024;
@@ -61,9 +71,6 @@ export const DELEGATE_MAX_ANSWER_BYTES = 4 * 1024 * 1024;
 export const DELEGATE_FINALIZATION_INPUT_RESERVE_TOKENS = 32 * 1024;
 /** Remaining retained-growth runway at which the child disables tools. */
 export const DELEGATE_FINALIZATION_TRIGGER_TOKENS = 8 * 1024;
-/** Answers at or under this serialize inline; larger ones degrade explicitly. */
-export const DELEGATE_INLINE_ANSWER_BYTES = 48 * 1024;
-
 export const DELEGATE_BUDGET_POLICY_ID = 'delegate-budget-policy-v3';
 
 export interface DelegateBudgetPolicyDescriptor {

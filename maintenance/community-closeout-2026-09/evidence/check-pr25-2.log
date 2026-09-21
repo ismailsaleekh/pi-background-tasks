@@ -1,0 +1,42 @@
+▶ BackgroundTaskRegistry
+  ✔ preserves full shell command bytes except surrounding whitespace (14.571875ms)
+  ✔ uses explicit isAgent to decide Pi telemetry wrapping (35.896875ms)
+  ✔ leaves Pi agent commands unchanged under Windows cmd and records telemetry unavailability (27.647583ms)
+  ✔ rejects unresolved Windows bash before creating a task (2.676333ms)
+  ✔ uses POSIX process-group kill before child fallback (29.553417ms)
+  ✔ falls back to child.kill when process-group kill fails and reports when both fail (35.048167ms)
+  ✔ uses taskkill tree termination on Windows and never falls back to child.kill (50.431792ms)
+  ✔ shares duplicate Windows graceful stops and aborts soft taskkill when force starts (44.611542ms)
+  ✔ treats explicit Windows force as terminal and does not arm escalation (91.977458ms)
+  ✔ records Windows taskkill exit 128 as an already-exited race (33.809333ms)
+  ✔ persists a Windows soft failure and still escalates to force after grace (41.689083ms)
+  ✔ surfaces Windows force failure loudly without root-only fallback (34.78075ms)
+  ✔ keeps terminal metadata running until in-flight Windows force settles (42.337083ms)
+  ✔ keeps duplicate stop requests idempotent and escalates to SIGKILL after grace (40.614208ms)
+  ✔ schedules exactly one SIGKILL escalation for concurrent stop requests (251.49875ms)
+  ✔ finalizes and notifies once under error/close and output-cap races (52.448125ms)
+  ✔ publishes terminal snapshots exactly once after durable metadata (30.82175ms)
+  ✔ keeps failed terminal EventBus delivery loud and retriable (120.586375ms)
+  ✔ stops retrying terminal publication once the EventBus is closed (370.432417ms)
+  ✔ stops retrying terminal publication while shutting down (371.732917ms)
+  ✔ resets notified when completion notification delivery fails and records loud metadata errors (45.0645ms)
+  ✔ ingests split, malformed, and large telemetry records without losing task state (51.606375ms)
+  ✔ renders wrapped Pi-agent activity transcripts and keeps telemetry out of the output file (51.370917ms)
+  ✔ preserves split multiline XML context telemetry across newline boundaries (33.032208ms)
+  ✔ produces a direct-spawn attested Pi sidecar with raw events, stderr, hashes, and exact argv (490.3485ms)
+  ✔ rejects duplicate thinking in attested Pi extra args before spawn (53.535125ms)
+  ✔ launches attested Pi on Windows through Node while preserving logical argv (168.484708ms)
+  ✔ strips metered API environment from attested Pi child process (177.695333ms)
+  ✔ rejects malformed attested Pi events and does not emit a sidecar (128.1895ms)
+  ✔ keeps ordinary bg_run tasks free of attestation sidecars (21.613334ms)
+  ✔ tracks managed Fusion completion, durable progress, once-only usage, and cancellation (86.428916ms)
+  ✔ prunes oldest finished tasks while preserving running tasks (102.848708ms)
+✔ BackgroundTaskRegistry (3135.044917ms)
+ℹ tests 32
+ℹ suites 1
+ℹ pass 32
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3780.238166

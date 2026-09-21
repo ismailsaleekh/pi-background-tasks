@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import {
@@ -37,13 +37,28 @@ const codeFacts = buildCodeFacts();
 const docsModel = loadDocsModel();
 
 assert.equal(docsModel.docs.length, 42, 'all docs/**/*.md are governed');
-assert.equal(codeFacts.public_surface_ids.length, 31, 'all command/tool/shortcut/renderer/EventBus/workflow surfaces are extracted');
+assert.equal(codeFacts.public_surface_ids.length, 32, 'all command/tool/shortcut/renderer/EventBus/workflow surfaces are extracted');
+assert.equal(codeFacts.default_public_surface_ids.length, 31, 'alternate dock shortcut is the only non-default surface');
 assert.ok(codeFacts.public_surface_ids.includes('eventbus:background-task-v1'));
 assert.ok(codeFacts.public_surface_ids.includes('workflow:research'));
+const surfaceById = new Map(
+  Object.values(codeFacts.public_surfaces).flat().map((surface) => [surface.id, surface]),
+);
+assert.equal(surfaceById.get('tool:bg_delegate').availability, 'feature:delegate');
+assert.equal(surfaceById.get('tool:fusion_reason').availability, 'feature:fusion');
+assert.equal(
+  surfaceById.get('tool:bg_result').availability,
+  'any(feature:delegate,feature:fusion)',
+);
+assert.equal(surfaceById.get('tool:bg_run_pi_attested').availability, 'feature:attested');
+assert.equal(surfaceById.get('command:claude-cache').availability, 'feature:attribution');
+assert.equal(surfaceById.get('shortcut:shift+down').availability, 'dock:shift+down');
+assert.equal(surfaceById.get('shortcut:ctrl+alt+b').availability, 'dock:ctrl+alt+b');
+assert.equal(surfaceById.get('shortcut:ctrl+alt+b').default_available, false);
 assert.equal(docsModel.docs.find((doc) => doc.doc_id === 'INDEX').frontmatter.covers_surfaces.length, 0, 'INDEX must not own public surfaces');
 assert.equal(docsModel.docs.find((doc) => doc.doc_id === 'read-before-edit').frontmatter.covers_sources.length, 0, 'read-before-edit must not own sources');
 const envNames = new Set(codeFacts.environment_variables.map((entry) => entry.name));
-for (const expectedEnv of ['PI_BG_SHELL', 'PI_BG_SHELL_PATH', 'PI_BG_DISABLE_PI_TELEMETRY', 'ComSpec', 'SystemRoot', 'WINDIR']) assert.ok(envNames.has(expectedEnv), `missing env extraction for ${expectedEnv}`);
+for (const expectedEnv of ['PI_BG_FEATURES', 'PI_BG_DOCK_SHORTCUT', 'PI_BG_SHELL', 'PI_BG_SHELL_PATH', 'PI_BG_DISABLE_PI_TELEMETRY', 'ComSpec', 'SystemRoot', 'WINDIR']) assert.ok(envNames.has(expectedEnv), `missing env extraction for ${expectedEnv}`);
 assert.ok(!envNames.has('FUSION_CHILD_IDLE_TIMEOUT_MS'), 'fixed timeout constant must not be classified as env');
 const runtimeArtifacts = new Set(codeFacts.runtime_paths_and_artifacts.map((entry) => entry.value));
 for (const expectedArtifact of [
@@ -166,6 +181,500 @@ mustThrow(
   () => assertRegistrationFixture(`export default function x(pi){ function registerTool(options: any): void { pi.registerTool({ ...options }); } registerTool({ ${validToolFields} }); }`),
   /must not use object spread/,
 );
+const finiteVariantConfig = readFileSync(resolve('src/core/config.ts'), 'utf8');
+assert.deepEqual(
+  assertRegistrationFixture({
+    entry: 'entry.ts',
+    files: {
+      'entry.ts': `import { parseBackgroundTasksConfig } from './config.js'; import { registerFeature } from './feature.js'; export default function x(pi){ const config = parseBackgroundTasksConfig(); if (config.features.delegate) { pi.registerCommand('delegate-only', {}); } if (config.features.delegate || config.features.fusion) { registerFeature(pi); } if (config.dockShortcut === 'ctrl+alt+b') { pi.registerShortcut('ctrl+alt+b', {}); } }`,
+      'config.ts': finiteVariantConfig,
+      'feature.ts': "export function registerFeature(pi){ pi.registerCommand('shared-result', {}); }",
+    },
+  }),
+  ['command:delegate-only', 'command:shared-result', 'shortcut:ctrl+alt+b'],
+  'closed feature, derived-result, and shortcut variants must be extracted',
+);
+mustThrow(
+  'finite variant enum drift',
+  () => assertRegistrationFixture({
+    entry: 'entry.ts',
+    files: {
+      'entry.ts': "import { parseBackgroundTasksConfig } from './config.js'; export default function x(pi){ const config = parseBackgroundTasksConfig(); if (config.features.delegate) { pi.registerCommand('hidden', {}); } }",
+      'config.ts': finiteVariantConfig.replace("'attribution'", "'attribution', 'invented'"),
+    },
+  }),
+  /variant enum drift|unsupported feature enum/,
+);
+mustThrow(
+  'finite shortcut enum drift',
+  () => assertRegistrationFixture({
+    entry: 'entry.ts',
+    files: {
+      'entry.ts': "import { parseBackgroundTasksConfig } from './config.js'; export default function x(pi){ const config = parseBackgroundTasksConfig(); if (config.dockShortcut === 'ctrl+alt+b') { pi.registerShortcut('ctrl+alt+b', {}); } }",
+      'config.ts': finiteVariantConfig.replace("  'off',\n] as const", "  'off',\n  'super+x',\n] as const"),
+    },
+  }),
+  /variant enum drift/,
+);
+mustThrow(
+  'unknown finite feature condition',
+  () => assertRegistrationFixture({
+    entry: 'entry.ts',
+    files: {
+      'entry.ts': "import { parseBackgroundTasksConfig } from './config.js'; export default function x(pi){ const config = parseBackgroundTasksConfig(); if (config.features.invented) { pi.registerCommand('hidden', {}); } }",
+      'config.ts': finiteVariantConfig,
+    },
+  }),
+  /unsupported feature availability condition|unrecognized finite variant condition/,
+);
+mustThrow(
+  'dock off cannot register a shortcut',
+  () => assertRegistrationFixture({
+    entry: 'entry.ts',
+    files: {
+      'entry.ts': "import { parseBackgroundTasksConfig } from './config.js'; export default function x(pi){ const config = parseBackgroundTasksConfig(); if (config.dockShortcut === 'off') { pi.registerShortcut('shift+down', {}); } }",
+      'config.ts': finiteVariantConfig,
+    },
+  }),
+  /dock.*off|unrecognized finite variant condition/,
+);
+mustThrow(
+  'mutated derived availability expression',
+  () => assertRegistrationFixture({
+    entry: 'entry.ts',
+    files: {
+      'entry.ts': "import { parseBackgroundTasksConfig } from './config.js'; export default function x(pi){ const config = parseBackgroundTasksConfig(); if (config.features.delegate && config.features.fusion) { pi.registerCommand('hidden', {}); } }",
+      'config.ts': finiteVariantConfig,
+    },
+  }),
+  /derived availability|unrecognized finite variant condition/,
+);
+mustThrow(
+  'aliased finite config binding',
+  () => assertRegistrationFixture({
+    entry: 'entry.ts',
+    files: {
+      'entry.ts': "import { parseBackgroundTasksConfig } from './config.js'; export default function x(pi){ const config = parseBackgroundTasksConfig(); const selected = config; if (selected.features.delegate) { pi.registerCommand('hidden', {}); } }",
+      'config.ts': finiteVariantConfig,
+    },
+  }),
+  /unrecognized finite variant condition|immediate top-level statement|finite config binding/,
+);
+
+const hiddenAliasRuntime = [];
+function hiddenAliasRegistrar(pi, host = pi) {
+  host.registerCommand('hidden-default-alias', {});
+}
+hiddenAliasRegistrar({
+  registerCommand: (name) => hiddenAliasRuntime.push(`command:${name}`),
+});
+assert.deepEqual(hiddenAliasRuntime, ['command:hidden-default-alias']);
+mustThrow(
+  'imported registrar parameter default host alias',
+  () => assertRegistrationFixture({
+    entry: 'entry.ts',
+    files: {
+      'entry.ts': "import { parseBackgroundTasksConfig } from './config.js'; import { registerFeature } from './feature.js'; export default function x(pi){ const config = parseBackgroundTasksConfig(); if (config.features.delegate) { registerFeature(pi); } }",
+      'config.ts': finiteVariantConfig,
+      'feature.ts': "export function registerFeature(pi, host = pi){ host.registerCommand('hidden-default-alias', {}); }",
+    },
+  }),
+  /parameter initializer|registration host|Pi registration host/,
+);
+
+const earlyReturnRuntime = [];
+function earlyReturnRegistrar(pi, enabled) {
+  if (!enabled) return;
+  pi.registerCommand('never-registered', {});
+}
+earlyReturnRegistrar(
+  { registerCommand: (name) => earlyReturnRuntime.push(`command:${name}`) },
+  false,
+);
+assert.deepEqual(earlyReturnRuntime, []);
+assert.deepEqual(
+  assertRegistrationFixture(
+    "export default function x(pi){ pi.registerCommand('handler-return', { handler(){ if (Math.random() > 2) return; return Promise.resolve(); } }); }",
+  ),
+  ['command:handler-return'],
+  'returns inside non-registration handlers remain outside the finite registration grammar',
+);
+assert.deepEqual(
+  assertRegistrationFixture({
+    entry: 'entry.ts',
+    files: {
+      'entry.ts': "import { parseBackgroundTasksConfig } from './config.js'; import { registerFeature } from './feature.js'; export default function x(pi){ const config = parseBackgroundTasksConfig(); if (config.features.attribution) { pi.on('session_start', (_event, _ctx) => { registerFeature(pi); }); } }",
+      'config.ts': finiteVariantConfig,
+      'feature.ts': `const ANTHROPIC_ATTRIBUTION_CLAIM_CHANNEL = 'pi-anthropic-attribution:claim:v1';
+      const ANTHROPIC_ATTRIBUTION_CLAIM_SCHEMA = 'pi-anthropic-attribution.claim.v1';
+      export function registerFeature(pi){
+        const acknowledgements = [];
+        const probe = {
+          schema_version: ANTHROPIC_ATTRIBUTION_CLAIM_SCHEMA,
+          acknowledge: () => { acknowledgements.push(true); },
+        };
+        pi.events.emit(ANTHROPIC_ATTRIBUTION_CLAIM_CHANNEL, probe);
+        if (acknowledgements.length > 0) return;
+        pi.registerCommand('claimed-owner', {});
+      }`,
+    },
+  }),
+  ['command:claimed-owner'],
+  'the exact synchronous duplicate-owner claim guard remains supported in a session activation scope',
+);
+mustThrow(
+  'mutated duplicate-owner guard is not a general early-return waiver',
+  () => assertRegistrationFixture({
+    entry: 'entry.ts',
+    files: {
+      'entry.ts': "import { parseBackgroundTasksConfig } from './config.js'; import { registerFeature } from './feature.js'; export default function x(pi){ const config = parseBackgroundTasksConfig(); if (config.features.attribution) { pi.on('session_start', (_event, _ctx) => { registerFeature(pi); }); } }",
+      'config.ts': finiteVariantConfig,
+      'feature.ts': `export function registerFeature(pi){
+        const acknowledgements = [true];
+        const probe = { acknowledge: () => { acknowledgements.push(true); } };
+        pi.events.emit('fixture:claim', probe);
+        if (acknowledgements.length > 0) return;
+        pi.registerCommand('invented-owner', {});
+      }`,
+    },
+  }),
+  /early return|control flow|return/,
+);
+mustThrow(
+  'imported registrar early return before registration',
+  () => assertRegistrationFixture({
+    entry: 'entry.ts',
+    files: {
+      'entry.ts': "import { parseBackgroundTasksConfig } from './config.js'; import { registerFeature } from './feature.js'; export default function x(pi){ const config = parseBackgroundTasksConfig(); if (config.features.delegate) { registerFeature(pi, false); } }",
+      'config.ts': finiteVariantConfig,
+      'feature.ts': "export function registerFeature(pi, enabled){ if (!enabled) return; pi.registerCommand('never-registered', {}); }",
+    },
+  }),
+  /early return|control flow|return/,
+);
+
+const mutatedConfigRuntime = [];
+let mutatedConfigRuntimeError;
+try {
+  const runtimeConfig = Object.freeze({ features: Object.freeze({ delegate: true }) });
+  Object.defineProperty(runtimeConfig.features, 'delegate', { value: false });
+  if (runtimeConfig.features.delegate) {
+    mutatedConfigRuntime.push('command:startup-never-reaches-registration');
+  }
+} catch (error) {
+  mutatedConfigRuntimeError = error instanceof Error ? error.name : String(error);
+}
+assert.deepEqual(mutatedConfigRuntime, []);
+assert.equal(mutatedConfigRuntimeError, 'TypeError');
+mustThrow(
+  'finite config mutation attempt before registration',
+  () => assertRegistrationFixture({
+    entry: 'entry.ts',
+    files: {
+      'entry.ts': "import { parseBackgroundTasksConfig } from './config.js'; export default function x(pi){ const config = parseBackgroundTasksConfig(); Object.defineProperty(config.features, 'delegate', { value: false }); if (config.features.delegate) { pi.registerCommand('startup-never-reaches-registration', {}); } }",
+      'config.ts': finiteVariantConfig,
+    },
+  }),
+  /finite config binding|mutation|escape/,
+);
+
+mustThrow(
+  'mutable parser cannot authorize finite config binding',
+  () => assertRegistrationFixture({
+    entry: 'entry.ts',
+    files: {
+      'entry.ts': "import { parseBackgroundTasksConfig } from './config.js'; export default function x(pi){ const config = parseBackgroundTasksConfig(); if (config.features.delegate) { pi.registerCommand('mutable-parser-surface', {}); } }",
+      'config.ts': `
+export const PI_BG_FEATURE_VALUES = Object.freeze(['process', 'delegate', 'fusion', 'attested', 'attribution'] as const);
+export const PI_BG_DEFAULT_FEATURES = PI_BG_FEATURE_VALUES;
+export const PI_BG_DOCK_SHORTCUT_VALUES = Object.freeze(['shift+down', 'ctrl+alt+b', 'off'] as const);
+export const PI_BG_DEFAULT_DOCK_SHORTCUT = 'shift+down';
+export function parseBackgroundTasksConfig(){ return { features: { process: true, delegate: true, fusion: true, attested: true, attribution: true }, dockShortcut: 'shift+down' }; }
+`,
+    },
+  }),
+  /immutable|Object\.freeze|parser/,
+);
+
+// Keep the seven final-review controls independent. Six use the byte-for-byte
+// production parser; the seventh mutates only the parser return-path seam it tests.
+let parameterInitializerError;
+try {
+  ((pi, fail = (() => { throw new Error('initializer stops activation'); })()) => {
+    void fail;
+    pi.registerCommand('initializer-never-registers', {});
+  })({ registerCommand: () => assert.fail('throwing initializer reached registration') });
+} catch (error) {
+  parameterInitializerError = error instanceof Error ? error.message : String(error);
+}
+assert.equal(parameterInitializerError, 'initializer stops activation');
+mustThrow(
+  'registration-owner parameter initializer control flow',
+  () => assertRegistrationFixture({
+    entry: 'entry.ts',
+    files: {
+      'entry.ts': `export default function entry(
+        pi: unknown,
+        fail: never = (() => { throw new Error('initializer stops activation'); })(),
+      ) {
+        void fail;
+        pi.registerCommand('initializer-never-registers', {});
+      }`,
+    },
+  }),
+  /parameter initializer.*(?:throw|control flow)/i,
+);
+
+let capturedConfigError;
+try {
+  const runtimeConfig = Object.freeze({ features: Object.freeze({ attribution: true }) });
+  (() => {
+    Object.defineProperty(runtimeConfig.features, 'attribution', { value: false });
+  })();
+} catch (error) {
+  capturedConfigError = error instanceof Error ? error.name : String(error);
+}
+assert.equal(capturedConfigError, 'TypeError');
+mustThrow(
+  'captured finite config mutation in session_start',
+  () => assertRegistrationFixture({
+    entry: 'entry.ts',
+    files: {
+      'entry.ts': `import { parseBackgroundTasksConfig } from './config.js';
+      export default function entry(pi) {
+        const config = parseBackgroundTasksConfig();
+        if (config.features.attribution) {
+          pi.on('session_start', () => {
+            Object.defineProperty(config.features, 'attribution', { value: false });
+            pi.registerCommand('captured-config-never-registers', {});
+          });
+        }
+      }`,
+      'config.ts': finiteVariantConfig,
+    },
+  }),
+  /finite config binding config escapes its validated availability condition/,
+);
+mustThrow(
+  'captured finite config cannot escape through a nested closure',
+  () => assertRegistrationFixture({
+    entry: 'entry.ts',
+    files: {
+      'entry.ts': `import { parseBackgroundTasksConfig } from './config.js';
+      export default function entry(pi) {
+        const config = parseBackgroundTasksConfig();
+        if (config.features.attribution) {
+          pi.on('session_start', () => {
+            const mutate = () => Object.defineProperty(config.features, 'attribution', { value: false });
+            mutate();
+            pi.registerCommand('closure-config-never-registers', {});
+          });
+        }
+      }`,
+      'config.ts': finiteVariantConfig,
+    },
+  }),
+  /unsupported nested registration helper or invocation/,
+);
+mustThrow(
+  'captured finite config mutation stays authoritative through imported registrars',
+  () => assertRegistrationFixture({
+    entry: 'entry.ts',
+    files: {
+      'entry.ts': `import { parseBackgroundTasksConfig } from './config.js';
+      import { registerFeature } from './feature.js';
+      export default function entry(pi) {
+        const config = parseBackgroundTasksConfig();
+        if (config.features.attribution) { registerFeature(pi); }
+      }`,
+      'config.ts': finiteVariantConfig,
+      'feature.ts': `import { parseBackgroundTasksConfig } from './config.js';
+      export function registerFeature(pi) {
+        const config = parseBackgroundTasksConfig();
+        pi.on('session_start', () => {
+          Reflect.set(config.features, 'attribution', false);
+          pi.registerCommand('imported-captured-config-never-registers', {});
+        });
+      }`,
+    },
+  }),
+  /finite config binding config escapes its validated availability condition/,
+);
+
+const fakeClaimRegistrations = [];
+const fakeClaimListeners = new Map();
+const fakeClaimHost = {
+  events: {
+    on: (channel, listener) => fakeClaimListeners.set(channel, listener),
+    emit: (channel, value) => fakeClaimListeners.get(channel)?.(value),
+  },
+  registerCommand: (name) => fakeClaimRegistrations.push(name),
+};
+((pi) => {
+  pi.events.on('unrelated:claim', (value) => value.acknowledge());
+  const acknowledgements = [];
+  const probe = { acknowledge: () => acknowledgements.push(true) };
+  pi.events.emit('unrelated:claim', probe);
+  if (acknowledgements.length > 0) return;
+  pi.registerCommand('fake-owner-suppressed', {});
+})(fakeClaimHost);
+assert.deepEqual(fakeClaimRegistrations, []);
+mustThrow(
+  'fake duplicate-owner channel and schema',
+  () => assertRegistrationFixture({
+    entry: 'entry.ts',
+    files: {
+      'entry.ts': "import { parseBackgroundTasksConfig } from './config.js'; import { registerFeature } from './feature.js'; export default function entry(pi) { const config = parseBackgroundTasksConfig(); if (config.features.attribution) { registerFeature(pi); } }",
+      'config.ts': finiteVariantConfig,
+      'feature.ts': `export function registerFeature(pi) {
+        pi.events.on('unrelated:claim', (value) => { value.acknowledge(); });
+        const acknowledgements = [];
+        const probe = { acknowledge: () => { acknowledgements.push(true); } };
+        pi.events.emit('unrelated:claim', probe);
+        if (acknowledgements.length > 0) return;
+        pi.registerCommand('fake-owner-suppressed', {});
+      }`,
+    },
+  }),
+  /duplicate-owner claim guard.*(?:channel|schema|probe)|early return/i,
+);
+mustThrow(
+  'duplicate-owner claim requires the production schema',
+  () => assertRegistrationFixture({
+    entry: 'entry.ts',
+    files: {
+      'entry.ts': "import { parseBackgroundTasksConfig } from './config.js'; import { registerFeature } from './feature.js'; export default function entry(pi) { const config = parseBackgroundTasksConfig(); if (config.features.attribution) { registerFeature(pi); } }",
+      'config.ts': finiteVariantConfig,
+      'feature.ts': `export function registerFeature(pi) {
+        const acknowledgements = [];
+        const probe = {
+          schema_version: 'fixture.claim.v1',
+          acknowledge: () => { acknowledgements.push(true); },
+        };
+        pi.events.emit('pi-anthropic-attribution:claim:v1', probe);
+        if (acknowledgements.length > 0) return;
+        pi.registerCommand('wrong-schema-owner', {});
+      }`,
+    },
+  }),
+  /duplicate-owner claim guard must use exact schema pi-anthropic-attribution\.claim\.v1/i,
+);
+mustThrow(
+  'duplicate-owner claim cannot acknowledge its own pre-probe listener',
+  () => assertRegistrationFixture({
+    entry: 'entry.ts',
+    files: {
+      'entry.ts': "import { parseBackgroundTasksConfig } from './config.js'; import { registerFeature } from './feature.js'; export default function entry(pi) { const config = parseBackgroundTasksConfig(); if (config.features.attribution) { registerFeature(pi); } }",
+      'config.ts': finiteVariantConfig,
+      'feature.ts': `export function registerFeature(pi) {
+        pi.events.on('pi-anthropic-attribution:claim:v1', (value) => value.acknowledge());
+        const acknowledgements = [];
+        const probe = {
+          schema_version: 'pi-anthropic-attribution.claim.v1',
+          acknowledge: () => { acknowledgements.push(true); },
+        };
+        pi.events.emit('pi-anthropic-attribution:claim:v1', probe);
+        if (acknowledgements.length > 0) return;
+        pi.registerCommand('self-claimed-owner', {});
+      }`,
+    },
+  }),
+  /must not install a local claim listener before its probe/i,
+);
+
+assert.deepEqual(
+  (() => {
+    const registrations = [];
+    const pi = { registerCommand: (name) => registrations.push(name) };
+    const otherHost = pi;
+    otherHost['registerCommand']('hidden-unknown-host', {});
+    pi.registerCommand('visible', {});
+    return registrations;
+  })(),
+  ['hidden-unknown-host', 'visible'],
+);
+mustThrow(
+  'unknown computed registration host',
+  () => assertRegistrationFixture({
+    entry: 'entry.ts',
+    files: {
+      'entry.ts': `import { otherHost } from './other.js';
+      export default function entry(pi) {
+        otherHost['registerCommand']('hidden-unknown-host', {});
+        pi.registerCommand('visible', {});
+      }`,
+      'other.ts': 'export const otherHost = globalThis.fixtureRegistrationHost;',
+    },
+  }),
+  /computed registration method registerCommand uses an unsupported registration host/i,
+);
+
+const destructuredHostRegistrations = [];
+const destructuredRuntimeHost = {
+  registerCommand: (name) => destructuredHostRegistrations.push(name),
+};
+((pi, { registerCommand } = destructuredRuntimeHost) => {
+  registerCommand('hidden-destructured-host', {});
+  pi.registerCommand('visible', {});
+})(destructuredRuntimeHost);
+assert.deepEqual(destructuredHostRegistrations, ['hidden-destructured-host', 'visible']);
+mustThrow(
+  'destructured default unknown registration host',
+  () => assertRegistrationFixture({
+    entry: 'entry.ts',
+    files: {
+      'entry.ts': `function getRegistrationHost() { return globalThis.fixtureRegistrationHost; }
+      export default function entry(pi, { registerCommand } = getRegistrationHost()) {
+        registerCommand('hidden-destructured-host', {});
+        pi.registerCommand('visible', {});
+      }`,
+    },
+  }),
+  /destructured registration binding registerCommand is unsupported/i,
+);
+
+const shadowedParserRuntime = [];
+((pi, parseBackgroundTasksConfig = () => ({ features: { delegate: false } })) => {
+  const config = parseBackgroundTasksConfig();
+  if (config.features.delegate) pi.registerCommand('shadowed-parser-never-registers', {});
+})({ registerCommand: (name) => shadowedParserRuntime.push(name) });
+assert.deepEqual(shadowedParserRuntime, []);
+mustThrow(
+  'shadowed imported config parser',
+  () => assertRegistrationFixture({
+    entry: 'entry.ts',
+    files: {
+      'entry.ts': `import { parseBackgroundTasksConfig } from './config.js';
+      export default function entry(
+        pi,
+        parseBackgroundTasksConfig = () => ({ features: { delegate: false } }),
+      ) {
+        const config = parseBackgroundTasksConfig();
+        if (config.features.delegate) { pi.registerCommand('shadowed-parser-never-registers', {}); }
+      }`,
+      'config.ts': finiteVariantConfig,
+    },
+  }),
+  /config parser call must resolve to the unshadowed imported parseBackgroundTasksConfig/i,
+);
+
+const parserWithHiddenEarlyReturn = finiteVariantConfig.replace(
+  `): PiBackgroundConfig {\n  const features = parseFeatures(env['PI_BG_FEATURES']);`,
+  `): PiBackgroundConfig {\n  if (env['PI_BG_FEATURES'] === undefined) {\n    return {\n      features: { process: true, delegate: false, fusion: false, attested: false, attribution: false },\n      dockShortcut: 'off',\n    } as PiBackgroundConfig;\n  }\n  const features = parseFeatures(env['PI_BG_FEATURES']);`,
+);
+assert.notEqual(parserWithHiddenEarlyReturn, finiteVariantConfig, 'hidden parser return seam');
+mustThrow(
+  'hidden early return in config parser',
+  () => assertRegistrationFixture({
+    entry: 'entry.ts',
+    files: {
+      'entry.ts': "import { parseBackgroundTasksConfig } from './config.js'; export default function entry(pi) { const config = parseBackgroundTasksConfig(); if (config.features.delegate) { pi.registerCommand('parser-early-return-never-registers', {}); } }",
+      'config.ts': parserWithHiddenEarlyReturn,
+    },
+  }),
+  /variant parser must have exactly one reachable direct immutable return/i,
+);
+
 mustThrow(
   'conditional registerTool inside wrapper',
   () => assertRegistrationFixture(`export default function x(pi){ function registerTool(options: any): void { if (enabled) { pi.registerTool({ name: options.name, label: options.label, description: options.description, promptSnippet: options.promptSnippet, promptGuidelines: options.promptGuidelines, parameters: options.parameters }); } } registerTool({ ${validToolFields} }); }`),
@@ -229,8 +738,8 @@ mustThrow(
   /imported registration function .* is invoked more than once/,
 );
 
-mustThrow('mandatory gateway missing', () => checkPayloadFiles(['package.json', 'README.md', 'TESTING.md', 'TEST_PLAN.md', 'PUBLISHING.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'logo.png', 'extensions/anthropic-attribution.ts', 'extensions/background-tasks.ts', 'extensions/delegate-child.ts', 'extensions/fusion-child.ts']), /packed payload missing BACKGROUND-TASKS-INSTRUCTIONS\.md/);
-mustThrow('missing packed doc', () => checkPayloadFiles(['package.json', 'README.md', 'TESTING.md', 'TEST_PLAN.md', 'PUBLISHING.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'BACKGROUND-TASKS-INSTRUCTIONS.md', 'logo.png', 'extensions/anthropic-attribution.ts', 'extensions/background-tasks.ts', 'extensions/delegate-child.ts', 'extensions/fusion-child.ts']), /packed payload missing/);
+mustThrow('mandatory gateway missing', () => checkPayloadFiles(['dist/extensions/anthropic-attribution.js', 'dist/extensions/background-tasks.js', 'dist/extensions/anthropic-attribution-child.js', 'dist/extensions/delegate-child.js', 'dist/extensions/fusion-child.js', 'dist/package.json', 'package.json', 'README.md', 'TESTING.md', 'TEST_PLAN.md', 'PUBLISHING.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'logo.png', 'extensions/anthropic-attribution.ts', 'extensions/background-tasks.ts', 'extensions/delegate-child.ts', 'extensions/fusion-child.ts']), /packed payload missing BACKGROUND-TASKS-INSTRUCTIONS\.md/);
+mustThrow('missing packed doc', () => checkPayloadFiles(['dist/extensions/anthropic-attribution.js', 'dist/extensions/background-tasks.js', 'dist/extensions/anthropic-attribution-child.js', 'dist/extensions/delegate-child.js', 'dist/extensions/fusion-child.js', 'dist/package.json', 'package.json', 'README.md', 'TESTING.md', 'TEST_PLAN.md', 'PUBLISHING.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'BACKGROUND-TASKS-INSTRUCTIONS.md', 'logo.png', 'extensions/anthropic-attribution.ts', 'extensions/background-tasks.ts', 'extensions/delegate-child.ts', 'extensions/fusion-child.ts']), /packed payload missing/);
 
 mustThrow('release check requires explicit tag ref', () => checkReleaseVersion(process.cwd(), undefined, undefined), /requires an explicit tag ref/);
 

@@ -6,6 +6,7 @@ import type { Api, Model } from '@earendil-works/pi-ai';
 import { isJsonObject, parseJsonText, type JsonObject } from '../common.js';
 import { replaceFileDurable } from '../durable-fs.js';
 import { CLAUDE_CODE_200K_SUBSCRIPTION_CONTEXT_WINDOW } from '../anthropic-attribution.js';
+import { CURRENT_MODEL_SELECTION } from './facade-contract.js';
 import {
   FUSION_MODEL_CONFIG_SCHEMA_VERSION,
   FusionError,
@@ -19,7 +20,7 @@ import {
 } from './types.js';
 
 export const FUSION_MODEL_CONFIG_FILE = 'fusion-models.json';
-export const CURRENT_MODEL_SELECTION = '$current';
+export { CURRENT_MODEL_SELECTION } from './facade-contract.js';
 
 export interface FusionModelRegistry {
   getAll(): Model<Api>[];

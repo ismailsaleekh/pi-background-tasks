@@ -10,12 +10,12 @@ covers_sources: []
 # `/claude-cache`
 
 <!-- pi-docs:begin name="command-contract-claude-cache" generator="scripts/docs/generate.mjs" -->
-| Command | Description | Provenance |
-| --- | --- | --- |
-| `/claude-cache` | Show or set Claude cache retention for this session (short, long, default) | `src/core/anthropic-attribution.ts:3026` |
+| Command | Availability | Default | Description | Provenance |
+| --- | --- | --- | --- | --- |
+| `/claude-cache` | `feature:attribution` | yes | Show or set Claude cache retention for this session (short, long, default) | `src/core/anthropic-attribution.ts:3220` |
 <!-- pi-docs:end name="command-contract-claude-cache" -->
 
-Show or change the Anthropic cache-retention preference for the current session.
+Show or change the Anthropic cache-retention preference for the current session. Under the initialized-host contract, the command is registered only when `PI_BG_FEATURES` includes the ambient `attribution` capability (enabled by default); disabling that capability removes the command together with the parent provider/hooks. Its generated default availability is not a pre-bind availability guarantee: bare SDK sessions and empty/mode-only reloads require the explicit binding described in [Anthropic attribution](../subsystems/anthropic-attribution.md#initialized-host-sdk-contract-and-blocker).
 
 ## Synopsis
 

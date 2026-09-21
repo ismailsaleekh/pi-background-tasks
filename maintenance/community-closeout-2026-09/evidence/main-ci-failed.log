@@ -1,0 +1,223 @@
+ubuntu-latest · Node 24.x	UNKNOWN STEP	﻿2026-09-04T03:08:42.2759506Z Current runner version: '2.337.0'
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:42.2778176Z ##[group]Runner Image Provisioner
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:42.2778892Z Hosted Compute Agent
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:42.2779351Z Version: 20260828.587
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:42.2779928Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:42.2780515Z Build Date: 2026-08-28T16:44:25Z
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:42.2781065Z Worker ID: {a76c2c90-e53c-4447-9877-8538fe71935d}
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:42.2781646Z Azure Region: westus3
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:42.2782119Z ##[endgroup]
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:42.2783298Z ##[group]Operating System
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:42.2783790Z Ubuntu
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:42.2784379Z 24.04.4
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:42.2784959Z LTS
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:42.2785422Z ##[endgroup]
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:42.2785907Z ##[group]Runner Image
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:42.2786387Z Image: ubuntu-24.04
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:42.2786835Z Version: 20260831.293.1
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:42.2787865Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260831.293/images/ubuntu/Ubuntu2404-Readme.md
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:42.2789170Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260831.293
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:42.2789965Z ##[endgroup]
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:42.2790877Z ##[group]GITHUB_TOKEN Permissions
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:42.2792554Z Contents: read
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:42.2793019Z Metadata: read
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:42.2793576Z ##[endgroup]
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:42.2795652Z Secret source: Actions
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:42.2796528Z Prepare workflow directory
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:42.3048841Z Prepare all required actions
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:42.3096586Z Getting action download info
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:42.5931498Z Download action repository 'actions/checkout@v5' (SHA:fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09)
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:42.6817552Z Download action repository 'actions/setup-node@v6' (SHA:249970729cb0ef3589644e2896645e5dc5ba9c38)
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:42.8055508Z Download action repository 'pnpm/action-setup@v4' (SHA:b906affcce14559ad1aafd4ab0e942779e9f58b1)
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.7383034Z Complete job name: ubuntu-latest · Node 24.x
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.7937044Z ##[group]Run actions/checkout@v5
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.7937859Z with:
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.7938396Z   repository: ismailsaleekh/pi-background-tasks
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.7942255Z   token: ***
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.7942739Z   ssh-strict: true
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.7943232Z   ssh-user: git
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.7943726Z   persist-credentials: true
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.7944392Z   clean: true
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.7944903Z   sparse-checkout-cone-mode: true
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.7945478Z   fetch-depth: 1
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.7945968Z   fetch-tags: false
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.7946505Z   show-progress: true
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.7946989Z   lfs: false
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.7947431Z   submodules: false
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.7947947Z   set-safe-directory: true
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.7948503Z   allow-unsafe-pr-checkout: false
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.7949202Z ##[endgroup]
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.8844814Z Syncing repository: ismailsaleekh/pi-background-tasks
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.8847378Z ##[group]Getting Git version info
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.8848953Z Working directory is '/home/runner/work/pi-background-tasks/pi-background-tasks'
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.8850719Z [command]/usr/bin/git version
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.8858895Z git version 2.55.0
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.8880089Z ##[endgroup]
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.8892079Z Temporarily overriding HOME='/home/runner/work/_temp/da2b0470-74f6-4f4a-af4b-5a934de5564e' before making global git config changes
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.8894427Z Adding repository directory to the temporary git global config as a safe directory
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.8896981Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/pi-background-tasks/pi-background-tasks
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.8933470Z Deleting the contents of '/home/runner/work/pi-background-tasks/pi-background-tasks'
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.8937048Z ##[group]Initializing the repository
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.8965840Z [command]/usr/bin/git init /home/runner/work/pi-background-tasks/pi-background-tasks
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.9011575Z hint: Using 'master' as the name for the initial branch. This default branch name
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.9013470Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.9015387Z hint: to use in all of your new repositories, which will suppress this warning,
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.9016352Z hint: call:
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.9017228Z hint:
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.9017988Z hint: 	git config --global init.defaultBranch <name>
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.9018988Z hint:
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.9019904Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.9021260Z hint: 'development'. The just-created branch can be renamed via this command:
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.9025797Z hint:
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.9028423Z hint: 	git branch -m <name>
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.9030649Z hint:
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.9032521Z hint: Disable this message with "git config set advice.defaultBranchName false"
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.9034150Z Initialized empty Git repository in /home/runner/work/pi-background-tasks/pi-background-tasks/.git/
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.9037946Z [command]/usr/bin/git remote add origin https://github.com/ismailsaleekh/pi-background-tasks
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.9063159Z ##[endgroup]
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.9064687Z ##[group]Disabling automatic garbage collection
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.9065982Z [command]/usr/bin/git config --local gc.auto 0
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.9086935Z ##[endgroup]
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.9088280Z ##[group]Setting up auth
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.9091115Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.9115114Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.9365587Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.9388355Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.9566419Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.9593503Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.9756613Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.9782053Z ##[endgroup]
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.9783224Z ##[group]Fetching the repository
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:43.9790615Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +14aa4ef382952f073bd4d540f57d6e8e3c2789a2:refs/remotes/origin/main
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:45.2274934Z From https://github.com/ismailsaleekh/pi-background-tasks
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:45.2277166Z  * [new ref]         14aa4ef382952f073bd4d540f57d6e8e3c2789a2 -> origin/main
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:45.2281423Z ##[endgroup]
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:45.2283077Z ##[group]Determining the checkout info
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:45.2285095Z ##[endgroup]
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:45.2288263Z [command]/usr/bin/git sparse-checkout disable
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:45.2324974Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:45.2346985Z ##[group]Checking out the ref
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:45.2357041Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:45.2719095Z Switched to a new branch 'main'
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:45.2723288Z branch 'main' set up to track 'origin/main'.
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:45.2730447Z ##[endgroup]
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:45.2759052Z [command]/usr/bin/git log -1 --format=%H
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:45.2778326Z 14aa4ef382952f073bd4d540f57d6e8e3c2789a2
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:45.3093416Z ##[group]Run actions/setup-node@v6
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:45.3094642Z with:
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:45.3095447Z   node-version: 24.x
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:45.3096306Z   cache: npm
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:45.3097136Z   check-latest: false
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:45.3105867Z   token: ***
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:45.3106724Z   package-manager-cache: true
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:45.3107724Z ##[endgroup]
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:45.4214120Z Found in cache @ /opt/hostedtoolcache/node/24.20.0/x64
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:45.4217116Z ##[group]Environment details
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:45.7416777Z node: v24.20.0
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:45.7417281Z npm: 11.19.0
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:45.7417714Z yarn: 1.22.22
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:45.7418455Z ##[endgroup]
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:45.7433036Z [command]/opt/hostedtoolcache/node/24.20.0/x64/bin/npm config get cache
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:45.8249747Z /home/runner/.npm
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:46.0330515Z npm cache is not found
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:46.0417566Z ##[group]Run npm ci
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:46.0417933Z [36;1mnpm ci[0m
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:46.0452194Z shell: /usr/bin/bash -e {0}
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:46.0452604Z ##[endgroup]
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:48.4256295Z npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:08:48.8432617Z npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:55.0942974Z 
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:55.0943881Z added 255 packages, and audited 256 packages in 1m
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:55.0944691Z 
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:55.0945527Z 18 packages are looking for funding
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:55.0946708Z   run `npm fund` for details
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:55.0990225Z 
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:55.0991119Z 2 vulnerabilities (1 low, 1 moderate)
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:55.0991474Z 
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:55.0991816Z To address all issues, run:
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:55.0992279Z   npm audit fix
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:55.0992470Z 
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:55.0992692Z Run `npm audit` for details.
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:55.1003049Z npm warn install-scripts 5 packages have install scripts not yet covered by allowScripts:
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:55.1004368Z npm warn install-scripts   @google/genai@1.52.0 (preinstall: echo 'preinstall: no-op')
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:55.1005277Z npm warn install-scripts   esbuild@0.28.0 (postinstall: node install.js)
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:55.1006277Z npm warn install-scripts   protobufjs@7.6.1 (postinstall: node scripts/postinstall)
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:55.1007199Z npm warn install-scripts   @google/genai@1.52.0 (preinstall: echo 'preinstall: no-op')
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:55.1008050Z npm warn install-scripts   protobufjs@7.6.5 (postinstall: node scripts/postinstall)
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:55.1008742Z npm warn install-scripts
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:55.1009539Z npm warn install-scripts Run `npm install-scripts ls` to review, or `npm install-scripts approve <pkg>` to allow.
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:55.1333199Z ##[group]Run npm run typecheck
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:55.1333534Z [36;1mnpm run typecheck[0m
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:55.1353940Z shell: /usr/bin/bash -e {0}
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:55.1354711Z ##[endgroup]
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:55.2123650Z 
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:55.2124136Z > pi-background-tasks@2.5.0 typecheck
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:55.2124821Z > tsc --noEmit
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:55.2125213Z 
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:58.9974006Z ##[group]Run npm run docs:verify
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:58.9974681Z [36;1mnpm run docs:verify[0m
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:58.9995107Z shell: /usr/bin/bash -e {0}
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:58.9995362Z ##[endgroup]
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:59.0778156Z 
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:59.0778623Z > pi-background-tasks@2.5.0 docs:verify
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:59.0779105Z > node scripts/docs/verify.mjs
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:09:59.0779337Z 
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.0546484Z docs-verify: 31 surfaces, 50 sources, deterministic generation OK; attestations advisory.
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.0728443Z ##[group]Run npm run test:type-safety
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.0728739Z [36;1mnpm run test:type-safety[0m
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.0749259Z shell: /usr/bin/bash -e {0}
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.0749507Z ##[endgroup]
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.1524860Z 
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.1525598Z > pi-background-tasks@2.5.0 test:type-safety
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.1526216Z > tsx --test tests/package/type-safety.test.ts
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.1526502Z 
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4331907Z ▶ type-safety standard
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4333198Z   ✖ has no explicit top-type escape, compiler suppressions, or double assertions in package TypeScript (53.270489ms)
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4521793Z   ✔ has no production non-null assertion bypasses (18.656332ms)
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4545230Z ✖ type-safety standard (72.900227ms)
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4664743Z ℹ tests 2
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4678765Z ℹ suites 1
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4715674Z ℹ pass 1
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4734174Z ℹ fail 1
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4736381Z ℹ cancelled 0
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4737048Z ℹ skipped 0
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4737845Z ℹ todo 0
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4738155Z ℹ duration_ms 213.014575
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4738350Z 
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4738536Z ✖ failing tests:
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4738754Z 
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4739023Z test at tests/package/type-safety.test.ts:1:1566
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4739995Z ✖ has no explicit top-type escape, compiler suppressions, or double assertions in package TypeScript (53.270489ms)
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4741721Z   AssertionError [ERR_ASSERTION]: /home/runner/work/pi-background-tasks/pi-background-tasks/src/core/anthropic-attribution.ts:83 explicit top-type escape: // Bump whenever any system/tool/message wire projection changes. Old receipts then
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4743833Z   /home/runner/work/pi-background-tasks/pi-background-tasks/src/core/anthropic-attribution.ts:1493 double assertion: return details as unknown as AnthropicLineageDetails;
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4744925Z   
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4745177Z   2 !== 0
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4745410Z   
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4746215Z       at TestContext.<anonymous> (/home/runner/work/pi-background-tasks/pi-background-tasks/tests/package/type-safety.test.ts:72:12)
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4747161Z       at async Test.run (node:internal/test_runner/test:1404:7)
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4747634Z       at async Promise.all (index 0)
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4748122Z       at async Suite.run (node:internal/test_runner/test:1889:7)
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4748843Z       at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4749437Z     generatedMessage: false,
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4749891Z     code: 'ERR_ASSERTION',
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4750307Z     actual: 2,
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4750672Z     expected: 0,
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4750967Z     operator: 'strictEqual',
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4751274Z     diff: 'simple'
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4751529Z   }
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4826702Z ##[error]Process completed with exit code 1.
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.4961001Z Post job cleanup.
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.5640759Z [command]/usr/bin/git version
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.5672552Z git version 2.55.0
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.5700373Z Temporarily overriding HOME='/home/runner/work/_temp/96ff1189-52f3-43fd-9b8e-359375fce035' before making global git config changes
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.5701496Z Adding repository directory to the temporary git global config as a safe directory
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.5705135Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/pi-background-tasks/pi-background-tasks
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.5733909Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.5760040Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.5931632Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.5952901Z http.https://github.com/.extraheader
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.5962033Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.5987236Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.6186857Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.6210167Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+ubuntu-latest · Node 24.x	UNKNOWN STEP	2026-09-04T03:10:00.6478420Z Cleaning up orphan processes

@@ -11,7 +11,9 @@ covers_sources: []
 
 <!-- pi-docs:begin name="tool-contract-bg_delegate" generator="scripts/docs/generate.mjs" -->
 - Label: **Background Delegate**
-- Source: `src/delegate-extension.ts:340`
+- Source: `src/delegate-extension.ts:500`
+- Availability: `feature:delegate`
+- Available by default: **yes**
 - Description: Launch one background Pi agent seeded with a frozen projection of the current conversation, then return a launch receipt immediately. The child has its own session, a route pinned at launch that is never substituted, and read-only tools. Extension discovery is isolated by default; ambient mode supports extension-registered providers but executes arbitrary discovered extension code. Retrieve its verified answer with bg_result.
 - Root schema: `object`; additionalProperties: `false`
 

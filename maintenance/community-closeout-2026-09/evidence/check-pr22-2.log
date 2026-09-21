@@ -1,0 +1,135 @@
+
+> pi-background-tasks@2.5.0 test:package
+> tsx --test tests/package/**/*.test.ts
+
+▶ delegate mutation resistance
+  ✔ never truncates or clips delegate answers or tool payloads (8.178875ms)
+  ✔ never swallows an error into a silent fallback (3.745833ms)
+  ✔ pins the route and never substitutes or retries on another one (2.159791ms)
+  ✔ bounds inline delivery and degrades explicitly instead of shortening (3.452708ms)
+  ✔ runs admission preflight before anything is created and never skips it (1.640333ms)
+  ✔ never synthesizes zero usage for a run that reported none (3.574791ms)
+  ✔ does not repeat Fusion BUG-185 by turning an advisory estimate into provider truth (1.479375ms)
+  ✔ fails closed when a guard hook itself throws (1.363917ms)
+  ✔ never commits an incomplete or empty response as a complete answer (1.778833ms)
+  ✔ latches a terminal condition so a degraded run cannot commit success (0.997333ms)
+  ✔ commits the result package atomically with fsync and rename (1.255ms)
+  ✔ enforces the tool boundary by argv and keeps ambient discovery explicit (1.348625ms)
+  ✔ delivers the seed over stdin and budgets the prompt actually sent (1.711625ms)
+  ✔ spills package-owned growth before it consumes protected finalization runway (1.682958ms)
+  ✔ reads bounded artifact ranges exactly or fails (3.858541ms)
+  ✔ preserves every supported tool-result content block on spill (0.92825ms)
+  ✔ never lets a delegate seed borrow Fusion provenance (0.765ms)
+✔ delegate mutation resistance (41.774459ms)
+▶ docs package integration contract
+  ✔ declares docs scripts, prepack gates, and packaged docs payload (0.444042ms)
+  ✔ pins reviewed runtime and generated artifact semantics (1.602542ms)
+✔ docs package integration contract (2.606791ms)
+▶ package
+  ✔ manifest/docs cover public extension surfaces (53.599958ms)
+  ✔ validates Fusion v1 public tool arguments loudly (5.380125ms)
+  ✔ Fusion candidate tool policy cannot be weakened (1.323084ms)
+  ✔ Fusion research web fetch registers only in research mode (1.219542ms)
+  ✔ Fusion evaluator and merger can never receive caller-selected tools (4.429834ms)
+  ✔ Fusion golden byte gate has no fixture generation path (1.459916ms)
+  ✔ validates fusion_validate verification contracts and legacy migration loudly (1.479209ms)
+  ✔ ships global package-owned Anthropic attribution with no exotic dependency (3.553958ms)
+  ✔ keeps Fusion Claude cache normalization before final-payload governance (9.825875ms)
+  ✔ ships the markdown extractor as a real dependency without startup import (9.019459ms)
+  ✔ Fusion validate cannot recurse through each child tool policy (4.172166ms)
+  ✔ Fusion facade exposes four fixed-purpose tools and no public capability mode (4.736292ms)
+  ✔ fusion production code avoids direct completion APIs and local adapters (16.904333ms)
+  ✔ BUG-182 keeps Fusion usage on the exact host contract across shipped producers and consumers (21.601208ms)
+  ✔ keeps background Fusion retrieval durable, verified, and once-accounted (4.539917ms)
+  ✔ BUG-185 keeps post-launch Fusion guards free of token/output reservation admission (7.094125ms)
+  ✔ keeps expanded Fusion execution limits enforced at child and parent boundaries (2.623583ms)
+  ✔ keeps the Fusion context/budget path free of silent truncation and fallback shapes (18.782709ms)
+  ✔ keeps production durable syncing handle-scoped and loud (53.440458ms)
+  ✖ converts file URLs to native paths instead of using URL.pathname (66.613666ms)
+  ✔ typechecks standalone with the full monorepo strictness vendored locally (1.275375ms)
+  ✔ packs exactly the runtime/docs payload and excludes tests/artifacts (1705.1195ms)
+  ✖ local tarball installs with the expected package files (1653.487875ms)
+✖ package (3654.29075ms)
+▶ type-safety standard
+  ✖ has no explicit top-type escape, compiler suppressions, or double assertions in package TypeScript (74.020209ms)
+  ✔ has no production non-null assertion bypasses (25.092708ms)
+✖ type-safety standard (99.8565ms)
+▶ TypeBox compatibility
+  ✔ resolves the TypeBox version bundled by the installed Pi, not a private pin (6.147209ms)
+  ✔ requires Pi lines that expose the Fusion settlement and provider-request hooks (0.972833ms)
+  ✔ uses no TypeBox API removed by the Pi 0.83/0.84 bundled version (91.494917ms)
+  ✔ compiles the exact shipped delegate and Fusion public schemas under TypeBox 1.3 (171.813125ms)
+  ✔ compiles nullable-array schemas matching Fusion projection shapes (2.832166ms)
+  ✔ keeps Value.Check available for the optional-field shapes the package registers (1.155709ms)
+✔ TypeBox compatibility (275.91125ms)
+ℹ tests 50
+ℹ suites 5
+ℹ pass 47
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4786.233583
+
+✖ failing tests:
+
+test at tests/package/package.test.ts:2:26552
+✖ converts file URLs to native paths instead of using URL.pathname (66.613666ms)
+  AssertionError [ERR_ASSERTION]: use fileURLToPath(new URL(...)) so Windows paths resolve correctly
+  + actual - expected
+  
+  + [
+  +   '<REVIEW_ROOT>/pr22/src/core/anthropic-attribution.ts'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (<REVIEW_ROOT>/pr22/tests/package/package.test.ts:1299:12)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ '<REVIEW_ROOT>/pr22/src/core/anthropic-attribution.ts' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/package/package.test.ts:2:30611
+✖ local tarball installs with the expected package files (1653.487875ms)
+  AssertionError [ERR_ASSERTION]: npm error code ENOTCACHED
+  npm error request to https://registry.npmjs.org/turndown failed: cache mode is 'only-if-cached' but no cached response is available.
+  npm error A complete log of this run can be found in: <REVIEW_ROOT>/pr22-home/.npm/_logs/2026-09-20T00_08_09_219Z-debug-0.log
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (<REVIEW_ROOT>/pr22/tests/package/package.test.ts:1455:14)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/package/type-safety.test.ts:1:1566
+✖ has no explicit top-type escape, compiler suppressions, or double assertions in package TypeScript (74.020209ms)
+  AssertionError [ERR_ASSERTION]: <REVIEW_ROOT>/pr22/src/core/anthropic-attribution.ts:83 explicit top-type escape: // Bump whenever any system/tool/message wire projection changes. Old receipts then
+  <REVIEW_ROOT>/pr22/src/core/anthropic-attribution.ts:1493 double assertion: return details as unknown as AnthropicLineageDetails;
+  
+  2 !== 0
+  
+      at TestContext.<anonymous> (<REVIEW_ROOT>/pr22/tests/package/type-safety.test.ts:72:12)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1771:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

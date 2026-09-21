@@ -5,25 +5,25 @@ mode: mixed
 review_policy: behavioral
 stability: stable
 covers_surfaces: [renderer:fusion-result, workflow:investigate, workflow:reason, workflow:research, workflow:validate]
-covers_sources: [extensions/fusion-child.ts, src/core/fusion/artifacts.ts, src/core/fusion/budget.ts, src/core/fusion/child-protocol.ts, src/core/fusion/claude-cache.ts, src/core/fusion/clean-context.ts, src/core/fusion/config.ts, src/core/fusion/context.ts, src/core/fusion/evaluation.ts, src/core/fusion/orchestrator.ts, src/core/fusion/output-contract.ts, src/core/fusion/pi-child.ts, src/core/fusion/prompts.ts, src/core/fusion/result-package.ts, src/core/fusion/source-policy.ts, src/core/fusion/types.ts, src/core/fusion/web-fetch.ts, src/core/fusion/workflows.ts, src/fusion-child-extension.ts, src/fusion-extension.ts, src/ui/fusion-model-selector.ts]
+covers_sources: [extensions/fusion-child.ts, src/core/fusion/artifacts.ts, src/core/fusion/budget.ts, src/core/fusion/child-protocol.ts, src/core/fusion/claude-cache.ts, src/core/fusion/clean-context.ts, src/core/fusion/config.ts, src/core/fusion/context.ts, src/core/fusion/evaluation.ts, src/core/fusion/facade-contract.ts, src/core/fusion/orchestrator.ts, src/core/fusion/output-contract.ts, src/core/fusion/pi-child.ts, src/core/fusion/prompts.ts, src/core/fusion/result-package.ts, src/core/fusion/source-policy.ts, src/core/fusion/types.ts, src/core/fusion/web-fetch.ts, src/core/fusion/workflows.ts, src/fusion-child-extension.ts, src/fusion-extension.ts, src/ui/fusion-model-selector.ts]
 ---
 
 # Fusion subsystem
 
 <!-- pi-docs:begin name="fusion-workflows" generator="scripts/docs/generate.mjs" -->
-| Workflow | Tool | Context | Candidate capability | Candidate tools | Evaluator/merger tools | Provenance |
-| --- | --- | --- | --- | --- | --- | --- |
-| `investigate` | `fusion_investigate` | `clean_task` | `inspect` | `read`, `grep`, `find`, `ls` | none | `src/core/fusion/workflows.ts:80` |
-| `reason` | `fusion_reason` | `session_projection` | `reason` | none | none | `src/core/fusion/workflows.ts:61` |
-| `research` | `fusion_research` | `clean_task` | `research` | `read`, `grep`, `find`, `ls`, `fusion_web_fetch` | none | `src/core/fusion/workflows.ts:99` |
-| `validate` | `fusion_validate` | `clean_task` | `inspect` | `read`, `grep`, `find`, `ls` | none | `src/core/fusion/workflows.ts:118` |
+| Workflow | Availability | Default | Tool | Context | Candidate capability | Candidate tools | Evaluator/merger tools | Provenance |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `investigate` | `feature:fusion` | yes | `fusion_investigate` | `clean_task` | `inspect` | `read`, `grep`, `find`, `ls` | none | `src/core/fusion/workflows.ts:80` |
+| `reason` | `feature:fusion` | yes | `fusion_reason` | `session_projection` | `reason` | none | none | `src/core/fusion/workflows.ts:61` |
+| `research` | `feature:fusion` | yes | `fusion_research` | `clean_task` | `research` | `read`, `grep`, `find`, `ls`, `fusion_web_fetch` | none | `src/core/fusion/workflows.ts:99` |
+| `validate` | `feature:fusion` | yes | `fusion_validate` | `clean_task` | `inspect` | `read`, `grep`, `find`, `ls` | none | `src/core/fusion/workflows.ts:118` |
 <!-- pi-docs:end name="fusion-workflows" -->
 
 This document is the primary behavioral owner for Fusion's package-owned source files listed in frontmatter. Shared parent-context and token-budget modules are referenced here only as dependencies; their behavior is not owned by this document.
 
 ## Public v1 surface
 
-Fusion v1 exposes exactly two commands and exactly four public tools:
+When `PI_BG_FEATURES` includes `fusion`, Fusion v1 exposes exactly two commands and exactly four public tools; all are absent otherwise:
 
 - `/fusion` — command shorthand for fixed-purpose `reason`.
 - `/fusion-models` — TUI-only global five-slot model selector.
@@ -33,6 +33,10 @@ Fusion v1 exposes exactly two commands and exactly four public tools:
 - `fusion_validate({objective, background, changeSummary, scope, acceptanceCriteria, verification, knownLimitations?, exclusions?})`.
 
 Every public tool schema is closed and has no public capability/mode switch. The retired `fusion_brainstorm` surface is never registered; session start removes it from active tools while preserving rendering of historical completed v4 result messages.
+
+Fusion's facade registers those schemas, commands, fixed workflow metadata, and the `fusion-result` renderer immediately. Context projection, clean-context construction, model configuration/resolution, and the orchestrator are loaded as one activation-local single-flight module on the first workflow invocation. `/fusion-models` has a separate config/selector loader, so opening the selector does not preload the orchestrator, and cancelling an empty `/fusion` editor does not load either lane. Concurrent cold calls share module loading only; every workflow keeps its own controller, readiness gate, managed task, and orchestrator run.
+
+A deferred import failure is bounded, names the failed lane, and is retained for that activation. Fusion joins the package-wide synchronous close fence, so both lanes close, lifecycle generation advances, and every active controller aborts in the same first shutdown handler that closes delegate/result/core lanes, before active-run cleanup can pause sequential Pi dispatch. Retained tools reject before loader or host effects. Retained `/fusion` and `/fusion-models` commands assert activation before editor, idle wait, mode/UI handling, selector loading, or notification; once closure is detected their error paths do not notify the old context. A real reload creates fresh loaders rather than reviving the old instance. The shared state-machine and conditional compiled-startup details are documented in [Delegation](delegation.md#lazy-facade-activation).
 
 ## Commands
 
@@ -59,7 +63,7 @@ All workflows use the same orchestrator shape:
 7. run a no-tool merger;
 8. durably commit `merged.md` plus manifest-bound `result.json`, then publish terminal task state.
 
-Do not describe Fusion as unconditionally exactly five model calls. A completed run may use five or six child invocations, while preflight failures use zero; candidate failures, cancellation, spawn retry, output caps, or invalid repair alter observed attempts.
+The five slots are role assignments, not a guarantee of five distinct models or of five provider calls. An ordinary success uses five child invocations (three candidates, one evaluator, one merger); the one permitted evaluator repair makes six. Fatal preflight launches zero children. Failed or cancelled waves may create or complete fewer children, a transient pre-creation spawn failure may be retried once, and a child agent loop may make multiple provider requests. Attempt and provider-request counts therefore remain runtime facts, not values inferred from the slot count.
 
 Candidate tool policies are fixed by workflow:
 
@@ -71,6 +75,27 @@ Candidate tool policies are fixed by workflow:
 | validate    |            `inspect` | `read`, `grep`, `find`, `ls`                     |
 
 Evaluator, evaluator-repair, and merger always use capability `reason` and empty tool lists. Tool-enabled children run with built-in tools disabled and an explicit allowlist plus a denylist that includes shell/write/edit, Fusion recursion, and background/delegate tools.
+
+### Model roles, fan-in, and latency
+
+Candidate 1/2/3 are independent child attempts, not assigned specialties. The orchestrator gives all three the same canonical input, candidate system instruction, workflow capability, and fixed candidate-tool policy, then starts their promises as one parallel wave. Tool-enabled candidates can make different investigative choices, but no slot is pre-designated as researcher, critic, or writer. Different capable routes may improve diversity without guaranteeing it; duplicate routes are valid but can yield similar answers. On a successful wave, evaluation cannot start until all three settle, so the slowest candidate determines wave latency.
+
+The evaluator receives the canonical input plus all three completed responses after their slot identities have been randomly mapped to anonymous A/B/C labels. It has no tools and must emit the closed `pi-background-tasks.fusion-evaluation.v1` structure: exactly three assessments plus agreements, conflicts, and a constrained synthesis plan (with validation accounting only for `fusion_validate`). It neither ranks a winner nor emits the final answer. If parsing or schema validation fails, the evaluation repair uses the same configured and resolved evaluator model. That single repair receives the complete original blind input, the invalid evaluator output, and bounded validation errors; another invalid result terminates the run.
+
+The merger receives the canonical input, all three anonymous candidate responses, and the validated evaluation. It has no tools and is the last model stage. For reason, investigate, and research, its output is the sole final answer; candidate and evaluator responses are never returned directly. For `fusion_validate`, the host subsequently renders the final report from the validated finding accounting, preventing raw merger prose from adding or dropping findings.
+
+The normal-path critical path is `preflight → max(candidate 1, candidate 2, candidate 3) → evaluator → merger`; repair inserts another evaluator-model stage before merger. Its stage fan-in is:
+
+| Stage | Prompt fan-in | Route/timing consequence |
+| --- | --- | --- |
+| Candidate | Candidate system prompt + canonical input | Three parallel routes; the slowest successful candidate gates evaluation. |
+| Evaluator | Evaluator system prompt + canonical input + all three bounded candidate outputs | First sequential stage; schema reliability matters because invalid output triggers the sole repair. |
+| Evaluation repair | Repair system prompt + original blind evaluator input + invalid evaluator output + bounded errors | Conditional, same evaluator route, and potentially the largest prompt. |
+| Merger | Merger system prompt + canonical input + all three candidate outputs + validated evaluation | Final sequential stage and normally the greatest synthesis/context burden. |
+
+Budget planning reserves upstream output contracts for every fan-in stage and records worst-case reservation pressure as warnings; immediately before each child launch, the exact rendered prompt must fit that role's route. A nominally stronger model with a smaller usable context window can therefore be an invalid choice. Quality-first routing favors capable, genuinely diverse candidates, a strong schema-following evaluator, and the strongest available long-context synthesizer for merger. Speed-first routing avoids a slow candidate outlier, uses a fast schema-reliable evaluator to avoid repair, and keeps the sequential merger fast. In both cases frontier routes remain subscription OAuth only; duplicates and `$current` are valid, and metered APIs are not a tradeoff option.
+
+See the user-facing [model-selection guide](../commands/fusion-models.md), [budgets and output contracts](#budgets-and-output-contracts), and the configured [Fusion runtime limits](../operations/configuration.md#fusion-runtime-limits).
 
 ## Validation specifics
 
@@ -88,7 +113,7 @@ Inspect/research candidates write sealed tool-call audit logs. The log contains 
 
 ## Child process isolation
 
-Fusion never calls direct completion APIs. It launches direct child `pi --mode text` processes and writes the prompt over stdin. Child argv includes `--no-session`, `--no-extensions`, `--no-skills`, `--no-prompt-templates`, `--no-themes`, and `--no-context-files`; explicit extensions still load. Non-Anthropic children receive only the package-owned compact metadata/runtime-governor extension. Anthropic children receive, in fixed order, the package-wide attribution/sanitization extension and the runtime governor. The same attribution implementation is globally loaded for ordinary package sessions; Fusion supplies its public extension entrypoint explicitly because ambient discovery is disabled. Attribution adds the Claude Code OAuth session header, linked account/device/session metadata, model-policy beta headers, system identity, beta-resource transport, cache surfaces, and model-aware cache usage pricing. It reads `userID` and `oauthAccount.accountUuid` from `~/.claude.json` without writing the file and fails loudly when required attribution data is absent or malformed. Its internal sanitizer removes all reviewed exact-match rejected prompt lines while preserving unrelated text and cache controls; no external sanitizer package is resolved.
+Fusion never calls direct completion APIs. It launches direct child `pi --mode text` processes and writes the prompt over stdin. Child argv includes `--no-session`, `--no-extensions`, `--no-skills`, `--no-prompt-templates`, `--no-themes`, and `--no-context-files`; explicit extensions still load. Non-Anthropic children receive only the package-owned compact metadata/runtime-governor extension. Anthropic children receive, in fixed order, the always-on `extensions/anthropic-attribution-child.ts` attribution/sanitization entrypoint and the runtime governor. Ordinary parent sessions use the separate feature-aware ambient entrypoint; disabling that ambient capability cannot disable explicit child safety. Attribution adds the Claude Code OAuth session header, linked account/device/session metadata, model-policy beta headers, system identity, beta-resource transport, cache surfaces, and model-aware cache usage pricing. It reads `userID` and `oauthAccount.accountUuid` from `~/.claude.json` without writing the file and fails loudly when required attribution data is absent or malformed. Its internal sanitizer removes all reviewed exact-match rejected prompt lines while preserving unrelated text and cache controls; no external sanitizer package is resolved.
 
 Child text mode writes the final full answer to stdout. The private child extension emits compact reasoning-free metadata frames to stderr for finalized assistant messages: provider/model, stop reason, text block byte counts and hashes, aggregate text hash, the complete Pi `Usage` object (including Anthropic `cacheWrite1h` and provider-reported reasoning subsets), and a closed cache-policy observation. It governs every final `before_provider_request` payload after attribution and sanitization. For Anthropic routes, the child environment defaults `PI_CACHE_RETENTION` to `long` before provider serialization, so the attribution/Pi adapter creates system, final-tool, and final-conversation breakpoints with `ttl: "1h"`; inherited `PI_CACHE_RETENTION=short|none|long` remains explicit, and call-level `cacheRetention="none"` still wins for compaction. The final governor validates and normalizes those upstream-selected breakpoints, falls back to short when model compatibility rejects long retention, preserves no-marker compaction payloads, enforces Anthropic's four-breakpoint ceiling, and appends the subscription prompt-caching-scope beta idempotently. Its `effective_retention` field describes the final payload, not provider acceptance. Provider usage is preserved verbatim: `cacheWrite1h > 0` proves a one-hour write, but zero is inconclusive on subscription OAuth. Live normal-spawn and exact Fusion-child controls each observed a unique cache read after 370 idle seconds despite `cacheWrite1h = 0`; therefore payload observations prove request intent and `cacheRead` proves reuse, while neither zero telemetry nor a six-minute hit alone proves the full one-hour lifetime. Malformed controls or policy values abort before transport. Non-Anthropic payloads and child environments remain unchanged apart from the governor's existing JSON normalization.
 
@@ -118,7 +143,7 @@ Artifact writes use durable private temp-file/fsync/rename. Manifests enforce le
 
 For tool-enabled children, the private audit journal remains open across every low-level `agent_end`, because Pi may still retry, compact and retry, or process a queued continuation. Only terminal `agent_settled` can exclusively publish the complete hash/count/byte seal. Runtime-guard refusal latches process failure, makes that seal incomplete, and forces the result settlement to failed. The child emits one closed `pi-background-tasks.fusion-runtime-guard.v2` stderr frame for malformed provider payloads, malformed Claude cache policy, provider-request loops, or tool-call loops. The frame contains the refusal code, route, request/tool ordinals, bounded payload byte/hash evidence where applicable, and a bounded message; it never emits the payload itself. The parent validates this frame and reports typed `child_runtime_limit_exceeded`, `child_runtime_payload_invalid`, or `child_cache_policy_invalid` instead of accepting a later clean-looking result or reducing it to an unexplained exit code. Tool activity after finalization, duplicate settlement, pre-settlement shutdown, extension diagnostics, malformed/duplicate runtime-guard frames, and missing/failed/stale seals are fatal. This lifecycle requires Pi 0.81.1 or newer; older Pi lines do not expose the required terminal event and are not claimed as compatible.
 
-The four public Fusion tools return a background launch receipt after the readiness barrier. Tool-launched runs default to terminal notification plus follow-up wake; `/fusion` uses notification-only. The first successful `bg_result` retrieval durably claims and attaches complete Fusion usage exactly once; repeated retrieval returns the answer without duplicating session accounting. Running retrieval never waits.
+The four public Fusion tools return a background launch receipt after the readiness barrier. Tool-launched runs default to terminal notification plus follow-up wake; `/fusion` uses notification-only. The first successful `bg_result` retrieval durably claims and attaches complete Fusion usage exactly once; repeated retrieval returns the answer without duplicating session accounting. Verification, delivery checks, and usage cloning finish before the claim starts. That durable claim is the retrieval settlement point: closure before it prevents a claim, while closure during its metadata write lets the already-started invocation finish and return the usage without any later host effect. Metadata failure remains loud and is not silently reset. Running retrieval never waits.
 
 Cancellation and shutdown are loud and durable when a run store exists. The extension tracks active runs, managed tasks own their abort controllers, `bg_kill` and session shutdown abort them, and terminal task publication waits for workflow settlement. Child processes have a 50 minute wall timeout, 35 minute idle watchdog, SIGTERM grace, SIGKILL wait, process-group kill on POSIX, bounded stdout/stderr, and cleanup-error propagation.
 

@@ -1,5 +1,5 @@
 import { createHash, randomBytes as nodeRandomBytes } from 'node:crypto';
-import { canonicalJson } from '../attested-pi-run.js';
+import { canonicalJson } from '../canonical-json.js';
 import { parseJsonText } from '../common.js';
 import { FUSION_BUDGET_POLICY, FusionBudget } from './budget.js';
 import { assertChildOutputWithinContract } from './output-contract.js';
@@ -841,6 +841,7 @@ export class FusionOrchestrator {
       const mergePrompt = buildMergePrompt(mergeInput);
       budget.assertStagePrompt('merge', profile.mergerSystemPrompt, mergePrompt);
       input.onProgress?.({ type: 'merge_started' });
+      // Stage policy, not caller input: evaluator and merger are always reasoning-only.
       const merged = await this.runChildWithRetry(
         input,
         store,
@@ -850,7 +851,6 @@ export class FusionOrchestrator {
         profile.mergerSystemPrompt,
         mergePrompt,
         input.signal ?? new AbortController().signal,
-        // Stage policy, not caller input: evaluator and merger are always reasoning-only.
         FUSION_NO_TOOLS_CAPABILITY,
         undefined,
         'md',
@@ -1144,6 +1144,7 @@ export class FusionOrchestrator {
     const systemPrompt = repair
       ? profile.evaluationRepairSystemPrompt
       : profile.evaluatorSystemPrompt;
+    // Stage policy, not caller input: evaluator and merger are always reasoning-only.
     const result = await this.runChildWithRetry(
       input,
       store,
@@ -1153,7 +1154,6 @@ export class FusionOrchestrator {
       systemPrompt,
       prompt,
       input.signal ?? new AbortController().signal,
-      // Stage policy, not caller input: evaluator and merger are always reasoning-only.
       FUSION_NO_TOOLS_CAPABILITY,
       undefined,
       'txt',

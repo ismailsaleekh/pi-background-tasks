@@ -1,0 +1,413 @@
+[benchmark final-source] round 1/30 delegate-facade-import
+[benchmark final-source] round 1/30 fusion-facade-import
+[benchmark final-source] round 1/30 sdk-no-extension-load
+[benchmark final-source] round 1/30 sdk-process-only-load
+[benchmark final-source] round 1/30 sdk-default-load
+[benchmark final-source] round 1/30 delegate-first
+[benchmark final-source] round 1/30 fusion-first
+[benchmark final-source] round 1/30 model-selector-first
+[benchmark final-source] round 2/30 model-selector-first
+[benchmark final-source] round 2/30 fusion-first
+[benchmark final-source] round 2/30 delegate-first
+[benchmark final-source] round 2/30 sdk-default-load
+[benchmark final-source] round 2/30 sdk-process-only-load
+[benchmark final-source] round 2/30 sdk-no-extension-load
+[benchmark final-source] round 2/30 fusion-facade-import
+[benchmark final-source] round 2/30 delegate-facade-import
+[benchmark final-source] round 3/30 delegate-facade-import
+[benchmark final-source] round 3/30 fusion-facade-import
+[benchmark final-source] round 3/30 sdk-no-extension-load
+[benchmark final-source] round 3/30 sdk-process-only-load
+[benchmark final-source] round 3/30 sdk-default-load
+[benchmark final-source] round 3/30 delegate-first
+[benchmark final-source] round 3/30 fusion-first
+[benchmark final-source] round 3/30 model-selector-first
+[benchmark final-source] round 4/30 model-selector-first
+[benchmark final-source] round 4/30 fusion-first
+[benchmark final-source] round 4/30 delegate-first
+[benchmark final-source] round 4/30 sdk-default-load
+[benchmark final-source] round 4/30 sdk-process-only-load
+[benchmark final-source] round 4/30 sdk-no-extension-load
+[benchmark final-source] round 4/30 fusion-facade-import
+[benchmark final-source] round 4/30 delegate-facade-import
+[benchmark final-source] round 5/30 delegate-facade-import
+[benchmark final-source] round 5/30 fusion-facade-import
+[benchmark final-source] round 5/30 sdk-no-extension-load
+[benchmark final-source] round 5/30 sdk-process-only-load
+[benchmark final-source] round 5/30 sdk-default-load
+[benchmark final-source] round 5/30 delegate-first
+[benchmark final-source] round 5/30 fusion-first
+[benchmark final-source] round 5/30 model-selector-first
+[benchmark final-source] round 6/30 model-selector-first
+[benchmark final-source] round 6/30 fusion-first
+[benchmark final-source] round 6/30 delegate-first
+[benchmark final-source] round 6/30 sdk-default-load
+[benchmark final-source] round 6/30 sdk-process-only-load
+[benchmark final-source] round 6/30 sdk-no-extension-load
+[benchmark final-source] round 6/30 fusion-facade-import
+[benchmark final-source] round 6/30 delegate-facade-import
+[benchmark final-source] round 7/30 delegate-facade-import
+[benchmark final-source] round 7/30 fusion-facade-import
+[benchmark final-source] round 7/30 sdk-no-extension-load
+[benchmark final-source] round 7/30 sdk-process-only-load
+[benchmark final-source] round 7/30 sdk-default-load
+[benchmark final-source] round 7/30 delegate-first
+[benchmark final-source] round 7/30 fusion-first
+[benchmark final-source] round 7/30 model-selector-first
+[benchmark final-source] round 8/30 model-selector-first
+[benchmark final-source] round 8/30 fusion-first
+[benchmark final-source] round 8/30 delegate-first
+[benchmark final-source] round 8/30 sdk-default-load
+[benchmark final-source] round 8/30 sdk-process-only-load
+[benchmark final-source] round 8/30 sdk-no-extension-load
+[benchmark final-source] round 8/30 fusion-facade-import
+[benchmark final-source] round 8/30 delegate-facade-import
+[benchmark final-source] round 9/30 delegate-facade-import
+[benchmark final-source] round 9/30 fusion-facade-import
+[benchmark final-source] round 9/30 sdk-no-extension-load
+[benchmark final-source] round 9/30 sdk-process-only-load
+[benchmark final-source] round 9/30 sdk-default-load
+[benchmark final-source] round 9/30 delegate-first
+[benchmark final-source] round 9/30 fusion-first
+[benchmark final-source] round 9/30 model-selector-first
+[benchmark final-source] round 10/30 model-selector-first
+[benchmark final-source] round 10/30 fusion-first
+[benchmark final-source] round 10/30 delegate-first
+[benchmark final-source] round 10/30 sdk-default-load
+[benchmark final-source] round 10/30 sdk-process-only-load
+[benchmark final-source] round 10/30 sdk-no-extension-load
+[benchmark final-source] round 10/30 fusion-facade-import
+[benchmark final-source] round 10/30 delegate-facade-import
+[benchmark final-source] round 11/30 delegate-facade-import
+[benchmark final-source] round 11/30 fusion-facade-import
+[benchmark final-source] round 11/30 sdk-no-extension-load
+[benchmark final-source] round 11/30 sdk-process-only-load
+[benchmark final-source] round 11/30 sdk-default-load
+[benchmark final-source] round 11/30 delegate-first
+[benchmark final-source] round 11/30 fusion-first
+[benchmark final-source] round 11/30 model-selector-first
+[benchmark final-source] round 12/30 model-selector-first
+[benchmark final-source] round 12/30 fusion-first
+[benchmark final-source] round 12/30 delegate-first
+[benchmark final-source] round 12/30 sdk-default-load
+[benchmark final-source] round 12/30 sdk-process-only-load
+[benchmark final-source] round 12/30 sdk-no-extension-load
+[benchmark final-source] round 12/30 fusion-facade-import
+[benchmark final-source] round 12/30 delegate-facade-import
+[benchmark final-source] round 13/30 delegate-facade-import
+[benchmark final-source] round 13/30 fusion-facade-import
+[benchmark final-source] round 13/30 sdk-no-extension-load
+[benchmark final-source] round 13/30 sdk-process-only-load
+[benchmark final-source] round 13/30 sdk-default-load
+[benchmark final-source] round 13/30 delegate-first
+[benchmark final-source] round 13/30 fusion-first
+[benchmark final-source] round 13/30 model-selector-first
+[benchmark final-source] round 14/30 model-selector-first
+[benchmark final-source] round 14/30 fusion-first
+[benchmark final-source] round 14/30 delegate-first
+[benchmark final-source] round 14/30 sdk-default-load
+[benchmark final-source] round 14/30 sdk-process-only-load
+[benchmark final-source] round 14/30 sdk-no-extension-load
+[benchmark final-source] round 14/30 fusion-facade-import
+[benchmark final-source] round 14/30 delegate-facade-import
+[benchmark final-source] round 15/30 delegate-facade-import
+[benchmark final-source] round 15/30 fusion-facade-import
+[benchmark final-source] round 15/30 sdk-no-extension-load
+[benchmark final-source] round 15/30 sdk-process-only-load
+[benchmark final-source] round 15/30 sdk-default-load
+[benchmark final-source] round 15/30 delegate-first
+[benchmark final-source] round 15/30 fusion-first
+[benchmark final-source] round 15/30 model-selector-first
+[benchmark final-source] round 16/30 model-selector-first
+[benchmark final-source] round 16/30 fusion-first
+[benchmark final-source] round 16/30 delegate-first
+[benchmark final-source] round 16/30 sdk-default-load
+[benchmark final-source] round 16/30 sdk-process-only-load
+[benchmark final-source] round 16/30 sdk-no-extension-load
+[benchmark final-source] round 16/30 fusion-facade-import
+[benchmark final-source] round 16/30 delegate-facade-import
+[benchmark final-source] round 17/30 delegate-facade-import
+[benchmark final-source] round 17/30 fusion-facade-import
+[benchmark final-source] round 17/30 sdk-no-extension-load
+[benchmark final-source] round 17/30 sdk-process-only-load
+[benchmark final-source] round 17/30 sdk-default-load
+[benchmark final-source] round 17/30 delegate-first
+[benchmark final-source] round 17/30 fusion-first
+[benchmark final-source] round 17/30 model-selector-first
+[benchmark final-source] round 18/30 model-selector-first
+[benchmark final-source] round 18/30 fusion-first
+[benchmark final-source] round 18/30 delegate-first
+[benchmark final-source] round 18/30 sdk-default-load
+[benchmark final-source] round 18/30 sdk-process-only-load
+[benchmark final-source] round 18/30 sdk-no-extension-load
+[benchmark final-source] round 18/30 fusion-facade-import
+[benchmark final-source] round 18/30 delegate-facade-import
+[benchmark final-source] round 19/30 delegate-facade-import
+[benchmark final-source] round 19/30 fusion-facade-import
+[benchmark final-source] round 19/30 sdk-no-extension-load
+[benchmark final-source] round 19/30 sdk-process-only-load
+[benchmark final-source] round 19/30 sdk-default-load
+[benchmark final-source] round 19/30 delegate-first
+[benchmark final-source] round 19/30 fusion-first
+[benchmark final-source] round 19/30 model-selector-first
+[benchmark final-source] round 20/30 model-selector-first
+[benchmark final-source] round 20/30 fusion-first
+[benchmark final-source] round 20/30 delegate-first
+[benchmark final-source] round 20/30 sdk-default-load
+[benchmark final-source] round 20/30 sdk-process-only-load
+[benchmark final-source] round 20/30 sdk-no-extension-load
+[benchmark final-source] round 20/30 fusion-facade-import
+[benchmark final-source] round 20/30 delegate-facade-import
+[benchmark final-source] round 21/30 delegate-facade-import
+[benchmark final-source] round 21/30 fusion-facade-import
+[benchmark final-source] round 21/30 sdk-no-extension-load
+[benchmark final-source] round 21/30 sdk-process-only-load
+[benchmark final-source] round 21/30 sdk-default-load
+[benchmark final-source] round 21/30 delegate-first
+[benchmark final-source] round 21/30 fusion-first
+[benchmark final-source] round 21/30 model-selector-first
+[benchmark final-source] round 22/30 model-selector-first
+[benchmark final-source] round 22/30 fusion-first
+[benchmark final-source] round 22/30 delegate-first
+[benchmark final-source] round 22/30 sdk-default-load
+[benchmark final-source] round 22/30 sdk-process-only-load
+[benchmark final-source] round 22/30 sdk-no-extension-load
+[benchmark final-source] round 22/30 fusion-facade-import
+[benchmark final-source] round 22/30 delegate-facade-import
+[benchmark final-source] round 23/30 delegate-facade-import
+[benchmark final-source] round 23/30 fusion-facade-import
+[benchmark final-source] round 23/30 sdk-no-extension-load
+[benchmark final-source] round 23/30 sdk-process-only-load
+[benchmark final-source] round 23/30 sdk-default-load
+[benchmark final-source] round 23/30 delegate-first
+[benchmark final-source] round 23/30 fusion-first
+[benchmark final-source] round 23/30 model-selector-first
+[benchmark final-source] round 24/30 model-selector-first
+[benchmark final-source] round 24/30 fusion-first
+[benchmark final-source] round 24/30 delegate-first
+[benchmark final-source] round 24/30 sdk-default-load
+[benchmark final-source] round 24/30 sdk-process-only-load
+[benchmark final-source] round 24/30 sdk-no-extension-load
+[benchmark final-source] round 24/30 fusion-facade-import
+[benchmark final-source] round 24/30 delegate-facade-import
+[benchmark final-source] round 25/30 delegate-facade-import
+[benchmark final-source] round 25/30 fusion-facade-import
+[benchmark final-source] round 25/30 sdk-no-extension-load
+[benchmark final-source] round 25/30 sdk-process-only-load
+[benchmark final-source] round 25/30 sdk-default-load
+[benchmark final-source] round 25/30 delegate-first
+[benchmark final-source] round 25/30 fusion-first
+[benchmark final-source] round 25/30 model-selector-first
+[benchmark final-source] round 26/30 model-selector-first
+[benchmark final-source] round 26/30 fusion-first
+[benchmark final-source] round 26/30 delegate-first
+[benchmark final-source] round 26/30 sdk-default-load
+[benchmark final-source] round 26/30 sdk-process-only-load
+[benchmark final-source] round 26/30 sdk-no-extension-load
+[benchmark final-source] round 26/30 fusion-facade-import
+[benchmark final-source] round 26/30 delegate-facade-import
+[benchmark final-source] round 27/30 delegate-facade-import
+[benchmark final-source] round 27/30 fusion-facade-import
+[benchmark final-source] round 27/30 sdk-no-extension-load
+[benchmark final-source] round 27/30 sdk-process-only-load
+[benchmark final-source] round 27/30 sdk-default-load
+[benchmark final-source] round 27/30 delegate-first
+[benchmark final-source] round 27/30 fusion-first
+[benchmark final-source] round 27/30 model-selector-first
+[benchmark final-source] round 28/30 model-selector-first
+[benchmark final-source] round 28/30 fusion-first
+[benchmark final-source] round 28/30 delegate-first
+[benchmark final-source] round 28/30 sdk-default-load
+[benchmark final-source] round 28/30 sdk-process-only-load
+[benchmark final-source] round 28/30 sdk-no-extension-load
+[benchmark final-source] round 28/30 fusion-facade-import
+[benchmark final-source] round 28/30 delegate-facade-import
+[benchmark final-source] round 29/30 delegate-facade-import
+[benchmark final-source] round 29/30 fusion-facade-import
+[benchmark final-source] round 29/30 sdk-no-extension-load
+[benchmark final-source] round 29/30 sdk-process-only-load
+[benchmark final-source] round 29/30 sdk-default-load
+[benchmark final-source] round 29/30 delegate-first
+[benchmark final-source] round 29/30 fusion-first
+[benchmark final-source] round 29/30 model-selector-first
+[benchmark final-source] round 30/30 model-selector-first
+[benchmark final-source] round 30/30 fusion-first
+[benchmark final-source] round 30/30 delegate-first
+[benchmark final-source] round 30/30 sdk-default-load
+[benchmark final-source] round 30/30 sdk-process-only-load
+[benchmark final-source] round 30/30 sdk-no-extension-load
+[benchmark final-source] round 30/30 fusion-facade-import
+[benchmark final-source] round 30/30 delegate-facade-import
+{
+  "output": "/private/tmp/pi-bg-closeout-iNoltL/final-benchmark/source.json",
+  "scenarios": {
+    "delegate-facade-import": {
+      "facade_import_ms": {
+        "count": 30,
+        "median_ms": 509.4922295,
+        "p90_ms": 650.95125,
+        "mad_ms": 6.275792000000024,
+        "min_ms": 499.9715,
+        "max_ms": 992.607959
+      }
+    },
+    "fusion-facade-import": {
+      "facade_import_ms": {
+        "count": 30,
+        "median_ms": 586.4184585,
+        "p90_ms": 653.6535,
+        "mad_ms": 59.352645499999994,
+        "min_ms": 504.763334,
+        "max_ms": 837.88325
+      }
+    },
+    "sdk-no-extension-load": {
+      "package_load_ms": {
+        "count": 30,
+        "median_ms": 0.939333,
+        "p90_ms": 1.353416,
+        "mad_ms": 0.02604149999999994,
+        "min_ms": 0.904209,
+        "max_ms": 2.025833
+      },
+      "sdk_import_ms": {
+        "count": 30,
+        "median_ms": 412.1582295,
+        "p90_ms": 498.449792,
+        "mad_ms": 4.837729499999995,
+        "min_ms": 404.191125,
+        "max_ms": 608.030917
+      }
+    },
+    "sdk-process-only-load": {
+      "package_load_ms": {
+        "count": 30,
+        "median_ms": 71.5697085,
+        "p90_ms": 78.442458,
+        "mad_ms": 3.523687500000001,
+        "min_ms": 60.96525,
+        "max_ms": 141.675166
+      },
+      "sdk_import_ms": {
+        "count": 30,
+        "median_ms": 414.7128335,
+        "p90_ms": 453.530208,
+        "mad_ms": 7.2158330000000035,
+        "min_ms": 404.054208,
+        "max_ms": 541.857125
+      }
+    },
+    "sdk-default-load": {
+      "package_load_ms": {
+        "count": 30,
+        "median_ms": 124.8706255,
+        "p90_ms": 131.707875,
+        "mad_ms": 2.674208,
+        "min_ms": 112.076375,
+        "max_ms": 145.775375
+      },
+      "sdk_import_ms": {
+        "count": 30,
+        "median_ms": 412.170521,
+        "p90_ms": 440.334917,
+        "mad_ms": 4.366812500000009,
+        "min_ms": 405.232792,
+        "max_ms": 533.864958
+      }
+    },
+    "delegate-first": {
+      "delegate_first_ms": {
+        "count": 30,
+        "median_ms": 149.8746875,
+        "p90_ms": 156.661708,
+        "mad_ms": 2.1486249999999956,
+        "min_ms": 143.159417,
+        "max_ms": 165.010375
+      },
+      "delegate_result_first_ms": {
+        "count": 30,
+        "median_ms": 19.854937999999997,
+        "p90_ms": 21.348958,
+        "mad_ms": 0.8672915000000003,
+        "min_ms": 18.150917,
+        "max_ms": 29.554833
+      },
+      "package_load_ms": {
+        "count": 30,
+        "median_ms": 80.2667085,
+        "p90_ms": 85.751084,
+        "mad_ms": 1.9533955000000063,
+        "min_ms": 71.592375,
+        "max_ms": 299.597875
+      },
+      "sdk_import_ms": {
+        "count": 30,
+        "median_ms": 411.633458,
+        "p90_ms": 446.154917,
+        "mad_ms": 4.083979499999998,
+        "min_ms": 403.950125,
+        "max_ms": 469.594583
+      }
+    },
+    "fusion-first": {
+      "fusion_first_ms": {
+        "count": 30,
+        "median_ms": 195.67775,
+        "p90_ms": 200.995167,
+        "mad_ms": 3.0816879999999998,
+        "min_ms": 186.2685,
+        "max_ms": 300.0095
+      },
+      "fusion_result_first_ms": {
+        "count": 30,
+        "median_ms": 29.590728499999997,
+        "p90_ms": 32.061791,
+        "mad_ms": 0.9054784999999974,
+        "min_ms": 27.4665,
+        "max_ms": 35.060875
+      },
+      "package_load_ms": {
+        "count": 30,
+        "median_ms": 115.831042,
+        "p90_ms": 121.537458,
+        "mad_ms": 2.522103999999999,
+        "min_ms": 106.905708,
+        "max_ms": 138.631417
+      },
+      "sdk_import_ms": {
+        "count": 30,
+        "median_ms": 409.713333,
+        "p90_ms": 421.873584,
+        "mad_ms": 2.6610624999999573,
+        "min_ms": 404.656583,
+        "max_ms": 562.8365
+      }
+    },
+    "model-selector-first": {
+      "model_selector_first_ms": {
+        "count": 30,
+        "median_ms": 19.670667,
+        "p90_ms": 21.631625,
+        "mad_ms": 0.6772920000000013,
+        "min_ms": 18.238042,
+        "max_ms": 25.510709
+      },
+      "package_load_ms": {
+        "count": 30,
+        "median_ms": 117.115021,
+        "p90_ms": 130.126,
+        "mad_ms": 3.467479499999996,
+        "min_ms": 111.450375,
+        "max_ms": 180.445542
+      },
+      "sdk_import_ms": {
+        "count": 30,
+        "median_ms": 413.851354,
+        "p90_ms": 481.035334,
+        "mad_ms": 5.845771000000013,
+        "min_ms": 403.999667,
+        "max_ms": 614.555958
+      }
+    }
+  }
+}

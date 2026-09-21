@@ -1,0 +1,5 @@
+
+> pi-background-tasks@2.5.0 docs:verify
+> node scripts/docs/verify.mjs
+
+docs-verify: 31 surfaces, 50 sources, deterministic generation OK; attestations advisory.

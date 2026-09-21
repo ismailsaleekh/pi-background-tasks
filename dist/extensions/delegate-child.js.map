@@ -1,0 +1,1 @@
+{"version":3,"file":"delegate-child.js","sourceRoot":"","sources":["../../extensions/delegate-child.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,OAAO,EAAE,MAAM,oCAAoC,CAAC","sourcesContent":["export { default } from '../src/delegate-child-extension.js';\n"]}

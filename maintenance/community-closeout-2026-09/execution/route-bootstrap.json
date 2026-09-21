@@ -1,0 +1,10 @@
+{
+  "provider": "openai-codex",
+  "model": "gpt-5.6-sol",
+  "api": "openai-codex-responses",
+  "authType": "oauth",
+  "thinkingRequested": "max",
+  "thinkingWireValue": "max",
+  "endpointOrigin": "https://chatgpt.com",
+  "networkModelCalls": 0
+}

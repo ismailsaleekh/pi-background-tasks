@@ -16,9 +16,11 @@ import {
   SettingsManager,
   type AgentSession,
   type EventBus,
+  type ExtensionAPI,
   type ExtensionUIContext,
 } from '@earendil-works/pi-coding-agent';
 import { parseJsonText, type BgTaskSnapshot, type TaskStatus } from '../../src/core/common.js';
+import { BackgroundTaskRegistry } from '../../src/core/registry.js';
 import {
   BG_EXTENSION_CAPABILITIES,
   BG_REQUEST_CHANNEL,
@@ -31,6 +33,7 @@ import {
   type BackgroundTaskExtensionTerminal,
 } from '../../src/core/extension-api.js';
 import { parsePackageInfo } from '../../src/core/update-check.js';
+import backgroundTasksExtension from '../../src/extension.js';
 
 const extensionPath = resolve('extensions/background-tasks.ts');
 const scriptedProviderPath = resolve('tests/scripted-provider/scripted-provider-extension.ts');
@@ -102,6 +105,16 @@ async function harness(options: SdkHarnessOptions = {}) {
 }
 
 type JsonObject = Record<PropertyKey, unknown>;
+
+function deferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (error: unknown) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+}
 
 interface TestToolContent {
   type: string;
@@ -804,6 +817,162 @@ void describe('sdk', () => {
       unsubscribeResponseOrder();
       await session.extensionRunner.emit({ type: 'session_shutdown', reason: 'quit' });
       session.dispose();
+    }
+  });
+
+  void it('uses AgentSession.reload() to invalidate old runners and bind fresh EventBus activations', async () => {
+    const eventBus = createEventBus();
+    const responses: BackgroundTaskExtensionResponse[] = [];
+    const terminals: BgTaskSnapshot[] = [];
+    const unsubscribeResponses = eventBus.on(BG_RESPONSE_CHANNEL, (data) => {
+      responses.push(requireEventResponse(data));
+    });
+    const unsubscribeTerminals = eventBus.on(BG_TERMINAL_CHANNEL, (data) => {
+      terminals.push(requireTerminal(data).task);
+    });
+    const { session } = await harness({ eventBus });
+    let bound = false;
+    try {
+      await session.bindExtensions({ onError: () => undefined });
+      bound = true;
+      for (let cycle = 1; cycle <= 2; cycle++) {
+        const oldRunner = session.extensionRunner;
+        const oldContext = oldRunner.createContext();
+        const runningRequestId = `real-reload-${String(cycle)}-running`;
+        const running = await emitEventRequest(eventBus, runningRequestId, 'run', {
+          name: `Real Reload Running ${String(cycle)}`,
+          command: `node -e ${JSON.stringify('setTimeout(() => {}, 10000)')}`,
+          isAgent: false,
+          notifyOnCompletion: false,
+          triggerOnCompletion: false,
+        });
+        const runningTask = requiredTask(requireOkResult(running), 'real reload running task');
+        assert.equal(runningTask.status, 'running');
+
+        await session.reload();
+        assert.notEqual(session.extensionRunner, oldRunner, 'reload must install a fresh runner');
+        assert.throws(() => oldContext.cwd, /stale after session replacement or reload/u);
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        assert.equal(
+          terminals.filter((task) => task.id === runningTask.id).length,
+          0,
+          'reload-killed tasks must not publish on the disposed activation',
+        );
+
+        const quickRequestId = `real-reload-${String(cycle)}-quick`;
+        const quick = await emitEventRequest(eventBus, quickRequestId, 'run', {
+          name: `Real Reload Quick ${String(cycle)}`,
+          command: 'echo reload-ok',
+          isAgent: false,
+          notifyOnCompletion: false,
+          triggerOnCompletion: false,
+        });
+        const quickTask = requiredTask(requireOkResult(quick), 'real reload quick task');
+        await waitForTerminalSnapshot(terminals, quickTask.id);
+        assert.equal(
+          responses.filter((response) => response.request_id === quickRequestId).length,
+          1,
+          'only the freshly bound activation may answer after reload',
+        );
+        assert.equal(
+          terminals.filter((task) => task.id === quickTask.id).length,
+          1,
+          'the fresh activation must publish exactly one ordinary terminal',
+        );
+      }
+    } finally {
+      unsubscribeTerminals();
+      unsubscribeResponses();
+      if (bound) {
+        await session.extensionRunner.emit({ type: 'session_shutdown', reason: 'quit' });
+      }
+      session.dispose();
+    }
+  });
+
+  void it('keeps an overlapping late session_start continuation from recreating status resources', async () => {
+    type LifecycleHandler = (event: Record<string, unknown>, ctx: JsonObject) => unknown;
+    const root = await mkdtemp(join(tmpdir(), 'pi-bg-late-session-start-'));
+    roots.push(root);
+    const cwd = join(root, 'project');
+    await mkdir(cwd, { recursive: true });
+    const handlers = new Map<string, LifecycleHandler[]>();
+    const pi: ExtensionAPI = Object.assign(Object.create(null), {
+      events: createEventBus(),
+      on(name: string, handler: LifecycleHandler) {
+        const registered = handlers.get(name) ?? [];
+        registered.push(handler);
+        handlers.set(name, registered);
+        return () => undefined;
+      },
+      registerTool() {},
+      registerCommand() {},
+      registerShortcut() {},
+      registerMessageRenderer() {},
+      sendMessage() {},
+      getThinkingLevel() {
+        return 'off';
+      },
+      getActiveTools() {
+        return [];
+      },
+      setActiveTools() {},
+    });
+    const ctx: JsonObject = {
+      cwd,
+      sessionManager: { getSessionId: () => 'late-session-start' },
+      modelRegistry: { getAll: () => [] },
+      model: undefined,
+      hasUI: false,
+      mode: 'print',
+      ui: { setStatus() {}, setWidget() {}, notify() {} },
+    };
+    const dispatch = async (name: string, event: Record<string, unknown>): Promise<void> => {
+      for (const handler of [...(handlers.get(name) ?? [])]) await handler(event, ctx);
+    };
+    await backgroundTasksExtension(pi);
+
+    const originalEnsureRuntimeDir = BackgroundTaskRegistry.prototype.ensureRuntimeDir;
+    const enteredEnsure = deferred<void>();
+    const releaseEnsure = deferred<void>();
+    const activeIntervals = new Set<ReturnType<typeof setInterval>>();
+    const realSetInterval = globalThis.setInterval;
+    const realClearInterval = globalThis.clearInterval;
+    globalThis.setInterval = ((...args: Parameters<typeof setInterval>) => {
+      const handle = realSetInterval(...args);
+      activeIntervals.add(handle);
+      return handle;
+    }) as typeof setInterval;
+    globalThis.clearInterval = ((handle?: ReturnType<typeof setInterval>) => {
+      if (handle !== undefined) activeIntervals.delete(handle);
+      return realClearInterval(handle);
+    }) as typeof clearInterval;
+    BackgroundTaskRegistry.prototype.ensureRuntimeDir = async function (context) {
+      enteredEnsure.resolve(undefined);
+      await releaseEnsure.promise;
+      return originalEnsureRuntimeDir.call(this, context);
+    };
+
+    try {
+      const start = dispatch('session_start', { type: 'session_start', reason: 'startup' });
+      await enteredEnsure.promise;
+      await dispatch('session_shutdown', { type: 'session_shutdown', reason: 'reload' });
+      assert.equal(activeIntervals.size, 0, 'shutdown must clear all pre-existing intervals');
+
+      releaseEnsure.resolve(undefined);
+      await start;
+      assert.equal(
+        activeIntervals.size,
+        0,
+        'the old session_start continuation must not create a post-shutdown interval',
+      );
+    } finally {
+      releaseEnsure.resolve(undefined);
+      for (const handle of activeIntervals) realClearInterval(handle);
+      activeIntervals.clear();
+      BackgroundTaskRegistry.prototype.ensureRuntimeDir = originalEnsureRuntimeDir;
+      globalThis.setInterval = realSetInterval;
+      globalThis.clearInterval = realClearInterval;
     }
   });
 
@@ -1590,10 +1759,7 @@ console.log(JSON.stringify({ type: "message_end", message: secondMessage }));
       const message = notifications.at(-1)?.message ?? '';
       assert.match(message, /pi install npm:pi-background-tasks@latest/);
       assert.match(message, /pi install npm:pi-background-tasks@999\.0\.0/);
-      assert.match(
-        message,
-        /pi install git:github\.com\/ismailsaleekh\/pi-background-tasks@main/,
-      );
+      assert.match(message, /pi install git:github\.com\/ismailsaleekh\/pi-background-tasks@main/);
       assert.match(message, /first verify the tag exists/);
       assert.doesNotMatch(message, /pi-background-tasks@v999\.0\.0/);
       assert.match(message, /999\.0\.0 is the latest published version/);

@@ -1,0 +1,15 @@
+124 |             id
+125 |           FROM cacheInterceptorV${VERSION2}
+126 |           ORDER BY cachedAt ASC
+127 |           LIMIT ?
+128 |         )
+129 |       `)}close(){this.#db.close()}get(key){assertCacheKey(key);let value2=this.#findValue(key);return value2?{body:value2.body?Buffer.from(value2.body.buffer,value2.body.byteOffset,value2.body.byteLength):void 0,statusCode:value2.statusCode,statusMessage:value2.statusMessage,headers:value2.headers?JSON.parse(value2.headers):void 0,etag:value2.etag?value2.etag:void 0,vary:value2.vary?JSON.parse(value2.vary):void 0,cacheControlDirectives:value2.cacheControlDirectives?JSON.parse(value2.cacheControlDirectives):void 0,cachedAt:value2.cachedAt,staleAt:value2.staleAt,deleteAt:value2.deleteAt}:void 0}set(key,value2){assertCacheKey(key);let url=this.#makeValueUrl(key),body=Array.isArray(value2.body)?Buffer.concat(value2.body):value2.body,size=body?.byteLength;if(size&&size>this.#maxEntrySize)return;let existingValue=this.#findValue(key,!0);existingValue?this.#updateValueQuery.run(body,value2.deleteAt,value2.statusCode,value2.statusMessage,value2.headers?JSON.stringify(value2.headers):null,value2.etag?value2.etag:null,
+
+TypeError: webidl.util.markAsUncloneable is not a function. (In 'webidl.util.markAsUncloneable(this)', 'webidl.util.markAsUncloneable' is undefined)
+      at new _CacheStorage (/usr/local/lib/node_modules/@earendil-works/pi-coding-agent/dist/bundle/chunks/chunk-7YM6BE7Y.js:129:85426)
+      at node_modules/undici/index.js (/usr/local/lib/node_modules/@earendil-works/pi-coding-agent/dist/bundle/chunks/chunk-7YM6BE7Y.js:133:726)
+      at <anonymous> (/usr/local/lib/node_modules/@earendil-works/pi-coding-agent/dist/bundle/chunks/chunk-4L3WN2XY.js:2:733)
+      at /usr/local/lib/node_modules/@earendil-works/pi-coding-agent/dist/bundle/chunks/chunk-7YM6BE7Y.js:272:22089
+      at loadAndEvaluateModule (2:1)
+
+Bun v1.3.4 (macOS arm64)

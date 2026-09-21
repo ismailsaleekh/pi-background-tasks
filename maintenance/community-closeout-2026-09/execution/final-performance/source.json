@@ -1,0 +1,4359 @@
+{
+  "schema_version": "pi-background-tasks.cold-load-benchmark.v1",
+  "provenance": {
+    "label": "final-source",
+    "recorded_at": "2026-09-20T17:57:57.231Z",
+    "package_root": "/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks",
+    "package_name": "pi-background-tasks",
+    "package_version": "2.5.0",
+    "source_commit": "5d0ad28fc1132c9611ec42d7f602bfaebd097520",
+    "source_tree": "f1f4cd25acb4e0463fb22dc12b82e4194be762eb",
+    "source_status": "clean",
+    "runtime": "source",
+    "source_format": "authoritative TypeScript source loaded through Pi/Jiti",
+    "package_entrypoints": [
+      "./extensions/anthropic-attribution.ts",
+      "./extensions/background-tasks.ts"
+    ],
+    "features": {
+      "sdk-no-extension-load": "(no package entrypoint)",
+      "sdk-process-only-load": "process",
+      "sdk-default-load": "process,delegate,fusion,attested,attribution",
+      "delegate-first": "process,delegate",
+      "fusion-first": "process,fusion",
+      "model-selector-first": "process,fusion"
+    },
+    "cold_definition": "fresh Node process and empty JS/Jiti module cache; host filesystem cache not flushed",
+    "node": "v24.16.0",
+    "npm": "11.13.0",
+    "package_pi": "0.84.0",
+    "host_pi": "0.86.0",
+    "os": {
+      "type": "Darwin",
+      "platform": "darwin",
+      "release": "24.6.0",
+      "arch": "arm64"
+    },
+    "sample_count": 30,
+    "excluded_warmups": 1,
+    "ordering": "scenario order reverses every round; baseline and candidate are sequential, not simultaneous AB/BA",
+    "limitations": [
+      "No filesystem-cache flush; this is process/module-cache cold only.",
+      "Baseline and candidate are sequential because no third worktree/copy is permitted; host drift remains possible.",
+      "No native Windows result and no compiled-Bun executable result.",
+      "Compiled measurements still use Pi/Jiti to load JavaScript and do not represent a vendor Bun binary."
+    ]
+  },
+  "scenarios": {
+    "delegate-facade-import": {
+      "statistics": {
+        "facade_import_ms": {
+          "count": 30,
+          "median_ms": 509.4922295,
+          "p90_ms": 650.95125,
+          "mad_ms": 6.275792000000024,
+          "min_ms": 499.9715,
+          "max_ms": 992.607959
+        }
+      },
+      "raw": [
+        {
+          "round": 0,
+          "metrics": {
+            "facade_import_ms": 551.170292
+          },
+          "facts": {
+            "exported_registrars": [
+              "registerDelegateExtension",
+              "registerBackgroundResultExtension"
+            ]
+          }
+        },
+        {
+          "round": 1,
+          "metrics": {
+            "facade_import_ms": 992.607959
+          },
+          "facts": {
+            "exported_registrars": [
+              "registerDelegateExtension",
+              "registerBackgroundResultExtension"
+            ]
+          }
+        },
+        {
+          "round": 2,
+          "metrics": {
+            "facade_import_ms": 610.049584
+          },
+          "facts": {
+            "exported_registrars": [
+              "registerDelegateExtension",
+              "registerBackgroundResultExtension"
+            ]
+          }
+        },
+        {
+          "round": 3,
+          "metrics": {
+            "facade_import_ms": 506.659541
+          },
+          "facts": {
+            "exported_registrars": [
+              "registerDelegateExtension",
+              "registerBackgroundResultExtension"
+            ]
+          }
+        },
+        {
+          "round": 4,
+          "metrics": {
+            "facade_import_ms": 513.477125
+          },
+          "facts": {
+            "exported_registrars": [
+              "registerDelegateExtension",
+              "registerBackgroundResultExtension"
+            ]
+          }
+        },
+        {
+          "round": 5,
+          "metrics": {
+            "facade_import_ms": 499.9715
+          },
+          "facts": {
+            "exported_registrars": [
+              "registerDelegateExtension",
+              "registerBackgroundResultExtension"
+            ]
+          }
+        },
+        {
+          "round": 6,
+          "metrics": {
+            "facade_import_ms": 503.652208
+          },
+          "facts": {
+            "exported_registrars": [
+              "registerDelegateExtension",
+              "registerBackgroundResultExtension"
+            ]
+          }
+        },
+        {
+          "round": 7,
+          "metrics": {
+            "facade_import_ms": 527.052291
+          },
+          "facts": {
+            "exported_registrars": [
+              "registerDelegateExtension",
+              "registerBackgroundResultExtension"
+            ]
+          }
+        },
+        {
+          "round": 8,
+          "metrics": {
+            "facade_import_ms": 508.942584
+          },
+          "facts": {
+            "exported_registrars": [
+              "registerDelegateExtension",
+              "registerBackgroundResultExtension"
+            ]
+          }
+        },
+        {
+          "round": 9,
+          "metrics": {
+            "facade_import_ms": 548.025958
+          },
+          "facts": {
+            "exported_registrars": [
+              "registerDelegateExtension",
+              "registerBackgroundResultExtension"
+            ]
+          }
+        },
+        {
+          "round": 10,
+          "metrics": {
+            "facade_import_ms": 512.950208
+          },
+          "facts": {
+            "exported_registrars": [
+              "registerDelegateExtension",
+              "registerBackgroundResultExtension"
+            ]
+          }
+        },
+        {
+          "round": 11,
+          "metrics": {
+            "facade_import_ms": 508.792959
+          },
+          "facts": {
+            "exported_registrars": [
+              "registerDelegateExtension",
+              "registerBackgroundResultExtension"
+            ]
+          }
+        },
+        {
+          "round": 12,
+          "metrics": {
+            "facade_import_ms": 506.89875
+          },
+          "facts": {
+            "exported_registrars": [
+              "registerDelegateExtension",
+              "registerBackgroundResultExtension"
+            ]
+          }
+        },
+        {
+          "round": 13,
+          "metrics": {
+            "facade_import_ms": 502.780667
+          },
+          "facts": {
+            "exported_registrars": [
+              "registerDelegateExtension",
+              "registerBackgroundResultExtension"
+            ]
+          }
+        },
+        {
+          "round": 14,
+          "metrics": {
+            "facade_import_ms": 756.792167
+          },
+          "facts": {
+            "exported_registrars": [
+              "registerDelegateExtension",
+              "registerBackgroundResultExtension"
+            ]
+          }
+        },
+        {
+          "round": 15,
+          "metrics": {
+            "facade_import_ms": 507.476333
+          },
+          "facts": {
+            "exported_registrars": [
+              "registerDelegateExtension",
+              "registerBackgroundResultExtension"
+            ]
+          }
+        },
+        {
+          "round": 16,
+          "metrics": {
+            "facade_import_ms": 506.632042
+          },
+          "facts": {
+            "exported_registrars": [
+              "registerDelegateExtension",
+              "registerBackgroundResultExtension"
+            ]
+          }
+        },
+        {
+          "round": 17,
+          "metrics": {
+            "facade_import_ms": 508.903041
+          },
+          "facts": {
+            "exported_registrars": [
+              "registerDelegateExtension",
+              "registerBackgroundResultExtension"
+            ]
+          }
+        },
+        {
+          "round": 18,
+          "metrics": {
+            "facade_import_ms": 519.617542
+          },
+          "facts": {
+            "exported_registrars": [
+              "registerDelegateExtension",
+              "registerBackgroundResultExtension"
+            ]
+          }
+        },
+        {
+          "round": 19,
+          "metrics": {
+            "facade_import_ms": 521.339458
+          },
+          "facts": {
+            "exported_registrars": [
+              "registerDelegateExtension",
+              "registerBackgroundResultExtension"
+            ]
+          }
+        },
+        {
+          "round": 20,
+          "metrics": {
+            "facade_import_ms": 510.041875
+          },
+          "facts": {
+            "exported_registrars": [
+              "registerDelegateExtension",
+              "registerBackgroundResultExtension"
+            ]
+          }
+        },
+        {
+          "round": 21,
+          "metrics": {
+            "facade_import_ms": 529.643041
+          },
+          "facts": {
+            "exported_registrars": [
+              "registerDelegateExtension",
+              "registerBackgroundResultExtension"
+            ]
+          }
+        },
+        {
+          "round": 22,
+          "metrics": {
+            "facade_import_ms": 504.441125
+          },
+          "facts": {
+            "exported_registrars": [
+              "registerDelegateExtension",
+              "registerBackgroundResultExtension"
+            ]
+          }
+        },
+        {
+          "round": 23,
+          "metrics": {
+            "facade_import_ms": 650.95125
+          },
+          "facts": {
+            "exported_registrars": [
+              "registerDelegateExtension",
+              "registerBackgroundResultExtension"
+            ]
+          }
+        },
+        {
+          "round": 24,
+          "metrics": {
+            "facade_import_ms": 699.904792
+          },
+          "facts": {
+            "exported_registrars": [
+              "registerDelegateExtension",
+              "registerBackgroundResultExtension"
+            ]
+          }
+        },
+        {
+          "round": 25,
+          "metrics": {
+            "facade_import_ms": 508.68025
+          },
+          "facts": {
+            "exported_registrars": [
+              "registerDelegateExtension",
+              "registerBackgroundResultExtension"
+            ]
+          }
+        },
+        {
+          "round": 26,
+          "metrics": {
+            "facade_import_ms": 507.9915
+          },
+          "facts": {
+            "exported_registrars": [
+              "registerDelegateExtension",
+              "registerBackgroundResultExtension"
+            ]
+          }
+        },
+        {
+          "round": 27,
+          "metrics": {
+            "facade_import_ms": 500.664709
+          },
+          "facts": {
+            "exported_registrars": [
+              "registerDelegateExtension",
+              "registerBackgroundResultExtension"
+            ]
+          }
+        },
+        {
+          "round": 28,
+          "metrics": {
+            "facade_import_ms": 504.769833
+          },
+          "facts": {
+            "exported_registrars": [
+              "registerDelegateExtension",
+              "registerBackgroundResultExtension"
+            ]
+          }
+        },
+        {
+          "round": 29,
+          "metrics": {
+            "facade_import_ms": 571.027167
+          },
+          "facts": {
+            "exported_registrars": [
+              "registerDelegateExtension",
+              "registerBackgroundResultExtension"
+            ]
+          }
+        }
+      ]
+    },
+    "fusion-facade-import": {
+      "statistics": {
+        "facade_import_ms": {
+          "count": 30,
+          "median_ms": 586.4184585,
+          "p90_ms": 653.6535,
+          "mad_ms": 59.352645499999994,
+          "min_ms": 504.763334,
+          "max_ms": 837.88325
+        }
+      },
+      "raw": [
+        {
+          "round": 0,
+          "metrics": {
+            "facade_import_ms": 547.816542
+          },
+          "facts": {
+            "exported_registrar": true
+          }
+        },
+        {
+          "round": 1,
+          "metrics": {
+            "facade_import_ms": 837.88325
+          },
+          "facts": {
+            "exported_registrar": true
+          }
+        },
+        {
+          "round": 2,
+          "metrics": {
+            "facade_import_ms": 653.6535
+          },
+          "facts": {
+            "exported_registrar": true
+          }
+        },
+        {
+          "round": 3,
+          "metrics": {
+            "facade_import_ms": 585.599
+          },
+          "facts": {
+            "exported_registrar": true
+          }
+        },
+        {
+          "round": 4,
+          "metrics": {
+            "facade_import_ms": 514.005416
+          },
+          "facts": {
+            "exported_registrar": true
+          }
+        },
+        {
+          "round": 5,
+          "metrics": {
+            "facade_import_ms": 621.222042
+          },
+          "facts": {
+            "exported_registrar": true
+          }
+        },
+        {
+          "round": 6,
+          "metrics": {
+            "facade_import_ms": 518.513792
+          },
+          "facts": {
+            "exported_registrar": true
+          }
+        },
+        {
+          "round": 7,
+          "metrics": {
+            "facade_import_ms": 615.925042
+          },
+          "facts": {
+            "exported_registrar": true
+          }
+        },
+        {
+          "round": 8,
+          "metrics": {
+            "facade_import_ms": 513.340125
+          },
+          "facts": {
+            "exported_registrar": true
+          }
+        },
+        {
+          "round": 9,
+          "metrics": {
+            "facade_import_ms": 593.414458
+          },
+          "facts": {
+            "exported_registrar": true
+          }
+        },
+        {
+          "round": 10,
+          "metrics": {
+            "facade_import_ms": 527.174292
+          },
+          "facts": {
+            "exported_registrar": true
+          }
+        },
+        {
+          "round": 11,
+          "metrics": {
+            "facade_import_ms": 587.237917
+          },
+          "facts": {
+            "exported_registrar": true
+          }
+        },
+        {
+          "round": 12,
+          "metrics": {
+            "facade_import_ms": 535.635834
+          },
+          "facts": {
+            "exported_registrar": true
+          }
+        },
+        {
+          "round": 13,
+          "metrics": {
+            "facade_import_ms": 645.879583
+          },
+          "facts": {
+            "exported_registrar": true
+          }
+        },
+        {
+          "round": 14,
+          "metrics": {
+            "facade_import_ms": 559.587333
+          },
+          "facts": {
+            "exported_registrar": true
+          }
+        },
+        {
+          "round": 15,
+          "metrics": {
+            "facade_import_ms": 588.597125
+          },
+          "facts": {
+            "exported_registrar": true
+          }
+        },
+        {
+          "round": 16,
+          "metrics": {
+            "facade_import_ms": 510.88925
+          },
+          "facts": {
+            "exported_registrar": true
+          }
+        },
+        {
+          "round": 17,
+          "metrics": {
+            "facade_import_ms": 604.743292
+          },
+          "facts": {
+            "exported_registrar": true
+          }
+        },
+        {
+          "round": 18,
+          "metrics": {
+            "facade_import_ms": 506.955334
+          },
+          "facts": {
+            "exported_registrar": true
+          }
+        },
+        {
+          "round": 19,
+          "metrics": {
+            "facade_import_ms": 592.153209
+          },
+          "facts": {
+            "exported_registrar": true
+          }
+        },
+        {
+          "round": 20,
+          "metrics": {
+            "facade_import_ms": 524.689833
+          },
+          "facts": {
+            "exported_registrar": true
+          }
+        },
+        {
+          "round": 21,
+          "metrics": {
+            "facade_import_ms": 602.788291
+          },
+          "facts": {
+            "exported_registrar": true
+          }
+        },
+        {
+          "round": 22,
+          "metrics": {
+            "facade_import_ms": 517.806833
+          },
+          "facts": {
+            "exported_registrar": true
+          }
+        },
+        {
+          "round": 23,
+          "metrics": {
+            "facade_import_ms": 794.581917
+          },
+          "facts": {
+            "exported_registrar": true
+          }
+        },
+        {
+          "round": 24,
+          "metrics": {
+            "facade_import_ms": 521.934083
+          },
+          "facts": {
+            "exported_registrar": true
+          }
+        },
+        {
+          "round": 25,
+          "metrics": {
+            "facade_import_ms": 591.083042
+          },
+          "facts": {
+            "exported_registrar": true
+          }
+        },
+        {
+          "round": 26,
+          "metrics": {
+            "facade_import_ms": 515.445875
+          },
+          "facts": {
+            "exported_registrar": true
+          }
+        },
+        {
+          "round": 27,
+          "metrics": {
+            "facade_import_ms": 594.8995
+          },
+          "facts": {
+            "exported_registrar": true
+          }
+        },
+        {
+          "round": 28,
+          "metrics": {
+            "facade_import_ms": 504.763334
+          },
+          "facts": {
+            "exported_registrar": true
+          }
+        },
+        {
+          "round": 29,
+          "metrics": {
+            "facade_import_ms": 702.294708
+          },
+          "facts": {
+            "exported_registrar": true
+          }
+        }
+      ]
+    },
+    "sdk-no-extension-load": {
+      "statistics": {
+        "package_load_ms": {
+          "count": 30,
+          "median_ms": 0.939333,
+          "p90_ms": 1.353416,
+          "mad_ms": 0.02604149999999994,
+          "min_ms": 0.904209,
+          "max_ms": 2.025833
+        },
+        "sdk_import_ms": {
+          "count": 30,
+          "median_ms": 412.1582295,
+          "p90_ms": 498.449792,
+          "mad_ms": 4.837729499999995,
+          "min_ms": 404.191125,
+          "max_ms": 608.030917
+        }
+      },
+      "raw": [
+        {
+          "round": 0,
+          "metrics": {
+            "sdk_import_ms": 419.694417,
+            "package_load_ms": 1.265375
+          },
+          "facts": {
+            "tools": [],
+            "commands": [],
+            "renderers": []
+          }
+        },
+        {
+          "round": 1,
+          "metrics": {
+            "sdk_import_ms": 489.45025,
+            "package_load_ms": 1.353416
+          },
+          "facts": {
+            "tools": [],
+            "commands": [],
+            "renderers": []
+          }
+        },
+        {
+          "round": 2,
+          "metrics": {
+            "sdk_import_ms": 453.432083,
+            "package_load_ms": 0.913625
+          },
+          "facts": {
+            "tools": [],
+            "commands": [],
+            "renderers": []
+          }
+        },
+        {
+          "round": 3,
+          "metrics": {
+            "sdk_import_ms": 406.025666,
+            "package_load_ms": 0.924792
+          },
+          "facts": {
+            "tools": [],
+            "commands": [],
+            "renderers": []
+          }
+        },
+        {
+          "round": 4,
+          "metrics": {
+            "sdk_import_ms": 418.125666,
+            "package_load_ms": 0.969833
+          },
+          "facts": {
+            "tools": [],
+            "commands": [],
+            "renderers": []
+          }
+        },
+        {
+          "round": 5,
+          "metrics": {
+            "sdk_import_ms": 414.501375,
+            "package_load_ms": 0.941458
+          },
+          "facts": {
+            "tools": [],
+            "commands": [],
+            "renderers": []
+          }
+        },
+        {
+          "round": 6,
+          "metrics": {
+            "sdk_import_ms": 408.378375,
+            "package_load_ms": 0.927416
+          },
+          "facts": {
+            "tools": [],
+            "commands": [],
+            "renderers": []
+          }
+        },
+        {
+          "round": 7,
+          "metrics": {
+            "sdk_import_ms": 498.449792,
+            "package_load_ms": 0.907958
+          },
+          "facts": {
+            "tools": [],
+            "commands": [],
+            "renderers": []
+          }
+        },
+        {
+          "round": 8,
+          "metrics": {
+            "sdk_import_ms": 412.009542,
+            "package_load_ms": 0.970542
+          },
+          "facts": {
+            "tools": [],
+            "commands": [],
+            "renderers": []
+          }
+        },
+        {
+          "round": 9,
+          "metrics": {
+            "sdk_import_ms": 411.687333,
+            "package_load_ms": 0.926917
+          },
+          "facts": {
+            "tools": [],
+            "commands": [],
+            "renderers": []
+          }
+        },
+        {
+          "round": 10,
+          "metrics": {
+            "sdk_import_ms": 404.191125,
+            "package_load_ms": 0.918083
+          },
+          "facts": {
+            "tools": [],
+            "commands": [],
+            "renderers": []
+          }
+        },
+        {
+          "round": 11,
+          "metrics": {
+            "sdk_import_ms": 409.867875,
+            "package_load_ms": 0.912958
+          },
+          "facts": {
+            "tools": [],
+            "commands": [],
+            "renderers": []
+          }
+        },
+        {
+          "round": 12,
+          "metrics": {
+            "sdk_import_ms": 408.64825,
+            "package_load_ms": 0.9085
+          },
+          "facts": {
+            "tools": [],
+            "commands": [],
+            "renderers": []
+          }
+        },
+        {
+          "round": 13,
+          "metrics": {
+            "sdk_import_ms": 412.306917,
+            "package_load_ms": 0.926
+          },
+          "facts": {
+            "tools": [],
+            "commands": [],
+            "renderers": []
+          }
+        },
+        {
+          "round": 14,
+          "metrics": {
+            "sdk_import_ms": 608.030917,
+            "package_load_ms": 1.468458
+          },
+          "facts": {
+            "tools": [],
+            "commands": [],
+            "renderers": []
+          }
+        },
+        {
+          "round": 15,
+          "metrics": {
+            "sdk_import_ms": 410.152417,
+            "package_load_ms": 0.929125
+          },
+          "facts": {
+            "tools": [],
+            "commands": [],
+            "renderers": []
+          }
+        },
+        {
+          "round": 16,
+          "metrics": {
+            "sdk_import_ms": 411.837166,
+            "package_load_ms": 0.917416
+          },
+          "facts": {
+            "tools": [],
+            "commands": [],
+            "renderers": []
+          }
+        },
+        {
+          "round": 17,
+          "metrics": {
+            "sdk_import_ms": 410.151875,
+            "package_load_ms": 0.939333
+          },
+          "facts": {
+            "tools": [],
+            "commands": [],
+            "renderers": []
+          }
+        },
+        {
+          "round": 18,
+          "metrics": {
+            "sdk_import_ms": 490.246541,
+            "package_load_ms": 1.487583
+          },
+          "facts": {
+            "tools": [],
+            "commands": [],
+            "renderers": []
+          }
+        },
+        {
+          "round": 19,
+          "metrics": {
+            "sdk_import_ms": 414.105583,
+            "package_load_ms": 0.941209
+          },
+          "facts": {
+            "tools": [],
+            "commands": [],
+            "renderers": []
+          }
+        },
+        {
+          "round": 20,
+          "metrics": {
+            "sdk_import_ms": 427.633708,
+            "package_load_ms": 0.962917
+          },
+          "facts": {
+            "tools": [],
+            "commands": [],
+            "renderers": []
+          }
+        },
+        {
+          "round": 21,
+          "metrics": {
+            "sdk_import_ms": 409.666,
+            "package_load_ms": 1.043125
+          },
+          "facts": {
+            "tools": [],
+            "commands": [],
+            "renderers": []
+          }
+        },
+        {
+          "round": 22,
+          "metrics": {
+            "sdk_import_ms": 406.041625,
+            "package_load_ms": 0.937666
+          },
+          "facts": {
+            "tools": [],
+            "commands": [],
+            "renderers": []
+          }
+        },
+        {
+          "round": 23,
+          "metrics": {
+            "sdk_import_ms": 530.381333,
+            "package_load_ms": 2.025833
+          },
+          "facts": {
+            "tools": [],
+            "commands": [],
+            "renderers": []
+          }
+        },
+        {
+          "round": 24,
+          "metrics": {
+            "sdk_import_ms": 504.339709,
+            "package_load_ms": 0.939333
+          },
+          "facts": {
+            "tools": [],
+            "commands": [],
+            "renderers": []
+          }
+        },
+        {
+          "round": 25,
+          "metrics": {
+            "sdk_import_ms": 415.720542,
+            "package_load_ms": 0.977667
+          },
+          "facts": {
+            "tools": [],
+            "commands": [],
+            "renderers": []
+          }
+        },
+        {
+          "round": 26,
+          "metrics": {
+            "sdk_import_ms": 406.262625,
+            "package_load_ms": 0.904209
+          },
+          "facts": {
+            "tools": [],
+            "commands": [],
+            "renderers": []
+          }
+        },
+        {
+          "round": 27,
+          "metrics": {
+            "sdk_import_ms": 420.958833,
+            "package_load_ms": 0.948833
+          },
+          "facts": {
+            "tools": [],
+            "commands": [],
+            "renderers": []
+          }
+        },
+        {
+          "round": 28,
+          "metrics": {
+            "sdk_import_ms": 409.918667,
+            "package_load_ms": 0.909208
+          },
+          "facts": {
+            "tools": [],
+            "commands": [],
+            "renderers": []
+          }
+        },
+        {
+          "round": 29,
+          "metrics": {
+            "sdk_import_ms": 411.135833,
+            "package_load_ms": 0.977667
+          },
+          "facts": {
+            "tools": [],
+            "commands": [],
+            "renderers": []
+          }
+        }
+      ]
+    },
+    "sdk-process-only-load": {
+      "statistics": {
+        "package_load_ms": {
+          "count": 30,
+          "median_ms": 71.5697085,
+          "p90_ms": 78.442458,
+          "mad_ms": 3.523687500000001,
+          "min_ms": 60.96525,
+          "max_ms": 141.675166
+        },
+        "sdk_import_ms": {
+          "count": 30,
+          "median_ms": 414.7128335,
+          "p90_ms": 453.530208,
+          "mad_ms": 7.2158330000000035,
+          "min_ms": 404.054208,
+          "max_ms": 541.857125
+        }
+      },
+      "raw": [
+        {
+          "round": 0,
+          "metrics": {
+            "sdk_import_ms": 487.115709,
+            "package_load_ms": 67.269083
+          },
+          "facts": {
+            "tools": [
+              "bg_kill",
+              "bg_logs",
+              "bg_run",
+              "bg_status"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification"
+            ]
+          }
+        },
+        {
+          "round": 1,
+          "metrics": {
+            "sdk_import_ms": 423.339792,
+            "package_load_ms": 69.942292
+          },
+          "facts": {
+            "tools": [
+              "bg_kill",
+              "bg_logs",
+              "bg_run",
+              "bg_status"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification"
+            ]
+          }
+        },
+        {
+          "round": 2,
+          "metrics": {
+            "sdk_import_ms": 451.659209,
+            "package_load_ms": 77.990458
+          },
+          "facts": {
+            "tools": [
+              "bg_kill",
+              "bg_logs",
+              "bg_run",
+              "bg_status"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification"
+            ]
+          }
+        },
+        {
+          "round": 3,
+          "metrics": {
+            "sdk_import_ms": 407.276917,
+            "package_load_ms": 71.473875
+          },
+          "facts": {
+            "tools": [
+              "bg_kill",
+              "bg_logs",
+              "bg_run",
+              "bg_status"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification"
+            ]
+          }
+        },
+        {
+          "round": 4,
+          "metrics": {
+            "sdk_import_ms": 409.790375,
+            "package_load_ms": 72.700292
+          },
+          "facts": {
+            "tools": [
+              "bg_kill",
+              "bg_logs",
+              "bg_run",
+              "bg_status"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification"
+            ]
+          }
+        },
+        {
+          "round": 5,
+          "metrics": {
+            "sdk_import_ms": 407.528959,
+            "package_load_ms": 73.618959
+          },
+          "facts": {
+            "tools": [
+              "bg_kill",
+              "bg_logs",
+              "bg_run",
+              "bg_status"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification"
+            ]
+          }
+        },
+        {
+          "round": 6,
+          "metrics": {
+            "sdk_import_ms": 409.553458,
+            "package_load_ms": 141.675166
+          },
+          "facts": {
+            "tools": [
+              "bg_kill",
+              "bg_logs",
+              "bg_run",
+              "bg_status"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification"
+            ]
+          }
+        },
+        {
+          "round": 7,
+          "metrics": {
+            "sdk_import_ms": 407.500042,
+            "package_load_ms": 66.309125
+          },
+          "facts": {
+            "tools": [
+              "bg_kill",
+              "bg_logs",
+              "bg_run",
+              "bg_status"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification"
+            ]
+          }
+        },
+        {
+          "round": 8,
+          "metrics": {
+            "sdk_import_ms": 417.975291,
+            "package_load_ms": 68.675042
+          },
+          "facts": {
+            "tools": [
+              "bg_kill",
+              "bg_logs",
+              "bg_run",
+              "bg_status"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification"
+            ]
+          }
+        },
+        {
+          "round": 9,
+          "metrics": {
+            "sdk_import_ms": 421.710208,
+            "package_load_ms": 70.530417
+          },
+          "facts": {
+            "tools": [
+              "bg_kill",
+              "bg_logs",
+              "bg_run",
+              "bg_status"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification"
+            ]
+          }
+        },
+        {
+          "round": 10,
+          "metrics": {
+            "sdk_import_ms": 410.358875,
+            "package_load_ms": 69.946458
+          },
+          "facts": {
+            "tools": [
+              "bg_kill",
+              "bg_logs",
+              "bg_run",
+              "bg_status"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification"
+            ]
+          }
+        },
+        {
+          "round": 11,
+          "metrics": {
+            "sdk_import_ms": 405.994708,
+            "package_load_ms": 71.306167
+          },
+          "facts": {
+            "tools": [
+              "bg_kill",
+              "bg_logs",
+              "bg_run",
+              "bg_status"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification"
+            ]
+          }
+        },
+        {
+          "round": 12,
+          "metrics": {
+            "sdk_import_ms": 407.207542,
+            "package_load_ms": 66.151583
+          },
+          "facts": {
+            "tools": [
+              "bg_kill",
+              "bg_logs",
+              "bg_run",
+              "bg_status"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification"
+            ]
+          }
+        },
+        {
+          "round": 13,
+          "metrics": {
+            "sdk_import_ms": 416.703667,
+            "package_load_ms": 70.567375
+          },
+          "facts": {
+            "tools": [
+              "bg_kill",
+              "bg_logs",
+              "bg_run",
+              "bg_status"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification"
+            ]
+          }
+        },
+        {
+          "round": 14,
+          "metrics": {
+            "sdk_import_ms": 541.857125,
+            "package_load_ms": 78.442458
+          },
+          "facts": {
+            "tools": [
+              "bg_kill",
+              "bg_logs",
+              "bg_run",
+              "bg_status"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification"
+            ]
+          }
+        },
+        {
+          "round": 15,
+          "metrics": {
+            "sdk_import_ms": 422.092792,
+            "package_load_ms": 62.832542
+          },
+          "facts": {
+            "tools": [
+              "bg_kill",
+              "bg_logs",
+              "bg_run",
+              "bg_status"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification"
+            ]
+          }
+        },
+        {
+          "round": 16,
+          "metrics": {
+            "sdk_import_ms": 421.931708,
+            "package_load_ms": 76.378
+          },
+          "facts": {
+            "tools": [
+              "bg_kill",
+              "bg_logs",
+              "bg_run",
+              "bg_status"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification"
+            ]
+          }
+        },
+        {
+          "round": 17,
+          "metrics": {
+            "sdk_import_ms": 409.336625,
+            "package_load_ms": 72.062375
+          },
+          "facts": {
+            "tools": [
+              "bg_kill",
+              "bg_logs",
+              "bg_run",
+              "bg_status"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification"
+            ]
+          }
+        },
+        {
+          "round": 18,
+          "metrics": {
+            "sdk_import_ms": 463.45625,
+            "package_load_ms": 77.931417
+          },
+          "facts": {
+            "tools": [
+              "bg_kill",
+              "bg_logs",
+              "bg_run",
+              "bg_status"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification"
+            ]
+          }
+        },
+        {
+          "round": 19,
+          "metrics": {
+            "sdk_import_ms": 404.054208,
+            "package_load_ms": 72.79425
+          },
+          "facts": {
+            "tools": [
+              "bg_kill",
+              "bg_logs",
+              "bg_run",
+              "bg_status"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification"
+            ]
+          }
+        },
+        {
+          "round": 20,
+          "metrics": {
+            "sdk_import_ms": 416.950583,
+            "package_load_ms": 72.337291
+          },
+          "facts": {
+            "tools": [
+              "bg_kill",
+              "bg_logs",
+              "bg_run",
+              "bg_status"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification"
+            ]
+          }
+        },
+        {
+          "round": 21,
+          "metrics": {
+            "sdk_import_ms": 417.005208,
+            "package_load_ms": 79.213667
+          },
+          "facts": {
+            "tools": [
+              "bg_kill",
+              "bg_logs",
+              "bg_run",
+              "bg_status"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification"
+            ]
+          }
+        },
+        {
+          "round": 22,
+          "metrics": {
+            "sdk_import_ms": 411.962167,
+            "package_load_ms": 71.665542
+          },
+          "facts": {
+            "tools": [
+              "bg_kill",
+              "bg_logs",
+              "bg_run",
+              "bg_status"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification"
+            ]
+          }
+        },
+        {
+          "round": 23,
+          "metrics": {
+            "sdk_import_ms": 453.530208,
+            "package_load_ms": 78.601
+          },
+          "facts": {
+            "tools": [
+              "bg_kill",
+              "bg_logs",
+              "bg_run",
+              "bg_status"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification"
+            ]
+          }
+        },
+        {
+          "round": 24,
+          "metrics": {
+            "sdk_import_ms": 412.722,
+            "package_load_ms": 71.734209
+          },
+          "facts": {
+            "tools": [
+              "bg_kill",
+              "bg_logs",
+              "bg_run",
+              "bg_status"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification"
+            ]
+          }
+        },
+        {
+          "round": 25,
+          "metrics": {
+            "sdk_import_ms": 406.990125,
+            "package_load_ms": 67.417
+          },
+          "facts": {
+            "tools": [
+              "bg_kill",
+              "bg_logs",
+              "bg_run",
+              "bg_status"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification"
+            ]
+          }
+        },
+        {
+          "round": 26,
+          "metrics": {
+            "sdk_import_ms": 423.62125,
+            "package_load_ms": 60.96525
+          },
+          "facts": {
+            "tools": [
+              "bg_kill",
+              "bg_logs",
+              "bg_run",
+              "bg_status"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification"
+            ]
+          }
+        },
+        {
+          "round": 27,
+          "metrics": {
+            "sdk_import_ms": 412.039167,
+            "package_load_ms": 70.31275
+          },
+          "facts": {
+            "tools": [
+              "bg_kill",
+              "bg_logs",
+              "bg_run",
+              "bg_status"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification"
+            ]
+          }
+        },
+        {
+          "round": 28,
+          "metrics": {
+            "sdk_import_ms": 447.973834,
+            "package_load_ms": 76.322209
+          },
+          "facts": {
+            "tools": [
+              "bg_kill",
+              "bg_logs",
+              "bg_run",
+              "bg_status"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification"
+            ]
+          }
+        },
+        {
+          "round": 29,
+          "metrics": {
+            "sdk_import_ms": 411.950125,
+            "package_load_ms": 66.8405
+          },
+          "facts": {
+            "tools": [
+              "bg_kill",
+              "bg_logs",
+              "bg_run",
+              "bg_status"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification"
+            ]
+          }
+        }
+      ]
+    },
+    "sdk-default-load": {
+      "statistics": {
+        "package_load_ms": {
+          "count": 30,
+          "median_ms": 124.8706255,
+          "p90_ms": 131.707875,
+          "mad_ms": 2.674208,
+          "min_ms": 112.076375,
+          "max_ms": 145.775375
+        },
+        "sdk_import_ms": {
+          "count": 30,
+          "median_ms": 412.170521,
+          "p90_ms": 440.334917,
+          "mad_ms": 4.366812500000009,
+          "min_ms": 405.232792,
+          "max_ms": 533.864958
+        }
+      },
+      "raw": [
+        {
+          "round": 0,
+          "metrics": {
+            "sdk_import_ms": 410.553125,
+            "package_load_ms": 119.649583
+          },
+          "facts": {
+            "tools": [
+              "bg_delegate",
+              "bg_kill",
+              "bg_logs",
+              "bg_result",
+              "bg_run",
+              "bg_run_pi_attested",
+              "bg_status",
+              "fusion_investigate",
+              "fusion_reason",
+              "fusion_research",
+              "fusion_validate"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "fusion",
+              "fusion-models",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification",
+              "fusion-result"
+            ]
+          }
+        },
+        {
+          "round": 1,
+          "metrics": {
+            "sdk_import_ms": 457.803083,
+            "package_load_ms": 123.72575
+          },
+          "facts": {
+            "tools": [
+              "bg_delegate",
+              "bg_kill",
+              "bg_logs",
+              "bg_result",
+              "bg_run",
+              "bg_run_pi_attested",
+              "bg_status",
+              "fusion_investigate",
+              "fusion_reason",
+              "fusion_research",
+              "fusion_validate"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "fusion",
+              "fusion-models",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification",
+              "fusion-result"
+            ]
+          }
+        },
+        {
+          "round": 2,
+          "metrics": {
+            "sdk_import_ms": 440.334917,
+            "package_load_ms": 126.687291
+          },
+          "facts": {
+            "tools": [
+              "bg_delegate",
+              "bg_kill",
+              "bg_logs",
+              "bg_result",
+              "bg_run",
+              "bg_run_pi_attested",
+              "bg_status",
+              "fusion_investigate",
+              "fusion_reason",
+              "fusion_research",
+              "fusion_validate"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "fusion",
+              "fusion-models",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification",
+              "fusion-result"
+            ]
+          }
+        },
+        {
+          "round": 3,
+          "metrics": {
+            "sdk_import_ms": 408.150458,
+            "package_load_ms": 124.433542
+          },
+          "facts": {
+            "tools": [
+              "bg_delegate",
+              "bg_kill",
+              "bg_logs",
+              "bg_result",
+              "bg_run",
+              "bg_run_pi_attested",
+              "bg_status",
+              "fusion_investigate",
+              "fusion_reason",
+              "fusion_research",
+              "fusion_validate"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "fusion",
+              "fusion-models",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification",
+              "fusion-result"
+            ]
+          }
+        },
+        {
+          "round": 4,
+          "metrics": {
+            "sdk_import_ms": 412.718167,
+            "package_load_ms": 125.833208
+          },
+          "facts": {
+            "tools": [
+              "bg_delegate",
+              "bg_kill",
+              "bg_logs",
+              "bg_result",
+              "bg_run",
+              "bg_run_pi_attested",
+              "bg_status",
+              "fusion_investigate",
+              "fusion_reason",
+              "fusion_research",
+              "fusion_validate"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "fusion",
+              "fusion-models",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification",
+              "fusion-result"
+            ]
+          }
+        },
+        {
+          "round": 5,
+          "metrics": {
+            "sdk_import_ms": 415.752708,
+            "package_load_ms": 135.502042
+          },
+          "facts": {
+            "tools": [
+              "bg_delegate",
+              "bg_kill",
+              "bg_logs",
+              "bg_result",
+              "bg_run",
+              "bg_run_pi_attested",
+              "bg_status",
+              "fusion_investigate",
+              "fusion_reason",
+              "fusion_research",
+              "fusion_validate"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "fusion",
+              "fusion-models",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification",
+              "fusion-result"
+            ]
+          }
+        },
+        {
+          "round": 6,
+          "metrics": {
+            "sdk_import_ms": 422.851167,
+            "package_load_ms": 125.307709
+          },
+          "facts": {
+            "tools": [
+              "bg_delegate",
+              "bg_kill",
+              "bg_logs",
+              "bg_result",
+              "bg_run",
+              "bg_run_pi_attested",
+              "bg_status",
+              "fusion_investigate",
+              "fusion_reason",
+              "fusion_research",
+              "fusion_validate"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "fusion",
+              "fusion-models",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification",
+              "fusion-result"
+            ]
+          }
+        },
+        {
+          "round": 7,
+          "metrics": {
+            "sdk_import_ms": 406.856667,
+            "package_load_ms": 118.05275
+          },
+          "facts": {
+            "tools": [
+              "bg_delegate",
+              "bg_kill",
+              "bg_logs",
+              "bg_result",
+              "bg_run",
+              "bg_run_pi_attested",
+              "bg_status",
+              "fusion_investigate",
+              "fusion_reason",
+              "fusion_research",
+              "fusion_validate"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "fusion",
+              "fusion-models",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification",
+              "fusion-result"
+            ]
+          }
+        },
+        {
+          "round": 8,
+          "metrics": {
+            "sdk_import_ms": 413.360917,
+            "package_load_ms": 124.345791
+          },
+          "facts": {
+            "tools": [
+              "bg_delegate",
+              "bg_kill",
+              "bg_logs",
+              "bg_result",
+              "bg_run",
+              "bg_run_pi_attested",
+              "bg_status",
+              "fusion_investigate",
+              "fusion_reason",
+              "fusion_research",
+              "fusion_validate"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "fusion",
+              "fusion-models",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification",
+              "fusion-result"
+            ]
+          }
+        },
+        {
+          "round": 9,
+          "metrics": {
+            "sdk_import_ms": 411.223292,
+            "package_load_ms": 120.390625
+          },
+          "facts": {
+            "tools": [
+              "bg_delegate",
+              "bg_kill",
+              "bg_logs",
+              "bg_result",
+              "bg_run",
+              "bg_run_pi_attested",
+              "bg_status",
+              "fusion_investigate",
+              "fusion_reason",
+              "fusion_research",
+              "fusion_validate"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "fusion",
+              "fusion-models",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification",
+              "fusion-result"
+            ]
+          }
+        },
+        {
+          "round": 10,
+          "metrics": {
+            "sdk_import_ms": 417.201208,
+            "package_load_ms": 127.291583
+          },
+          "facts": {
+            "tools": [
+              "bg_delegate",
+              "bg_kill",
+              "bg_logs",
+              "bg_result",
+              "bg_run",
+              "bg_run_pi_attested",
+              "bg_status",
+              "fusion_investigate",
+              "fusion_reason",
+              "fusion_research",
+              "fusion_validate"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "fusion",
+              "fusion-models",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification",
+              "fusion-result"
+            ]
+          }
+        },
+        {
+          "round": 11,
+          "metrics": {
+            "sdk_import_ms": 405.232792,
+            "package_load_ms": 121.03925
+          },
+          "facts": {
+            "tools": [
+              "bg_delegate",
+              "bg_kill",
+              "bg_logs",
+              "bg_result",
+              "bg_run",
+              "bg_run_pi_attested",
+              "bg_status",
+              "fusion_investigate",
+              "fusion_reason",
+              "fusion_research",
+              "fusion_validate"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "fusion",
+              "fusion-models",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification",
+              "fusion-result"
+            ]
+          }
+        },
+        {
+          "round": 12,
+          "metrics": {
+            "sdk_import_ms": 408.444666,
+            "package_load_ms": 121.943167
+          },
+          "facts": {
+            "tools": [
+              "bg_delegate",
+              "bg_kill",
+              "bg_logs",
+              "bg_result",
+              "bg_run",
+              "bg_run_pi_attested",
+              "bg_status",
+              "fusion_investigate",
+              "fusion_reason",
+              "fusion_research",
+              "fusion_validate"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "fusion",
+              "fusion-models",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification",
+              "fusion-result"
+            ]
+          }
+        },
+        {
+          "round": 13,
+          "metrics": {
+            "sdk_import_ms": 407.456959,
+            "package_load_ms": 112.076375
+          },
+          "facts": {
+            "tools": [
+              "bg_delegate",
+              "bg_kill",
+              "bg_logs",
+              "bg_result",
+              "bg_run",
+              "bg_run_pi_attested",
+              "bg_status",
+              "fusion_investigate",
+              "fusion_reason",
+              "fusion_research",
+              "fusion_validate"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "fusion",
+              "fusion-models",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification",
+              "fusion-result"
+            ]
+          }
+        },
+        {
+          "round": 14,
+          "metrics": {
+            "sdk_import_ms": 533.864958,
+            "package_load_ms": 145.775375
+          },
+          "facts": {
+            "tools": [
+              "bg_delegate",
+              "bg_kill",
+              "bg_logs",
+              "bg_result",
+              "bg_run",
+              "bg_run_pi_attested",
+              "bg_status",
+              "fusion_investigate",
+              "fusion_reason",
+              "fusion_research",
+              "fusion_validate"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "fusion",
+              "fusion-models",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification",
+              "fusion-result"
+            ]
+          }
+        },
+        {
+          "round": 15,
+          "metrics": {
+            "sdk_import_ms": 429.496708,
+            "package_load_ms": 131.707875
+          },
+          "facts": {
+            "tools": [
+              "bg_delegate",
+              "bg_kill",
+              "bg_logs",
+              "bg_result",
+              "bg_run",
+              "bg_run_pi_attested",
+              "bg_status",
+              "fusion_investigate",
+              "fusion_reason",
+              "fusion_research",
+              "fusion_validate"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "fusion",
+              "fusion-models",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification",
+              "fusion-result"
+            ]
+          }
+        },
+        {
+          "round": 16,
+          "metrics": {
+            "sdk_import_ms": 424.39375,
+            "package_load_ms": 127.258125
+          },
+          "facts": {
+            "tools": [
+              "bg_delegate",
+              "bg_kill",
+              "bg_logs",
+              "bg_result",
+              "bg_run",
+              "bg_run_pi_attested",
+              "bg_status",
+              "fusion_investigate",
+              "fusion_reason",
+              "fusion_research",
+              "fusion_validate"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "fusion",
+              "fusion-models",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification",
+              "fusion-result"
+            ]
+          }
+        },
+        {
+          "round": 17,
+          "metrics": {
+            "sdk_import_ms": 414.473333,
+            "package_load_ms": 126.3935
+          },
+          "facts": {
+            "tools": [
+              "bg_delegate",
+              "bg_kill",
+              "bg_logs",
+              "bg_result",
+              "bg_run",
+              "bg_run_pi_attested",
+              "bg_status",
+              "fusion_investigate",
+              "fusion_reason",
+              "fusion_research",
+              "fusion_validate"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "fusion",
+              "fusion-models",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification",
+              "fusion-result"
+            ]
+          }
+        },
+        {
+          "round": 18,
+          "metrics": {
+            "sdk_import_ms": 425.371041,
+            "package_load_ms": 126.44225
+          },
+          "facts": {
+            "tools": [
+              "bg_delegate",
+              "bg_kill",
+              "bg_logs",
+              "bg_result",
+              "bg_run",
+              "bg_run_pi_attested",
+              "bg_status",
+              "fusion_investigate",
+              "fusion_reason",
+              "fusion_research",
+              "fusion_validate"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "fusion",
+              "fusion-models",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification",
+              "fusion-result"
+            ]
+          }
+        },
+        {
+          "round": 19,
+          "metrics": {
+            "sdk_import_ms": 451.930083,
+            "package_load_ms": 123.3915
+          },
+          "facts": {
+            "tools": [
+              "bg_delegate",
+              "bg_kill",
+              "bg_logs",
+              "bg_result",
+              "bg_run",
+              "bg_run_pi_attested",
+              "bg_status",
+              "fusion_investigate",
+              "fusion_reason",
+              "fusion_research",
+              "fusion_validate"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "fusion",
+              "fusion-models",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification",
+              "fusion-result"
+            ]
+          }
+        },
+        {
+          "round": 20,
+          "metrics": {
+            "sdk_import_ms": 412.29675,
+            "package_load_ms": 126.926458
+          },
+          "facts": {
+            "tools": [
+              "bg_delegate",
+              "bg_kill",
+              "bg_logs",
+              "bg_result",
+              "bg_run",
+              "bg_run_pi_attested",
+              "bg_status",
+              "fusion_investigate",
+              "fusion_reason",
+              "fusion_research",
+              "fusion_validate"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "fusion",
+              "fusion-models",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification",
+              "fusion-result"
+            ]
+          }
+        },
+        {
+          "round": 21,
+          "metrics": {
+            "sdk_import_ms": 410.91325,
+            "package_load_ms": 130.800333
+          },
+          "facts": {
+            "tools": [
+              "bg_delegate",
+              "bg_kill",
+              "bg_logs",
+              "bg_result",
+              "bg_run",
+              "bg_run_pi_attested",
+              "bg_status",
+              "fusion_investigate",
+              "fusion_reason",
+              "fusion_research",
+              "fusion_validate"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "fusion",
+              "fusion-models",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification",
+              "fusion-result"
+            ]
+          }
+        },
+        {
+          "round": 22,
+          "metrics": {
+            "sdk_import_ms": 409.150417,
+            "package_load_ms": 125.874
+          },
+          "facts": {
+            "tools": [
+              "bg_delegate",
+              "bg_kill",
+              "bg_logs",
+              "bg_result",
+              "bg_run",
+              "bg_run_pi_attested",
+              "bg_status",
+              "fusion_investigate",
+              "fusion_reason",
+              "fusion_research",
+              "fusion_validate"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "fusion",
+              "fusion-models",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification",
+              "fusion-result"
+            ]
+          }
+        },
+        {
+          "round": 23,
+          "metrics": {
+            "sdk_import_ms": 410.476708,
+            "package_load_ms": 142.788291
+          },
+          "facts": {
+            "tools": [
+              "bg_delegate",
+              "bg_kill",
+              "bg_logs",
+              "bg_result",
+              "bg_run",
+              "bg_run_pi_attested",
+              "bg_status",
+              "fusion_investigate",
+              "fusion_reason",
+              "fusion_research",
+              "fusion_validate"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "fusion",
+              "fusion-models",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification",
+              "fusion-result"
+            ]
+          }
+        },
+        {
+          "round": 24,
+          "metrics": {
+            "sdk_import_ms": 419.742917,
+            "package_load_ms": 121.777792
+          },
+          "facts": {
+            "tools": [
+              "bg_delegate",
+              "bg_kill",
+              "bg_logs",
+              "bg_result",
+              "bg_run",
+              "bg_run_pi_attested",
+              "bg_status",
+              "fusion_investigate",
+              "fusion_reason",
+              "fusion_research",
+              "fusion_validate"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "fusion",
+              "fusion-models",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification",
+              "fusion-result"
+            ]
+          }
+        },
+        {
+          "round": 25,
+          "metrics": {
+            "sdk_import_ms": 406.751333,
+            "package_load_ms": 121.776334
+          },
+          "facts": {
+            "tools": [
+              "bg_delegate",
+              "bg_kill",
+              "bg_logs",
+              "bg_result",
+              "bg_run",
+              "bg_run_pi_attested",
+              "bg_status",
+              "fusion_investigate",
+              "fusion_reason",
+              "fusion_research",
+              "fusion_validate"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "fusion",
+              "fusion-models",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification",
+              "fusion-result"
+            ]
+          }
+        },
+        {
+          "round": 26,
+          "metrics": {
+            "sdk_import_ms": 405.490333,
+            "package_load_ms": 120.413083
+          },
+          "facts": {
+            "tools": [
+              "bg_delegate",
+              "bg_kill",
+              "bg_logs",
+              "bg_result",
+              "bg_run",
+              "bg_run_pi_attested",
+              "bg_status",
+              "fusion_investigate",
+              "fusion_reason",
+              "fusion_research",
+              "fusion_validate"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "fusion",
+              "fusion-models",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification",
+              "fusion-result"
+            ]
+          }
+        },
+        {
+          "round": 27,
+          "metrics": {
+            "sdk_import_ms": 408.4455,
+            "package_load_ms": 119.369875
+          },
+          "facts": {
+            "tools": [
+              "bg_delegate",
+              "bg_kill",
+              "bg_logs",
+              "bg_result",
+              "bg_run",
+              "bg_run_pi_attested",
+              "bg_status",
+              "fusion_investigate",
+              "fusion_reason",
+              "fusion_research",
+              "fusion_validate"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "fusion",
+              "fusion-models",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification",
+              "fusion-result"
+            ]
+          }
+        },
+        {
+          "round": 28,
+          "metrics": {
+            "sdk_import_ms": 412.044292,
+            "package_load_ms": 125.647
+          },
+          "facts": {
+            "tools": [
+              "bg_delegate",
+              "bg_kill",
+              "bg_logs",
+              "bg_result",
+              "bg_run",
+              "bg_run_pi_attested",
+              "bg_status",
+              "fusion_investigate",
+              "fusion_reason",
+              "fusion_research",
+              "fusion_validate"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "fusion",
+              "fusion-models",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification",
+              "fusion-result"
+            ]
+          }
+        },
+        {
+          "round": 29,
+          "metrics": {
+            "sdk_import_ms": 409.115417,
+            "package_load_ms": 122.514208
+          },
+          "facts": {
+            "tools": [
+              "bg_delegate",
+              "bg_kill",
+              "bg_logs",
+              "bg_result",
+              "bg_run",
+              "bg_run_pi_attested",
+              "bg_status",
+              "fusion_investigate",
+              "fusion_reason",
+              "fusion_research",
+              "fusion_validate"
+            ],
+            "commands": [
+              "bg",
+              "bg-clear",
+              "bg-tasks",
+              "bg-update",
+              "fusion",
+              "fusion-models",
+              "jobs",
+              "kill",
+              "logs",
+              "tasks"
+            ],
+            "renderers": [
+              "background-task-notification",
+              "fusion-result"
+            ]
+          }
+        }
+      ]
+    },
+    "delegate-first": {
+      "statistics": {
+        "delegate_first_ms": {
+          "count": 30,
+          "median_ms": 149.8746875,
+          "p90_ms": 156.661708,
+          "mad_ms": 2.1486249999999956,
+          "min_ms": 143.159417,
+          "max_ms": 165.010375
+        },
+        "delegate_result_first_ms": {
+          "count": 30,
+          "median_ms": 19.854937999999997,
+          "p90_ms": 21.348958,
+          "mad_ms": 0.8672915000000003,
+          "min_ms": 18.150917,
+          "max_ms": 29.554833
+        },
+        "package_load_ms": {
+          "count": 30,
+          "median_ms": 80.2667085,
+          "p90_ms": 85.751084,
+          "mad_ms": 1.9533955000000063,
+          "min_ms": 71.592375,
+          "max_ms": 299.597875
+        },
+        "sdk_import_ms": {
+          "count": 30,
+          "median_ms": 411.633458,
+          "p90_ms": 446.154917,
+          "mad_ms": 4.083979499999998,
+          "min_ms": 403.950125,
+          "max_ms": 469.594583
+        }
+      },
+      "raw": [
+        {
+          "round": 0,
+          "metrics": {
+            "sdk_import_ms": 415.579,
+            "package_load_ms": 128.790834,
+            "delegate_first_ms": 149.953917,
+            "delegate_result_first_ms": 20.896416
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed"
+          }
+        },
+        {
+          "round": 1,
+          "metrics": {
+            "sdk_import_ms": 412.369334,
+            "package_load_ms": 75.713417,
+            "delegate_first_ms": 159.10375,
+            "delegate_result_first_ms": 20.92175
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed"
+          }
+        },
+        {
+          "round": 2,
+          "metrics": {
+            "sdk_import_ms": 430.744958,
+            "package_load_ms": 77.826833,
+            "delegate_first_ms": 156.661708,
+            "delegate_result_first_ms": 19.176375
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed"
+          }
+        },
+        {
+          "round": 3,
+          "metrics": {
+            "sdk_import_ms": 430.322791,
+            "package_load_ms": 81.852542,
+            "delegate_first_ms": 149.795458,
+            "delegate_result_first_ms": 19.127334
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed"
+          }
+        },
+        {
+          "round": 4,
+          "metrics": {
+            "sdk_import_ms": 410.832167,
+            "package_load_ms": 82.240458,
+            "delegate_first_ms": 151.604375,
+            "delegate_result_first_ms": 19.703
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed"
+          }
+        },
+        {
+          "round": 5,
+          "metrics": {
+            "sdk_import_ms": 414.41575,
+            "package_load_ms": 79.686542,
+            "delegate_first_ms": 152.072625,
+            "delegate_result_first_ms": 19.933542
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed"
+          }
+        },
+        {
+          "round": 6,
+          "metrics": {
+            "sdk_import_ms": 416.751583,
+            "package_load_ms": 71.592375,
+            "delegate_first_ms": 156.02725,
+            "delegate_result_first_ms": 19.337083
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed"
+          }
+        },
+        {
+          "round": 7,
+          "metrics": {
+            "sdk_import_ms": 409.845,
+            "package_load_ms": 76.597334,
+            "delegate_first_ms": 146.657292,
+            "delegate_result_first_ms": 18.150917
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed"
+          }
+        },
+        {
+          "round": 8,
+          "metrics": {
+            "sdk_import_ms": 405.124625,
+            "package_load_ms": 79.374334,
+            "delegate_first_ms": 149.37225,
+            "delegate_result_first_ms": 19.693333
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed"
+          }
+        },
+        {
+          "round": 9,
+          "metrics": {
+            "sdk_import_ms": 415.97575,
+            "package_load_ms": 80.832542,
+            "delegate_first_ms": 150.856333,
+            "delegate_result_first_ms": 20.132417
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed"
+          }
+        },
+        {
+          "round": 10,
+          "metrics": {
+            "sdk_import_ms": 411.253916,
+            "package_load_ms": 81.375667,
+            "delegate_first_ms": 150.80475,
+            "delegate_result_first_ms": 20.841708
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed"
+          }
+        },
+        {
+          "round": 11,
+          "metrics": {
+            "sdk_import_ms": 410.423666,
+            "package_load_ms": 84.915542,
+            "delegate_first_ms": 149.184292,
+            "delegate_result_first_ms": 19.588708
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed"
+          }
+        },
+        {
+          "round": 12,
+          "metrics": {
+            "sdk_import_ms": 406.309,
+            "package_load_ms": 83.685042,
+            "delegate_first_ms": 148.880125,
+            "delegate_result_first_ms": 18.668417
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed"
+          }
+        },
+        {
+          "round": 13,
+          "metrics": {
+            "sdk_import_ms": 403.950125,
+            "package_load_ms": 80.219792,
+            "delegate_first_ms": 149.70375,
+            "delegate_result_first_ms": 18.241834
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed"
+          }
+        },
+        {
+          "round": 14,
+          "metrics": {
+            "sdk_import_ms": 446.482167,
+            "package_load_ms": 85.751084,
+            "delegate_first_ms": 165.010375,
+            "delegate_result_first_ms": 20.971417
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed"
+          }
+        },
+        {
+          "round": 15,
+          "metrics": {
+            "sdk_import_ms": 415.855875,
+            "package_load_ms": 77.509166,
+            "delegate_first_ms": 147.406042,
+            "delegate_result_first_ms": 20.042334
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed"
+          }
+        },
+        {
+          "round": 16,
+          "metrics": {
+            "sdk_import_ms": 406.355792,
+            "package_load_ms": 79.895542,
+            "delegate_first_ms": 164.549958,
+            "delegate_result_first_ms": 19.396375
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed"
+          }
+        },
+        {
+          "round": 17,
+          "metrics": {
+            "sdk_import_ms": 409.51025,
+            "package_load_ms": 76.569125,
+            "delegate_first_ms": 147.386709,
+            "delegate_result_first_ms": 18.459208
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed"
+          }
+        },
+        {
+          "round": 18,
+          "metrics": {
+            "sdk_import_ms": 408.4195,
+            "package_load_ms": 81.342208,
+            "delegate_first_ms": 154.760791,
+            "delegate_result_first_ms": 20.666583
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed"
+          }
+        },
+        {
+          "round": 19,
+          "metrics": {
+            "sdk_import_ms": 411.466041,
+            "package_load_ms": 107.265834,
+            "delegate_first_ms": 143.159417,
+            "delegate_result_first_ms": 21.54975
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed"
+          }
+        },
+        {
+          "round": 20,
+          "metrics": {
+            "sdk_import_ms": 409.1305,
+            "package_load_ms": 79.790791,
+            "delegate_first_ms": 151.974,
+            "delegate_result_first_ms": 19.776334
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed"
+          }
+        },
+        {
+          "round": 21,
+          "metrics": {
+            "sdk_import_ms": 418.834583,
+            "package_load_ms": 79.350916,
+            "delegate_first_ms": 146.942416,
+            "delegate_result_first_ms": 21.905084
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed"
+          }
+        },
+        {
+          "round": 22,
+          "metrics": {
+            "sdk_import_ms": 446.648458,
+            "package_load_ms": 299.597875,
+            "delegate_first_ms": 151.508042,
+            "delegate_result_first_ms": 19.743416
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed"
+          }
+        },
+        {
+          "round": 23,
+          "metrics": {
+            "sdk_import_ms": 469.594583,
+            "package_load_ms": 82.19975,
+            "delegate_first_ms": 148.431833,
+            "delegate_result_first_ms": 19.641708
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed"
+          }
+        },
+        {
+          "round": 24,
+          "metrics": {
+            "sdk_import_ms": 411.800875,
+            "package_load_ms": 79.914959,
+            "delegate_first_ms": 151.840125,
+            "delegate_result_first_ms": 29.554833
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed"
+          }
+        },
+        {
+          "round": 25,
+          "metrics": {
+            "sdk_import_ms": 409.445667,
+            "package_load_ms": 76.796958,
+            "delegate_first_ms": 144.670791,
+            "delegate_result_first_ms": 20.041292
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed"
+          }
+        },
+        {
+          "round": 26,
+          "metrics": {
+            "sdk_import_ms": 405.934416,
+            "package_load_ms": 80.313625,
+            "delegate_first_ms": 149.755667,
+            "delegate_result_first_ms": 18.932
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed"
+          }
+        },
+        {
+          "round": 27,
+          "metrics": {
+            "sdk_import_ms": 408.817792,
+            "package_load_ms": 77.925417,
+            "delegate_first_ms": 151.375625,
+            "delegate_result_first_ms": 21.348958
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed"
+          }
+        },
+        {
+          "round": 28,
+          "metrics": {
+            "sdk_import_ms": 446.154917,
+            "package_load_ms": 80.535875,
+            "delegate_first_ms": 146.71625,
+            "delegate_result_first_ms": 20.800584
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed"
+          }
+        },
+        {
+          "round": 29,
+          "metrics": {
+            "sdk_import_ms": 415.120833,
+            "package_load_ms": 80.575541,
+            "delegate_first_ms": 145.610875,
+            "delegate_result_first_ms": 20.955125
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed"
+          }
+        }
+      ]
+    },
+    "fusion-first": {
+      "statistics": {
+        "fusion_first_ms": {
+          "count": 30,
+          "median_ms": 195.67775,
+          "p90_ms": 200.995167,
+          "mad_ms": 3.0816879999999998,
+          "min_ms": 186.2685,
+          "max_ms": 300.0095
+        },
+        "fusion_result_first_ms": {
+          "count": 30,
+          "median_ms": 29.590728499999997,
+          "p90_ms": 32.061791,
+          "mad_ms": 0.9054784999999974,
+          "min_ms": 27.4665,
+          "max_ms": 35.060875
+        },
+        "package_load_ms": {
+          "count": 30,
+          "median_ms": 115.831042,
+          "p90_ms": 121.537458,
+          "mad_ms": 2.522103999999999,
+          "min_ms": 106.905708,
+          "max_ms": 138.631417
+        },
+        "sdk_import_ms": {
+          "count": 30,
+          "median_ms": 409.713333,
+          "p90_ms": 421.873584,
+          "mad_ms": 2.6610624999999573,
+          "min_ms": 404.656583,
+          "max_ms": 562.8365
+        }
+      },
+      "raw": [
+        {
+          "round": 0,
+          "metrics": {
+            "sdk_import_ms": 413.980042,
+            "package_load_ms": 115.285125,
+            "fusion_first_ms": 195.247375,
+            "fusion_result_first_ms": 35.060875
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed",
+            "mocked_child_calls": 5
+          }
+        },
+        {
+          "round": 1,
+          "metrics": {
+            "sdk_import_ms": 441.199459,
+            "package_load_ms": 121.757625,
+            "fusion_first_ms": 194.205542,
+            "fusion_result_first_ms": 27.4665
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed",
+            "mocked_child_calls": 5
+          }
+        },
+        {
+          "round": 2,
+          "metrics": {
+            "sdk_import_ms": 421.873584,
+            "package_load_ms": 121.537458,
+            "fusion_first_ms": 206.719083,
+            "fusion_result_first_ms": 29.99425
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed",
+            "mocked_child_calls": 5
+          }
+        },
+        {
+          "round": 3,
+          "metrics": {
+            "sdk_import_ms": 562.8365,
+            "package_load_ms": 116.72925,
+            "fusion_first_ms": 196.934625,
+            "fusion_result_first_ms": 28.770833
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed",
+            "mocked_child_calls": 5
+          }
+        },
+        {
+          "round": 4,
+          "metrics": {
+            "sdk_import_ms": 410.18975,
+            "package_load_ms": 114.670583,
+            "fusion_first_ms": 190.253459,
+            "fusion_result_first_ms": 28.940125
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed",
+            "mocked_child_calls": 5
+          }
+        },
+        {
+          "round": 5,
+          "metrics": {
+            "sdk_import_ms": 408.545542,
+            "package_load_ms": 110.939625,
+            "fusion_first_ms": 200.995167,
+            "fusion_result_first_ms": 30.667334
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed",
+            "mocked_child_calls": 5
+          }
+        },
+        {
+          "round": 6,
+          "metrics": {
+            "sdk_import_ms": 412.261625,
+            "package_load_ms": 119.906333,
+            "fusion_first_ms": 192.235333,
+            "fusion_result_first_ms": 29.571291
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed",
+            "mocked_child_calls": 5
+          }
+        },
+        {
+          "round": 7,
+          "metrics": {
+            "sdk_import_ms": 404.656583,
+            "package_load_ms": 114.316042,
+            "fusion_first_ms": 188.555666,
+            "fusion_result_first_ms": 29.028834
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed",
+            "mocked_child_calls": 5
+          }
+        },
+        {
+          "round": 8,
+          "metrics": {
+            "sdk_import_ms": 407.496792,
+            "package_load_ms": 115.1475,
+            "fusion_first_ms": 197.395334,
+            "fusion_result_first_ms": 31.8315
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed",
+            "mocked_child_calls": 5
+          }
+        },
+        {
+          "round": 9,
+          "metrics": {
+            "sdk_import_ms": 405.400083,
+            "package_load_ms": 117.91825,
+            "fusion_first_ms": 196.5395,
+            "fusion_result_first_ms": 32.061791
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed",
+            "mocked_child_calls": 5
+          }
+        },
+        {
+          "round": 10,
+          "metrics": {
+            "sdk_import_ms": 409.626833,
+            "package_load_ms": 115.970375,
+            "fusion_first_ms": 198.799667,
+            "fusion_result_first_ms": 28.599667
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed",
+            "mocked_child_calls": 5
+          }
+        },
+        {
+          "round": 11,
+          "metrics": {
+            "sdk_import_ms": 409.799833,
+            "package_load_ms": 119.299167,
+            "fusion_first_ms": 196.436333,
+            "fusion_result_first_ms": 30.38225
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed",
+            "mocked_child_calls": 5
+          }
+        },
+        {
+          "round": 12,
+          "metrics": {
+            "sdk_import_ms": 406.990333,
+            "package_load_ms": 113.855375,
+            "fusion_first_ms": 191.725667,
+            "fusion_result_first_ms": 29.630458
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed",
+            "mocked_child_calls": 5
+          }
+        },
+        {
+          "round": 13,
+          "metrics": {
+            "sdk_import_ms": 405.309875,
+            "package_load_ms": 112.146583,
+            "fusion_first_ms": 193.065166,
+            "fusion_result_first_ms": 32.890041
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed",
+            "mocked_child_calls": 5
+          }
+        },
+        {
+          "round": 14,
+          "metrics": {
+            "sdk_import_ms": 409.368334,
+            "package_load_ms": 138.631417,
+            "fusion_first_ms": 300.0095,
+            "fusion_result_first_ms": 28.49125
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed",
+            "mocked_child_calls": 5
+          }
+        },
+        {
+          "round": 15,
+          "metrics": {
+            "sdk_import_ms": 410.692458,
+            "package_load_ms": 111.420708,
+            "fusion_first_ms": 198.133375,
+            "fusion_result_first_ms": 33.367334
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed",
+            "mocked_child_calls": 5
+          }
+        },
+        {
+          "round": 16,
+          "metrics": {
+            "sdk_import_ms": 409.566209,
+            "package_load_ms": 117.5275,
+            "fusion_first_ms": 188.775584,
+            "fusion_result_first_ms": 29.261667
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed",
+            "mocked_child_calls": 5
+          }
+        },
+        {
+          "round": 17,
+          "metrics": {
+            "sdk_import_ms": 406.911625,
+            "package_load_ms": 117.136292,
+            "fusion_first_ms": 196.515208,
+            "fusion_result_first_ms": 27.69
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed",
+            "mocked_child_calls": 5
+          }
+        },
+        {
+          "round": 18,
+          "metrics": {
+            "sdk_import_ms": 409.067959,
+            "package_load_ms": 110.650375,
+            "fusion_first_ms": 196.561958,
+            "fusion_result_first_ms": 29.260708
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed",
+            "mocked_child_calls": 5
+          }
+        },
+        {
+          "round": 19,
+          "metrics": {
+            "sdk_import_ms": 415.382083,
+            "package_load_ms": 112.874042,
+            "fusion_first_ms": 188.266,
+            "fusion_result_first_ms": 29.373875
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed",
+            "mocked_child_calls": 5
+          }
+        },
+        {
+          "round": 20,
+          "metrics": {
+            "sdk_import_ms": 409.397542,
+            "package_load_ms": 119.655083,
+            "fusion_first_ms": 196.108125,
+            "fusion_result_first_ms": 28.270833
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed",
+            "mocked_child_calls": 5
+          }
+        },
+        {
+          "round": 21,
+          "metrics": {
+            "sdk_import_ms": 405.629875,
+            "package_load_ms": 111.982958,
+            "fusion_first_ms": 222.881875,
+            "fusion_result_first_ms": 28.543125
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed",
+            "mocked_child_calls": 5
+          }
+        },
+        {
+          "round": 22,
+          "metrics": {
+            "sdk_import_ms": 421.416875,
+            "package_load_ms": 115.81725,
+            "fusion_first_ms": 194.319292,
+            "fusion_result_first_ms": 29.610166
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed",
+            "mocked_child_calls": 5
+          }
+        },
+        {
+          "round": 23,
+          "metrics": {
+            "sdk_import_ms": 412.1025,
+            "package_load_ms": 115.844834,
+            "fusion_first_ms": 191.39,
+            "fusion_result_first_ms": 30.073916
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed",
+            "mocked_child_calls": 5
+          }
+        },
+        {
+          "round": 24,
+          "metrics": {
+            "sdk_import_ms": 444.543875,
+            "package_load_ms": 125.831125,
+            "fusion_first_ms": 198.719209,
+            "fusion_result_first_ms": 29.754708
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed",
+            "mocked_child_calls": 5
+          }
+        },
+        {
+          "round": 25,
+          "metrics": {
+            "sdk_import_ms": 407.61425,
+            "package_load_ms": 114.853125,
+            "fusion_first_ms": 194.44725,
+            "fusion_result_first_ms": 28.3205
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed",
+            "mocked_child_calls": 5
+          }
+        },
+        {
+          "round": 26,
+          "metrics": {
+            "sdk_import_ms": 409.869417,
+            "package_load_ms": 111.276541,
+            "fusion_first_ms": 187.769959,
+            "fusion_result_first_ms": 30.604416
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed",
+            "mocked_child_calls": 5
+          }
+        },
+        {
+          "round": 27,
+          "metrics": {
+            "sdk_import_ms": 407.114208,
+            "package_load_ms": 117.457958,
+            "fusion_first_ms": 188.441375,
+            "fusion_result_first_ms": 31.448083
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed",
+            "mocked_child_calls": 5
+          }
+        },
+        {
+          "round": 28,
+          "metrics": {
+            "sdk_import_ms": 418.928833,
+            "package_load_ms": 106.905708,
+            "fusion_first_ms": 186.2685,
+            "fusion_result_first_ms": 30.38125
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed",
+            "mocked_child_calls": 5
+          }
+        },
+        {
+          "round": 29,
+          "metrics": {
+            "sdk_import_ms": 418.899792,
+            "package_load_ms": 117.659542,
+            "fusion_first_ms": 196.160416,
+            "fusion_result_first_ms": 29.323292
+          },
+          "facts": {
+            "task_status": "completed",
+            "result_state": "committed",
+            "mocked_child_calls": 5
+          }
+        }
+      ]
+    },
+    "model-selector-first": {
+      "statistics": {
+        "model_selector_first_ms": {
+          "count": 30,
+          "median_ms": 19.670667,
+          "p90_ms": 21.631625,
+          "mad_ms": 0.6772920000000013,
+          "min_ms": 18.238042,
+          "max_ms": 25.510709
+        },
+        "package_load_ms": {
+          "count": 30,
+          "median_ms": 117.115021,
+          "p90_ms": 130.126,
+          "mad_ms": 3.467479499999996,
+          "min_ms": 111.450375,
+          "max_ms": 180.445542
+        },
+        "sdk_import_ms": {
+          "count": 30,
+          "median_ms": 413.851354,
+          "p90_ms": 481.035334,
+          "mad_ms": 5.845771000000013,
+          "min_ms": 403.999667,
+          "max_ms": 614.555958
+        }
+      },
+      "raw": [
+        {
+          "round": 0,
+          "metrics": {
+            "sdk_import_ms": 423.982,
+            "package_load_ms": 118.6665,
+            "model_selector_first_ms": 20.58175
+          },
+          "facts": {
+            "custom_calls": 1
+          }
+        },
+        {
+          "round": 1,
+          "metrics": {
+            "sdk_import_ms": 570.86175,
+            "package_load_ms": 130.126,
+            "model_selector_first_ms": 19.823208
+          },
+          "facts": {
+            "custom_calls": 1
+          }
+        },
+        {
+          "round": 2,
+          "metrics": {
+            "sdk_import_ms": 408.252958,
+            "package_load_ms": 117.456042,
+            "model_selector_first_ms": 19.032
+          },
+          "facts": {
+            "custom_calls": 1
+          }
+        },
+        {
+          "round": 3,
+          "metrics": {
+            "sdk_import_ms": 453.362542,
+            "package_load_ms": 131.305083,
+            "model_selector_first_ms": 22.937625
+          },
+          "facts": {
+            "custom_calls": 1
+          }
+        },
+        {
+          "round": 4,
+          "metrics": {
+            "sdk_import_ms": 408.299875,
+            "package_load_ms": 115.027333,
+            "model_selector_first_ms": 19.613917
+          },
+          "facts": {
+            "custom_calls": 1
+          }
+        },
+        {
+          "round": 5,
+          "metrics": {
+            "sdk_import_ms": 453.992667,
+            "package_load_ms": 118.059667,
+            "model_selector_first_ms": 18.436916
+          },
+          "facts": {
+            "custom_calls": 1
+          }
+        },
+        {
+          "round": 6,
+          "metrics": {
+            "sdk_import_ms": 413.601125,
+            "package_load_ms": 114.759875,
+            "model_selector_first_ms": 21.631625
+          },
+          "facts": {
+            "custom_calls": 1
+          }
+        },
+        {
+          "round": 7,
+          "metrics": {
+            "sdk_import_ms": 405.09125,
+            "package_load_ms": 123.355083,
+            "model_selector_first_ms": 19.899042
+          },
+          "facts": {
+            "custom_calls": 1
+          }
+        },
+        {
+          "round": 8,
+          "metrics": {
+            "sdk_import_ms": 409.152333,
+            "package_load_ms": 115.125542,
+            "model_selector_first_ms": 19.643167
+          },
+          "facts": {
+            "custom_calls": 1
+          }
+        },
+        {
+          "round": 9,
+          "metrics": {
+            "sdk_import_ms": 406.462959,
+            "package_load_ms": 114.982791,
+            "model_selector_first_ms": 20.423375
+          },
+          "facts": {
+            "custom_calls": 1
+          }
+        },
+        {
+          "round": 10,
+          "metrics": {
+            "sdk_import_ms": 481.035334,
+            "package_load_ms": 125.457417,
+            "model_selector_first_ms": 18.95475
+          },
+          "facts": {
+            "custom_calls": 1
+          }
+        },
+        {
+          "round": 11,
+          "metrics": {
+            "sdk_import_ms": 403.999667,
+            "package_load_ms": 111.678042,
+            "model_selector_first_ms": 19.6605
+          },
+          "facts": {
+            "custom_calls": 1
+          }
+        },
+        {
+          "round": 12,
+          "metrics": {
+            "sdk_import_ms": 414.414417,
+            "package_load_ms": 118.502333,
+            "model_selector_first_ms": 18.789542
+          },
+          "facts": {
+            "custom_calls": 1
+          }
+        },
+        {
+          "round": 13,
+          "metrics": {
+            "sdk_import_ms": 415.566792,
+            "package_load_ms": 118.15275,
+            "model_selector_first_ms": 18.855542
+          },
+          "facts": {
+            "custom_calls": 1
+          }
+        },
+        {
+          "round": 14,
+          "metrics": {
+            "sdk_import_ms": 457.887458,
+            "package_load_ms": 180.445542,
+            "model_selector_first_ms": 25.510709
+          },
+          "facts": {
+            "custom_calls": 1
+          }
+        },
+        {
+          "round": 15,
+          "metrics": {
+            "sdk_import_ms": 614.555958,
+            "package_load_ms": 136.1375,
+            "model_selector_first_ms": 20.300041
+          },
+          "facts": {
+            "custom_calls": 1
+          }
+        },
+        {
+          "round": 16,
+          "metrics": {
+            "sdk_import_ms": 415.867333,
+            "package_load_ms": 113.68575,
+            "model_selector_first_ms": 19.680834
+          },
+          "facts": {
+            "custom_calls": 1
+          }
+        },
+        {
+          "round": 17,
+          "metrics": {
+            "sdk_import_ms": 414.765834,
+            "package_load_ms": 113.609333,
+            "model_selector_first_ms": 18.835959
+          },
+          "facts": {
+            "custom_calls": 1
+          }
+        },
+        {
+          "round": 18,
+          "metrics": {
+            "sdk_import_ms": 407.758208,
+            "package_load_ms": 115.387416,
+            "model_selector_first_ms": 19.433958
+          },
+          "facts": {
+            "custom_calls": 1
+          }
+        },
+        {
+          "round": 19,
+          "metrics": {
+            "sdk_import_ms": 409.723583,
+            "package_load_ms": 115.823875,
+            "model_selector_first_ms": 20.449541
+          },
+          "facts": {
+            "custom_calls": 1
+          }
+        },
+        {
+          "round": 20,
+          "metrics": {
+            "sdk_import_ms": 593.62725,
+            "package_load_ms": 122.293083,
+            "model_selector_first_ms": 19.329792
+          },
+          "facts": {
+            "custom_calls": 1
+          }
+        },
+        {
+          "round": 21,
+          "metrics": {
+            "sdk_import_ms": 443.4685,
+            "package_load_ms": 111.450375,
+            "model_selector_first_ms": 21.720292
+          },
+          "facts": {
+            "custom_calls": 1
+          }
+        },
+        {
+          "round": 22,
+          "metrics": {
+            "sdk_import_ms": 413.704542,
+            "package_load_ms": 119.581459,
+            "model_selector_first_ms": 19.357458
+          },
+          "facts": {
+            "custom_calls": 1
+          }
+        },
+        {
+          "round": 23,
+          "metrics": {
+            "sdk_import_ms": 413.128416,
+            "package_load_ms": 120.726167,
+            "model_selector_first_ms": 19.915167
+          },
+          "facts": {
+            "custom_calls": 1
+          }
+        },
+        {
+          "round": 24,
+          "metrics": {
+            "sdk_import_ms": 413.373875,
+            "package_load_ms": 112.793958,
+            "model_selector_first_ms": 19.603042
+          },
+          "facts": {
+            "custom_calls": 1
+          }
+        },
+        {
+          "round": 25,
+          "metrics": {
+            "sdk_import_ms": 404.949458,
+            "package_load_ms": 112.967042,
+            "model_selector_first_ms": 19.633833
+          },
+          "facts": {
+            "custom_calls": 1
+          }
+        },
+        {
+          "round": 26,
+          "metrics": {
+            "sdk_import_ms": 429.59075,
+            "package_load_ms": 116.774,
+            "model_selector_first_ms": 20.409792
+          },
+          "facts": {
+            "custom_calls": 1
+          }
+        },
+        {
+          "round": 27,
+          "metrics": {
+            "sdk_import_ms": 412.892875,
+            "package_load_ms": 120.721292,
+            "model_selector_first_ms": 21.51525
+          },
+          "facts": {
+            "custom_calls": 1
+          }
+        },
+        {
+          "round": 28,
+          "metrics": {
+            "sdk_import_ms": 413.998166,
+            "package_load_ms": 113.693625,
+            "model_selector_first_ms": 18.238042
+          },
+          "facts": {
+            "custom_calls": 1
+          }
+        },
+        {
+          "round": 29,
+          "metrics": {
+            "sdk_import_ms": 412.633458,
+            "package_load_ms": 111.911792,
+            "model_selector_first_ms": 20.126209
+          },
+          "facts": {
+            "custom_calls": 1
+          }
+        }
+      ]
+    }
+  }
+}

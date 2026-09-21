@@ -1,6 +1,6 @@
-import { statSync, type WriteStream } from 'node:fs';
+import { accessSync, constants, statSync, type WriteStream } from 'node:fs';
 import { open } from 'node:fs/promises';
-import { extname, isAbsolute, join, win32 } from 'node:path';
+import { basename, delimiter, extname, isAbsolute, join, resolve, win32 } from 'node:path';
 import { DEFAULT_MAX_BYTES } from '@earendil-works/pi-coding-agent';
 import type { BackgroundTaskChildProcess } from './registry.js';
 import type { DelegateBudgetRouteSource, DelegateExtensionMode } from './delegate/types.js';
@@ -12,6 +12,44 @@ export const TERMINAL_TASK_STATUS_VALUES = ['completed', 'failed', 'killed'] as 
 export type TaskStatus = (typeof TASK_STATUS_VALUES)[number];
 export type TerminalTaskStatus = (typeof TERMINAL_TASK_STATUS_VALUES)[number];
 export type KillKind = 'user' | 'timeout' | 'output_cap' | 'shutdown';
+export type ReloadShellStopKind = KillKind | 'handoff_expired';
+
+export type TerminalPublicationState = 'pending' | 'delivered' | 'abandoned';
+export type TerminalPublicationAbandonReason =
+  | 'registry_shutdown'
+  | 'publisher_closed'
+  | 'gate_rejected'
+  | 'retry_exhausted'
+  | 'retention_limit'
+  | 'reload_handoff_expired';
+
+export type ReloadSurvivalErrorCode =
+  | 'pi_bg_survive_reload_invalid'
+  | 'pi_bg_survive_reload_requires_non_agent'
+  | 'pi_bg_survive_reload_unsupported_task_kind'
+  | 'pi_bg_reload_owner_unavailable'
+  | 'pi_bg_reload_owner_protocol_incompatible'
+  | 'pi_bg_reload_owner_activation_conflict'
+  | 'pi_bg_reload_owner_stale_claim'
+  | 'pi_bg_reload_handoff_expired';
+
+export class ReloadSurvivalError extends Error {
+  constructor(
+    readonly code: ReloadSurvivalErrorCode,
+    message: string,
+  ) {
+    super(`${code}: ${message}`);
+    this.name = 'ReloadSurvivalError';
+  }
+}
+
+export function rejectSurvivalForTaskKind(value: object, kind: string): void {
+  if (!Object.prototype.hasOwnProperty.call(value, 'surviveReload')) return;
+  throw new ReloadSurvivalError(
+    'pi_bg_survive_reload_unsupported_task_kind',
+    `${kind} does not support surviveReload; only ordinary isAgent:false shell tasks may survive reload`,
+  );
+}
 
 export type JsonObject = Readonly<Record<PropertyKey, unknown>>;
 
@@ -36,6 +74,150 @@ export interface TaskToolUsage {
   byName: Record<string, number>;
 }
 
+export interface ReloadSurvivalSnapshotV1 {
+  schemaVersion: 'pi-background-tasks.reload-shell.v1';
+  authority: 'same-process-live-owner';
+  hostPid: number;
+  sessionId: string;
+  cwdRealpath: string;
+  launchNonce: string;
+  completionId: string;
+  spawnedAt: number;
+  childPid: number;
+  timeoutDeadlineAt?: number | undefined;
+  outputCapBytes: number;
+  posixProcessGroupId?: number | undefined;
+  windowsTreeRootPid?: number | undefined;
+  leaseGeneration: number;
+  handoffCount: number;
+}
+
+export interface ReloadShellIdentityV1 {
+  readonly hostPid: number;
+  readonly sessionId: string;
+  readonly cwdRealpath: string;
+}
+
+export interface ReloadShellActivationLeaseV1 {
+  readonly protocol: 'pi-background-tasks.reload-shell-owner.v1';
+  readonly hubNonce: string;
+  readonly identityKey: string;
+  readonly generation: number;
+  readonly activationNonce: string;
+}
+
+export interface ReloadShellActivationClaimV1 {
+  readonly protocol: 'pi-background-tasks.reload-shell-owner.v1';
+  readonly hubNonce: string;
+  readonly claimNonce: string;
+  readonly identity: ReloadShellIdentityV1;
+  readonly identityKey: string;
+  readonly generation: number;
+  readonly activationNonce: string;
+  readonly expiresAt?: number | undefined;
+  readonly executions: readonly ReloadableShellExecutionV1[];
+}
+
+export interface ReloadShellProcessV1 {
+  readonly pid?: number | undefined;
+  stdout?: {
+    on(event: 'data', listener: (data: Buffer | string) => void): unknown;
+    off?(event: 'data', listener: (data: Buffer | string) => void): unknown;
+  } | null | undefined;
+  stderr?: {
+    on(event: 'data', listener: (data: Buffer | string) => void): unknown;
+    off?(event: 'data', listener: (data: Buffer | string) => void): unknown;
+  } | null | undefined;
+  kill(signal?: NodeJS.Signals): boolean;
+  on(event: 'error', listener: (error: Error) => void): unknown;
+  on(
+    event: 'close',
+    listener: (code: number | null, signal: NodeJS.Signals | null) => void,
+  ): unknown;
+  off?(event: 'error', listener: (error: Error) => void): unknown;
+  off?(
+    event: 'close',
+    listener: (code: number | null, signal: NodeJS.Signals | null) => void,
+  ): unknown;
+}
+
+export interface ReloadShellOwnerEventSinkV1 {
+  readonly onChanged: (execution: ReloadableShellExecutionV1) => void;
+  readonly onTerminal: (execution: ReloadableShellExecutionV1) => void;
+}
+
+export type ReloadShellNotificationState = 'disabled' | 'pending' | 'sending' | 'delivered';
+
+export interface ReloadableShellExecutionV1 {
+  readonly protocol: 'pi-background-tasks.reload-shell-owner.v1';
+  readonly launchNonce: string;
+  readonly completionId: string;
+  readonly task: BgTask;
+  child: ReloadShellProcessV1 | undefined;
+  outputStream: WriteStream | undefined;
+  readonly spawnedAt: number;
+  readonly timeoutDeadlineAt?: number | undefined;
+  readonly outputCapBytes: number;
+  readonly terminal: Promise<BgTask>;
+  readonly requestStop: (kind: ReloadShellStopKind, reason?: string) => Promise<BgTask>;
+  phase: 'starting' | 'running' | 'stop_requested' | 'finalizing' | 'terminal' | 'released';
+  closeObservation?: {
+    code: number | null;
+    signal: NodeJS.Signals | null;
+    observedAt: number;
+  } | undefined;
+  admissionCommitted: boolean;
+  notificationState: ReloadShellNotificationState;
+  readonly commitInitialMetadata: (signal?: AbortSignal) => Promise<void>;
+  readonly failAdmission: (error: Error) => void;
+  readonly setOwnerEventSink: (sink: ReloadShellOwnerEventSinkV1 | undefined) => void;
+  readonly markAdmissionCommitted: (generation: number, handoffCount: number) => void;
+  readonly updateLeaseAudit: (generation: number, handoffCount: number) => void;
+  readonly abandonReloadHandoff: () => void;
+  readonly beginNotification: (lease: ReloadShellActivationLeaseV1) => string | undefined;
+  readonly finishNotification: (token: string, delivered: boolean) => void;
+  readonly releaseResources: () => void;
+}
+
+export interface ReloadShellHostAdapterV1 {
+  readonly activationNonce: string;
+  readonly onBound: (lease: ReloadShellActivationLeaseV1) => void;
+  readonly onChanged: (execution: ReloadableShellExecutionV1) => void;
+  readonly onTerminal: (execution: ReloadableShellExecutionV1) => void;
+}
+
+export interface ReloadShellOwnerHubV1 {
+  readonly protocol: 'pi-background-tasks.reload-shell-owner.v1';
+  readonly hubNonce: string;
+  beginActivation(
+    identity: ReloadShellIdentityV1,
+    startReason: string,
+    activationNonce: string,
+  ): ReloadShellActivationClaimV1;
+  commitActivation(
+    claim: ReloadShellActivationClaimV1,
+    adapter: ReloadShellHostAdapterV1,
+  ): ReloadShellActivationLeaseV1;
+  abortActivation(claim: ReloadShellActivationClaimV1, error: unknown): void;
+  beginReloadHandoff(
+    lease: ReloadShellActivationLeaseV1,
+  ): readonly ReloadableShellExecutionV1[];
+  releaseActivation(lease: ReloadShellActivationLeaseV1): void;
+  registerExecution(
+    lease: ReloadShellActivationLeaseV1,
+    execution: ReloadableShellExecutionV1,
+  ): void;
+  markAdmissionCommitted(
+    lease: ReloadShellActivationLeaseV1,
+    execution: ReloadableShellExecutionV1,
+  ): void;
+  releaseExecution(
+    leaseOrClaim: ReloadShellActivationLeaseV1 | ReloadShellActivationClaimV1,
+    execution: ReloadableShellExecutionV1,
+  ): void;
+  isCurrentLease(lease: ReloadShellActivationLeaseV1): boolean;
+}
+
 export interface BgTaskSnapshot {
   id: string;
   name?: string | undefined;
@@ -51,6 +233,8 @@ export interface BgTaskSnapshot {
   pid?: number | undefined;
   bytesWritten: number;
   isAgent: boolean;
+  surviveReload: boolean;
+  reloadSurvival?: ReloadSurvivalSnapshotV1 | undefined;
   error?: string | undefined;
   notified: boolean;
   notifyOnCompletion: boolean;
@@ -61,6 +245,8 @@ export interface BgTaskSnapshot {
   toolUsage?: TaskToolUsage | undefined;
   model?: string | undefined;
   telemetryUnavailableReason?: string | undefined;
+  /** Immutable non-secret shell selection for ordinary shell tasks. */
+  shellPolicy?: ShellPolicySnapshot | undefined;
   attestationPath?: string | undefined;
   delegate?: DelegateTaskFacts | undefined;
   fusion?: FusionTaskFacts | undefined;
@@ -130,6 +316,10 @@ export interface BgTask extends Omit<BgTaskSnapshot, 'name'> {
   wrapperAbsPath?: string | undefined;
   attestationAbsPath?: string | undefined;
   child?: BackgroundTaskChildProcess | undefined;
+  /** Immutable in-memory ownership captured from a detached POSIX spawn; never restored from metadata. */
+  ownedPosixProcessGroupId?: number | undefined;
+  /** One-way latch preventing any later signal after group authority is released. */
+  posixProcessGroupSignalAuthorityReleased?: boolean | undefined;
   stream?: WriteStream | undefined;
   timeoutHandle?: NodeJS.Timeout | undefined;
   killKind?: KillKind | undefined;
@@ -137,8 +327,14 @@ export interface BgTask extends Omit<BgTaskSnapshot, 'name'> {
   killEscalationTimer?: NodeJS.Timeout | undefined;
   capExceeded?: boolean | undefined;
   finalized?: boolean | undefined;
-  terminalPublished?: boolean | undefined;
+  /** True only after the terminal EventBus emitter returns successfully; abandonment is never delivery. */
+  terminalPublished: boolean;
+  terminalPublicationState: TerminalPublicationState;
+  terminalPublicationAbandonReason?: TerminalPublicationAbandonReason | undefined;
+  terminalPublishAttempts: number;
   terminalPublishInFlight?: boolean | undefined;
+  /** True only while the synchronous terminal emitter itself is on the stack. */
+  terminalEmitInFlight?: boolean | undefined;
   terminalPublishRetryHandle?: NodeJS.Timeout | undefined;
   /** Optional protocol barrier used by EventBus run requests so early child exits cannot publish before the run response is observable. */
   terminalPublicationGate?: Promise<void> | undefined;
@@ -152,6 +348,12 @@ export interface BgTask extends Omit<BgTaskSnapshot, 'name'> {
   attestedPi?: AttestedPiTaskFiles | undefined;
   delegate?: DelegateTaskFacts | undefined;
   fusion?: FusionTaskFacts | undefined;
+  /** In-memory same-process authority for an opted ordinary shell task; never serialized. */
+  reloadExecution?: ReloadableShellExecutionV1 | undefined;
+  /** Fresh-registry terminal host delivery state for an imported owner execution. */
+  reloadHostDeliveryInFlight?: boolean | undefined;
+  reloadHostDeliverySettled?: boolean | undefined;
+  reloadHostNotificationSettled?: boolean | undefined;
   /** Cancellation hook for an in-process managed task such as Fusion. */
   managedCancel?: (() => void) | undefined;
   managedCancelRequested?: boolean | undefined;
@@ -248,6 +450,7 @@ export interface StartTaskOptions {
   timeoutSeconds?: number | undefined;
   notifyOnCompletion?: boolean | undefined;
   triggerOnCompletion?: boolean | undefined;
+  surviveReload?: boolean | undefined;
   /** @internal EventBus protocol barrier; callers should not set this outside the extension service. */
   terminalPublicationGate?: Promise<void> | undefined;
 }
@@ -407,10 +610,12 @@ export function parseBgCommandArgs(args: string): {
   name?: string;
   command: string;
   isAgent: boolean;
+  surviveReload: boolean;
 } {
   let input = args.trim();
   let name: string | undefined;
   let isAgent = false;
+  let surviveReload = false;
 
   while (input) {
     let consumed = false;
@@ -458,6 +663,28 @@ export function parseBgCommandArgs(args: string): {
     }
     if (consumed) continue;
 
+    if (
+      input === '--survive-reload' ||
+      input.startsWith('--survive-reload ') ||
+      input.startsWith('--survive-reload\t')
+    ) {
+      if (surviveReload) {
+        throw new ReloadSurvivalError(
+          'pi_bg_survive_reload_invalid',
+          '/bg accepts --survive-reload at most once',
+        );
+      }
+      surviveReload = true;
+      input = input.slice('--survive-reload'.length).trimStart();
+      continue;
+    }
+    if (input.startsWith('--survive-reload=')) {
+      throw new ReloadSurvivalError(
+        'pi_bg_survive_reload_invalid',
+        '/bg accepts only the bare --survive-reload flag',
+      );
+    }
+
     if (input === '--') {
       input = '';
       break;
@@ -469,7 +696,15 @@ export function parseBgCommandArgs(args: string): {
     break;
   }
 
-  return name ? { name, command: input, isAgent } : { command: input, isAgent };
+  if (surviveReload && isAgent) {
+    throw new ReloadSurvivalError(
+      'pi_bg_survive_reload_requires_non_agent',
+      'surviveReload requires isAgent:false',
+    );
+  }
+  return name
+    ? { name, command: input, isAgent, surviveReload }
+    : { command: input, isAgent, surviveReload };
 }
 
 export function formatDuration(ms: number): string {
@@ -611,7 +846,23 @@ export function shellQuote(value: string): string {
   return `'${value.replace(/'/g, `'"'"'`)}'`;
 }
 
-export type ShellDialect = 'cmd' | 'posix';
+export type ShellDialect = 'cmd' | 'posix' | 'user-non-posix';
+export type ShellPolicyDialect = ShellDialect | 'bash';
+export type ShellPolicyName = 'inherit' | 'bash' | 'sh' | 'cmd';
+
+/** Non-secret launch facts persisted for ordinary shell tasks. */
+export interface ShellPolicySnapshot {
+  readonly policy: ShellPolicyName;
+  readonly executable: string;
+  readonly argvPrefix: readonly string[];
+  readonly dialect: ShellPolicyDialect;
+}
+
+/** One immutable shell selection shared by guidance and every ordinary spawn in an activation. */
+export interface ResolvedShellPolicy extends ShellPolicySnapshot {
+  readonly supportsPosixFunctionWrapper: boolean;
+  readonly windowsVerbatimArguments: boolean;
+}
 
 export interface ShellInvocation {
   shell: string;
@@ -633,12 +884,43 @@ type ShellCandidateResult =
   | { readonly found: true }
   | { readonly found: false; readonly diagnostic: string };
 
+const POSIX_FUNCTION_SHELLS = new Set([
+  'sh',
+  'dash',
+  'ash',
+  'ksh',
+  'ksh93',
+  'mksh',
+  'pdksh',
+  'zsh',
+  'yash',
+  'posh',
+]);
+
 function failShellInvocation(message: string): never {
   throw new ShellInvocationError(message);
 }
 
 function shellErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function freezeShellPolicy(
+  policy: Omit<ResolvedShellPolicy, 'argvPrefix'> & { argvPrefix: readonly string[] },
+): ResolvedShellPolicy {
+  return Object.freeze({
+    ...policy,
+    argvPrefix: Object.freeze([...policy.argvPrefix]),
+  });
+}
+
+export function shellPolicySnapshot(policy: ResolvedShellPolicy): ShellPolicySnapshot {
+  return Object.freeze({
+    policy: policy.policy,
+    executable: policy.executable,
+    argvPrefix: Object.freeze([...policy.argvPrefix]),
+    dialect: policy.dialect,
+  });
 }
 
 function isWindowsExecutablePath(path: string): boolean {
@@ -696,17 +978,168 @@ function resolveWindowsBash(env: NodeJS.ProcessEnv): string {
   failShellInvocation(`PI_BG_SHELL=bash could not resolve bash.exe or bash.com on PATH${suffix}`);
 }
 
-function cmdShellInvocation(command: string, shell: string): ShellInvocation {
-  return {
-    shell,
-    args: ['/d', '/s', '/c', `"${command}"`],
-    dialect: 'cmd',
-    windowsVerbatimArguments: true,
-  };
+function validatePosixShellPath(path: string, label: string): string {
+  if (path.length === 0) failShellInvocation(`${label} is empty`);
+  if (!isAbsolute(path)) failShellInvocation(`${label} must be an absolute path`);
+  let stats: ReturnType<typeof statSync>;
+  try {
+    stats = statSync(path);
+  } catch (error) {
+    failShellInvocation(`${label} stat failed: ${shellErrorMessage(error)}`);
+  }
+  if (!stats.isFile()) failShellInvocation(`${label} must point to a regular file`);
+  try {
+    accessSync(path, constants.X_OK);
+  } catch (error) {
+    failShellInvocation(`${label} must be executable: ${shellErrorMessage(error)}`);
+  }
+  return path;
 }
 
-function posixShellInvocation(command: string, shell: string): ShellInvocation {
-  return { shell, args: ['-c', command], dialect: 'posix', windowsVerbatimArguments: false };
+function inspectPosixShellCandidate(path: string): boolean {
+  try {
+    const stats = statSync(path);
+    if (!stats.isFile()) return false;
+    accessSync(path, constants.X_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function resolvePosixExecutable(
+  name: 'bash' | 'sh',
+  env: NodeJS.ProcessEnv,
+  activationCwd: string,
+): string {
+  const binCandidate = `/bin/${name}`;
+  if (inspectPosixShellCandidate(binCandidate)) return binCandidate;
+  const pathValue = env['PATH'] ?? '';
+  for (const entry of pathValue.split(delimiter)) {
+    if (entry.length === 0) continue;
+    const directory = isAbsolute(entry) ? entry : resolve(activationCwd, entry);
+    const candidate = join(directory, name);
+    if (inspectPosixShellCandidate(candidate)) return candidate;
+  }
+  failShellInvocation(
+    `PI_BG_POSIX_SHELL=${name} could not resolve executable ${binCandidate} or ${name} on PATH`,
+  );
+}
+
+function inheritedPosixDialect(executable: string): ShellPolicyDialect {
+  const name = basename(executable).toLowerCase();
+  if (name === 'bash') return 'bash';
+  return POSIX_FUNCTION_SHELLS.has(name) ? 'posix' : 'user-non-posix';
+}
+
+/** Resolve one activation-stable policy. New POSIX variables are intentionally ignored on Windows. */
+export function resolveShellPolicy(
+  platform: NodeJS.Platform = process.platform,
+  env: NodeJS.ProcessEnv = process.env,
+  activationCwd: string = process.cwd(),
+): ResolvedShellPolicy {
+  if (platform === 'win32') {
+    const requestedShell = env['PI_BG_SHELL'];
+    const requestedPath = env['PI_BG_SHELL_PATH'];
+    if (requestedShell === undefined) {
+      if (requestedPath !== undefined)
+        failShellInvocation('PI_BG_SHELL_PATH requires PI_BG_SHELL');
+      const comSpec = env['ComSpec'];
+      return freezeShellPolicy({
+        policy: 'cmd',
+        executable: comSpec && comSpec.length > 0 ? comSpec : 'cmd.exe',
+        argvPrefix: ['/d', '/s', '/c'],
+        dialect: 'cmd',
+        supportsPosixFunctionWrapper: false,
+        windowsVerbatimArguments: true,
+      });
+    }
+    if (requestedShell !== 'cmd' && requestedShell !== 'bash') {
+      failShellInvocation('PI_BG_SHELL must be exactly cmd or bash');
+    }
+    const explicitPath =
+      requestedPath !== undefined
+        ? validateWindowsShellPath(requestedPath, 'PI_BG_SHELL_PATH')
+        : undefined;
+    if (requestedShell === 'cmd') {
+      const comSpec = env['ComSpec'];
+      return freezeShellPolicy({
+        policy: 'cmd',
+        executable: explicitPath ?? (comSpec && comSpec.length > 0 ? comSpec : 'cmd.exe'),
+        argvPrefix: ['/d', '/s', '/c'],
+        dialect: 'cmd',
+        supportsPosixFunctionWrapper: false,
+        windowsVerbatimArguments: true,
+      });
+    }
+    return freezeShellPolicy({
+      policy: 'bash',
+      executable: explicitPath ?? resolveWindowsBash(env),
+      argvPrefix: ['-c'],
+      dialect: 'bash',
+      supportsPosixFunctionWrapper: true,
+      windowsVerbatimArguments: false,
+    });
+  }
+
+  const configuredPolicy = env['PI_BG_POSIX_SHELL'];
+  if (
+    configuredPolicy !== undefined &&
+    configuredPolicy !== 'inherit' &&
+    configuredPolicy !== 'bash' &&
+    configuredPolicy !== 'sh'
+  ) {
+    failShellInvocation('PI_BG_POSIX_SHELL must be exactly inherit, bash, or sh');
+  }
+  const policy = configuredPolicy ?? 'inherit';
+  const configuredPath = env['PI_BG_POSIX_SHELL_PATH'];
+  if (policy === 'inherit') {
+    if (configuredPath !== undefined) {
+      failShellInvocation(
+        'PI_BG_POSIX_SHELL_PATH requires PI_BG_POSIX_SHELL=bash or PI_BG_POSIX_SHELL=sh',
+      );
+    }
+    const inherited = env['SHELL'];
+    const executable = inherited && inherited.length > 0 ? inherited : '/bin/sh';
+    const dialect = inheritedPosixDialect(executable);
+    return freezeShellPolicy({
+      policy,
+      executable,
+      argvPrefix: ['-c'],
+      dialect,
+      supportsPosixFunctionWrapper: dialect === 'bash' || dialect === 'posix',
+      windowsVerbatimArguments: false,
+    });
+  }
+
+  const executable =
+    configuredPath !== undefined
+      ? validatePosixShellPath(configuredPath, 'PI_BG_POSIX_SHELL_PATH')
+      : resolvePosixExecutable(policy, env, activationCwd);
+  return freezeShellPolicy({
+    policy,
+    executable,
+    argvPrefix: ['-c'],
+    dialect: policy === 'bash' ? 'bash' : 'posix',
+    supportsPosixFunctionWrapper: true,
+    windowsVerbatimArguments: false,
+  });
+}
+
+export function shellInvocationForPolicy(
+  command: string,
+  policy: ResolvedShellPolicy,
+): ShellInvocation {
+  const dialect: ShellDialect = policy.dialect === 'bash' ? 'posix' : policy.dialect;
+  return {
+    shell: policy.executable,
+    args:
+      policy.dialect === 'cmd'
+        ? [...policy.argvPrefix, `"${command}"`]
+        : [...policy.argvPrefix, command],
+    dialect,
+    windowsVerbatimArguments: policy.windowsVerbatimArguments,
+  };
 }
 
 export function shellInvocation(
@@ -714,33 +1147,7 @@ export function shellInvocation(
   platform: NodeJS.Platform = process.platform,
   env: NodeJS.ProcessEnv = process.env,
 ): ShellInvocation {
-  if (platform !== 'win32') {
-    const shell = env['SHELL'];
-    return posixShellInvocation(command, shell && shell.length > 0 ? shell : '/bin/sh');
-  }
-
-  const requestedShell = env['PI_BG_SHELL'];
-  const requestedPath = env['PI_BG_SHELL_PATH'];
-  if (requestedShell === undefined) {
-    if (requestedPath !== undefined) failShellInvocation('PI_BG_SHELL_PATH requires PI_BG_SHELL');
-    const comSpec = env['ComSpec'];
-    return cmdShellInvocation(command, comSpec && comSpec.length > 0 ? comSpec : 'cmd.exe');
-  }
-  if (requestedShell !== 'cmd' && requestedShell !== 'bash') {
-    failShellInvocation('PI_BG_SHELL must be exactly cmd or bash');
-  }
-  const explicitPath =
-    requestedPath !== undefined
-      ? validateWindowsShellPath(requestedPath, 'PI_BG_SHELL_PATH')
-      : undefined;
-  if (requestedShell === 'cmd') {
-    const comSpec = env['ComSpec'];
-    return cmdShellInvocation(
-      command,
-      explicitPath ?? (comSpec && comSpec.length > 0 ? comSpec : 'cmd.exe'),
-    );
-  }
-  return posixShellInvocation(command, explicitPath ?? resolveWindowsBash(env));
+  return shellInvocationForPolicy(command, resolveShellPolicy(platform, env));
 }
 
 export function normalizeMaxBytes(value: unknown, fallback = DEFAULT_LOG_BYTES): number {
@@ -764,6 +1171,8 @@ export function snapshot(task: BgTask): BgTaskSnapshot {
     pid: task.pid,
     bytesWritten: task.bytesWritten,
     isAgent: task.isAgent,
+    surviveReload: task.surviveReload === true,
+    reloadSurvival: task.reloadSurvival,
     error: task.error,
     notified: task.notified,
     notifyOnCompletion: task.notifyOnCompletion,
@@ -774,6 +1183,7 @@ export function snapshot(task: BgTask): BgTaskSnapshot {
     toolUsage: task.toolUsage,
     model: task.model,
     telemetryUnavailableReason: task.telemetryUnavailableReason,
+    shellPolicy: task.shellPolicy,
     attestationPath: task.attestationPath,
     delegate: task.delegate,
     fusion: task.fusion,

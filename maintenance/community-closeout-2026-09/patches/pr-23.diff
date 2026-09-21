@@ -1,0 +1,236 @@
+diff --git a/docs/manifest.json b/docs/manifest.json
+index d75c271..8aa8faa 100644
+--- a/docs/manifest.json
++++ b/docs/manifest.json
+@@ -62,7 +62,7 @@
+       "state": "stale-authored-prose"
+     },
+     {
+-      "authored_body_sha256": "sha256:40ee5dac92b9e873d6a9f71a59c03ff1ccd44d6717a13d3be18f74b19e68326e",
++      "authored_body_sha256": "sha256:fb9e9110778c90e66e35e7c4652b29adf0e5a5290d70b35c81c226a891d3547d",
+       "covers_sources": [
+         "src/core/durable-fs.ts",
+         "src/core/pi-launch.ts"
+diff --git a/docs/operations/troubleshooting.md b/docs/operations/troubleshooting.md
+index 612dd7c..11ab5c0 100644
+--- a/docs/operations/troubleshooting.md
++++ b/docs/operations/troubleshooting.md
+@@ -19,7 +19,7 @@ Start from the symptom, verify the source-owned doc, then apply the remediation.
+ | `bg_run` starts but logs are bounded/truncated | `bg_logs` is model-visible and capped by design | Read the full output file path from the notice only when operator-approved; do not increase model-visible logs casually. |
+ | Output cap terminates a task | `PI_BG_MAX_OUTPUT_BYTES` cap reached | Inspect full command behavior; raise cap only deliberately for that run environment. The task failure is intentional safety. |
+ | `PI_BG_SHELL` or `PI_BG_SHELL_PATH` error on Windows | Windows shell selection is closed and path-validated | Use `PI_BG_SHELL=cmd` or `bash`; if setting `PI_BG_SHELL_PATH`, provide an absolute `.exe`/`.com`. See `docs/subsystems/child-launch-durability-and-safety.md`. |
+-| `pi_executable_resolution_failed` | Windows Pi package bin cannot be resolved/validated | Reinstall/repair Pi package; do not fall back to shell PATH shims. |
++| `pi_executable_resolution_failed` | Windows Pi package bin cannot be resolved/validated | Reinstall/repair Pi package; the error lists module, entry, and host-script attempts. Do not fall back to shell PATH shims. |
+ | `pi_command_line_too_long` | Rendered Windows command line exceeds 32,767 UTF-16 units | Move large payload to stdin/artifact path; do not truncate argv. |
+ | Terminal metadata/output durability failure | Fsync/close/metadata write failed | Treat terminal state as failed; inspect `DurableFileError` operation/path/cause. See `docs/subsystems/child-launch-durability-and-safety.md`. |
+ | Delegate refuses with `delegate_hook_contract_unsupported` | Current Pi hook behavior does not match committed evidence | Re-run the hook characterization gate during release work and re-review the guard; do not weaken the guard. See `docs/operations/testing.md`. |
+diff --git a/docs/subsystems/child-launch-durability-and-safety.md b/docs/subsystems/child-launch-durability-and-safety.md
+index cdcfde1..97d7047 100644
+--- a/docs/subsystems/child-launch-durability-and-safety.md
++++ b/docs/subsystems/child-launch-durability-and-safety.md
+@@ -15,7 +15,7 @@ Primary sources: `src/core/pi-launch.ts` and `src/core/durable-fs.ts`.
+ 
+ On non-Windows platforms, `resolvePiLaunch()` returns `{ executable: 'pi', argvPrefix: [], kind: 'path' }`.
+ 
+-On Windows, the package does not trust shell PATH shims. It resolves `@earendil-works/pi-coding-agent/package.json`, reads `bin.pi`, realpaths the package root and bin target, verifies the target stays inside the package root, and accepts only a regular file with one of these forms:
++On Windows, the package does not trust shell PATH shims. It locates `@earendil-works/pi-coding-agent/package.json` by module resolution from this package's install location first. When that fails, as it does when Pi is installed globally and this package sits in Pi's extension prefix, it walks up from the running host script (`process.argv[1]`) to the nearest `package.json` that carries a `name`, and accepts it only when that name is `@earendil-works/pi-coding-agent`. Either way, it then reads `bin.pi`, realpaths the package root and bin target, verifies the target stays inside the package root, and accepts only a regular file with one of these forms:
+ 
+ - `.js`, `.cjs`, `.mjs`: launch with `process.execPath` and the target as `argvPrefix[0]`;
+ - `.exe`, `.com`: launch the target directly.
+diff --git a/src/core/pi-launch.ts b/src/core/pi-launch.ts
+index e803a43..80f358d 100644
+--- a/src/core/pi-launch.ts
++++ b/src/core/pi-launch.ts
+@@ -14,6 +14,8 @@ export interface PiLaunchDependencies {
+   readonly platform?: NodeJS.Platform;
+   readonly execPath?: string;
+   readonly resolvePackageJson?: (specifier: string) => string;
++  readonly resolveModule?: (specifier: string) => string;
++  readonly hostScript?: string;
+   readonly readFile?: (path: string) => string | Buffer;
+   readonly realpath?: (path: string) => string;
+   readonly stat?: (path: string) => Pick<Stats, 'isFile'>;
+@@ -53,19 +55,81 @@ interface JsonRecord {
+   readonly [key: string]: unknown;
+ }
+ 
+-function defaultResolvePackageJson(specifier: string): string {
+-  const requireForPi = createRequire(import.meta.url);
++type ManifestIo = Required<Pick<PiLaunchDependencies, 'readFile' | 'realpath' | 'stat'>>;
++
++const nodeManifestIo: ManifestIo = {
++  readFile: (path) => readFileSync(path),
++  realpath: (path) => realpathSync(path),
++  stat: (path) => statSync(path),
++};
++
++function probeManifestName(candidate: string, io: ManifestIo, diagnostics: string[]): unknown {
+   try {
+-    return requireForPi.resolve(specifier);
++    if (!io.stat(candidate).isFile()) {
++      diagnostics.push(`${candidate} is not a regular file`);
++      return undefined;
++    }
++    const raw = io.readFile(candidate);
++    const parsed: unknown = JSON.parse(Buffer.isBuffer(raw) ? raw.toString('utf8') : raw);
++    const name = isJsonRecord(parsed) ? parsed['name'] : undefined;
++    if (typeof name !== 'string') diagnostics.push(`${candidate} carries no name`);
++    return name;
++  } catch (error) {
++    diagnostics.push(`${candidate}: ${errorMessage(error)}`);
++    return undefined;
++  }
++}
++
++export function resolvePiManifestFromHostScript(
++  hostScript: string | undefined,
++  io: ManifestIo = nodeManifestIo,
++): string {
++  if (!hostScript) throw new Error('host script path is unavailable');
++  const scriptReal = io.realpath(hostScript);
++  const diagnostics: string[] = [];
++  let dir = dirname(scriptReal);
++  for (;;) {
++    const candidate = join(dir, 'package.json');
++    const name = probeManifestName(candidate, io, diagnostics);
++    if (name === PI_PACKAGE_NAME) return candidate;
++    if (typeof name === 'string') {
++      throw new Error(`nearest named manifest above host script is ${name}: ${candidate}`);
++    }
++    const parent = dirname(dir);
++    if (parent === dir) {
++      throw new Error(`no ${PI_PACKAGE_NAME} manifest above host script: ${diagnostics.join('; ')}`);
++    }
++    dir = parent;
++  }
++}
++
++function defaultResolveModule(specifier: string): string {
++  if (specifier === PI_PACKAGE_MANIFEST) return createRequire(import.meta.url).resolve(specifier);
++  return fileURLToPath(import.meta.resolve(specifier));
++}
++
++function defaultResolvePackageJson(specifier: string, deps: PiLaunchDependencies): string {
++  const resolveModule = deps.resolveModule ?? defaultResolveModule;
++  try {
++    return resolveModule(specifier);
+   } catch (manifestError) {
+     if (specifier !== PI_PACKAGE_MANIFEST) throw manifestError;
+     let packageEntry: string;
+     try {
+-      packageEntry = fileURLToPath(import.meta.resolve(PI_PACKAGE_NAME));
++      packageEntry = resolveModule(PI_PACKAGE_NAME);
+     } catch (entryError) {
+-      throw new Error(
+-        `${errorMessage(manifestError)}; package entry resolve failed: ${errorMessage(entryError)}`,
+-      );
++      try {
++        return resolvePiManifestFromHostScript(deps.hostScript ?? process.argv[1], {
++          ...nodeManifestIo,
++          ...(deps.readFile ? { readFile: deps.readFile } : {}),
++          ...(deps.realpath ? { realpath: deps.realpath } : {}),
++          ...(deps.stat ? { stat: deps.stat } : {}),
++        });
++      } catch (hostError) {
++        throw new Error(
++          `${errorMessage(manifestError)}; package entry resolve failed: ${errorMessage(entryError)}; host script resolve failed: ${errorMessage(hostError)}`,
++        );
++      }
+     }
+     const diagnostics: string[] = [];
+     let dir = dirname(packageEntry);
+@@ -138,7 +202,8 @@ export function resolvePiLaunch(deps: PiLaunchDependencies = {}): PiLaunchSpec {
+   const platform = deps.platform ?? process.platform;
+   if (platform !== 'win32') return { executable: 'pi', argvPrefix: [], kind: 'path' };
+ 
+-  const resolvePackageJson = deps.resolvePackageJson ?? defaultResolvePackageJson;
++  const resolvePackageJson =
++    deps.resolvePackageJson ?? ((specifier: string) => defaultResolvePackageJson(specifier, deps));
+   const readFile = deps.readFile ?? readFileSync;
+   const realpath = deps.realpath ?? realpathSync;
+   const stat = deps.stat ?? statSync;
+diff --git a/tests/unit/pi-launch.test.ts b/tests/unit/pi-launch.test.ts
+index ccfe19c..fc9fa9c 100644
+--- a/tests/unit/pi-launch.test.ts
++++ b/tests/unit/pi-launch.test.ts
+@@ -8,6 +8,7 @@ import {
+   assertWindowsCommandLineWithinLimit,
+   piLaunchArgv,
+   resolvePiLaunch,
++  resolvePiManifestFromHostScript,
+   type PiLaunchDependencies,
+   type PiLaunchSpec,
+ } from '../../src/core/pi-launch.js';
+@@ -169,6 +170,72 @@ void describe('Pi launch resolution', () => {
+     }
+   });
+ 
++  void it('falls through to the running host script when both module lookups fail on Windows', async () => {
++    const fixture = await createPackageFixture(
++      { name: '@earendil-works/pi-coding-agent', bin: { pi: 'dist/cli.js' } },
++      ['dist/cli.js'],
++    );
++    try {
++      const attempted: string[] = [];
++      const { resolvePackageJson: _ignored, ...io } = fixture.deps;
++      const spec = resolvePiLaunch({
++        ...io,
++        resolveModule: (specifier) => {
++          attempted.push(specifier);
++          throw new Error(`Cannot find module '${specifier}'`);
++        },
++        hostScript: join(fixture.packageRoot, 'dist', 'cli.js'),
++      });
++      assert.deepEqual(attempted, [
++        '@earendil-works/pi-coding-agent/package.json',
++        '@earendil-works/pi-coding-agent',
++      ]);
++      assert.equal(spec.executable, process.execPath);
++      assert.equal(spec.kind, 'package-node-cli');
++      assert.equal(spec.argvPrefix[0], realpathSync(join(fixture.packageRoot, 'dist', 'cli.js')));
++    } finally {
++      await removeFixture(fixture.root);
++    }
++  });
++
++  void it('walks past a nameless sub-manifest to reach the Pi manifest', async () => {
++    const fixture = await createPackageFixture(
++      { name: '@earendil-works/pi-coding-agent', bin: { pi: 'dist/cli.js' } },
++      ['dist/cli.js'],
++    );
++    try {
++      await writeFile(join(fixture.packageRoot, 'dist', 'package.json'), '{"type":"module"}\n', 'utf8');
++      const manifest = resolvePiManifestFromHostScript(join(fixture.packageRoot, 'dist', 'cli.js'));
++      assert.equal(manifest, realpathSync(fixture.manifestPath));
++    } finally {
++      await removeFixture(fixture.root);
++    }
++  });
++
++  void it('fails closed with every attempt named when the host script belongs to another package', async () => {
++    const foreign = await createPackageFixture({ name: 'some-other-cli', bin: 'dist/cli.js' }, [
++      'dist/cli.js',
++    ]);
++    try {
++      const { resolvePackageJson: _ignored, ...io } = foreign.deps;
++      assert.throws(
++        () =>
++          resolvePiLaunch({
++            ...io,
++            resolveModule: (specifier) => {
++              throw new Error(`Cannot find module '${specifier}'`);
++            },
++            hostScript: join(foreign.packageRoot, 'dist', 'cli.js'),
++          }),
++        /pi_executable_resolution_failed: package manifest resolve failed .*Cannot find module '@earendil-works\/pi-coding-agent\/package.json'; package entry resolve failed: .*; host script resolve failed: nearest named manifest above host script is some-other-cli/,
++      );
++    } finally {
++      await removeFixture(foreign.root);
++    }
++
++    assert.throws(() => resolvePiManifestFromHostScript(undefined), /host script path is unavailable/);
++  });
++
+   void it('rejects oversized Windows command lines without leaking argument text', () => {
+     const launch: PiLaunchSpec = {
+       executable: 'C:\\Node\\node.exe',

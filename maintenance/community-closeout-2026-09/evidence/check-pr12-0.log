@@ -1,0 +1,4 @@
+
+> pi-background-tasks@2.5.0 typecheck
+> tsc --noEmit
+

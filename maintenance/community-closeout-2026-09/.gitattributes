@@ -1,0 +1,10 @@
+# Immutable external evidence: preserve exact bytes and significant patch context
+# whitespace across platforms. These are review artifacts, not production sources.
+patches/*.diff -text -diff
+threads/*.md -text -diff
+evidence/*.log -text -diff
+# This verbatim worker receipt embeds significant unified-diff context whitespace.
+execution/fusion-role-typefix/report.md -text -diff
+# Execution receipts preserve terminal/reviewer bytes; trailing spaces may be
+# emitted by third-party TAP/Markdown producers and are not source formatting.
+execution/** whitespace=-trailing-space

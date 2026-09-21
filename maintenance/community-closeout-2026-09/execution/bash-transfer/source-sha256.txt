@@ -1,0 +1,15 @@
+e26badbbd2b95079aa346edfc69efc78b5bc7cc843b4740594872509a959a6f9  node_modules/@earendil-works/pi-coding-agent/package.json
+e01d870f368a62050ce91a04752ee3e87d241fa5afded395f0add690037a4b01  node_modules/@earendil-works/pi-coding-agent/dist/core/tools/bash.js
+9e7d23f770375a9827fe208b8e4e7081450940b0d9e52a108238b267e284ada8  node_modules/@earendil-works/pi-coding-agent/dist/core/extensions/types.d.ts
+b39d59b8f86693b9aca15f13e14f367fce9a0ad8ed7ce9ad17950906f226951d  node_modules/@earendil-works/pi-coding-agent/dist/core/extensions/runner.js
+91e72d5497f665e731cbd79da6a6e826d8cae7d2ce156a7dee39f8ca205e32c8  node_modules/@earendil-works/pi-coding-agent/dist/core/agent-session.js
+0c9361f1f5411cbb9b3c6f3a7f6d001c6fd45f0737174d830d3b642128bad6e9  node_modules/@earendil-works/pi-coding-agent/dist/core/settings-manager.js
+d3d20bc773ccc8d5f7cfe0eabf8b421ff3da8685617445b142d89a44457741bc  node_modules/@earendil-works/pi-coding-agent/node_modules/@earendil-works/pi-agent-core/dist/agent-loop.js
+0ff20059e51f954e820153774b4ece6a8562b244fb4994c1dfd7f07563ab218a  /usr/local/lib/node_modules/@earendil-works/pi-coding-agent/package.json
+8acde89e7e1ad7ab013ccbf4b2cbfe847422de46f9451ca796f889ab37fee307  /usr/local/lib/node_modules/@earendil-works/pi-coding-agent/dist/core/tools/bash.js
+a4d5b8774fa8015b8a3274614f1398a6aeeffdd888c122910439666955dc2a52  /usr/local/lib/node_modules/@earendil-works/pi-coding-agent/dist/core/extensions/types.d.ts
+07a94efe560e6a460a415b2188c1c3c69ca151bd163c9b5f05347caf8403ace2  /usr/local/lib/node_modules/@earendil-works/pi-coding-agent/dist/core/extensions/runner.js
+edaff7055ced7d49d25135c92415fbbfd9c14c4a29be5a79510ab9216045d6d9  /usr/local/lib/node_modules/@earendil-works/pi-coding-agent/dist/core/agent-session.js
+5368b155ec26d88374cec9e66b8e588b5041a0fb0047414f70b34e13892c4f48  /usr/local/lib/node_modules/@earendil-works/pi-coding-agent/dist/core/settings-manager.js
+aedd3264c31a3b9f1c3dc52826871894c0653718021583abbdfbe1e6763cd3e6  /usr/local/lib/node_modules/@earendil-works/pi-coding-agent/node_modules/@earendil-works/pi-agent-core/dist/agent-loop.js
+8091e2b1cefd6b2962c2af09cb2b1359eac6a4200e5047cf61eaddddb0345abd  /usr/local/lib/node_modules/@earendil-works/pi-coding-agent/dist/bundle/chunks/chunk-7YM6BE7Y.js

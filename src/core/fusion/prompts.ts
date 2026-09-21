@@ -1,4 +1,4 @@
-import { canonicalJson } from '../attested-pi-run.js';
+import { canonicalJson } from '../canonical-json.js';
 import { FUSION_CANDIDATE_OUTPUT_CONTRACT_INSTRUCTION } from './output-contract.js';
 import {
   FUSION_EVALUATION_SCHEMA_VERSION,

@@ -1,0 +1,35 @@
+▶ Anthropic attribution lineage recovery (#14)
+  ✔ chains unchanged append-only requests and replays exact signed thinking (8.110208ms)
+  ✔ resets system prompt, reanchors, and never resurrects old signatures (2.748375ms)
+  ✔ resets tool schema, reanchors, and never resurrects old signatures (2.226833ms)
+  ✔ resets thinking effort, reanchors, and never resurrects old signatures (1.6565ms)
+  ✔ resets tool choice, reanchors, and never resurrects old signatures (1.361917ms)
+  ✔ resets rewritten user history, reanchors, and never resurrects old signatures (1.476083ms)
+  ✔ resets shortened history, reanchors, and never resurrects old signatures (1.231583ms)
+  ✔ resets cache retention, reanchors, and never resurrects old signatures (1.157042ms)
+  ✔ resets disabled caching, reanchors, and never resurrects old signatures (1.091917ms)
+  ✔ recovers a reload that drops earlier thinking while retaining stale lineage (0.844292ms)
+  ✔ recovers again after a failed reset attempt without persisting a false anchor (5.176792ms)
+  ✔ opens another epoch for history drift under a retained compaction marker (3.3905ms)
+  ✔ still rejects middleware messages mutations after a reset, before fetch (0.923375ms)
+  ✔ still rejects middleware thinking mutations after a reset, before fetch (0.522708ms)
+  ✔ still rejects middleware diagnostics mutations after a reset, before fetch (0.440958ms)
+  ✔ still rejects middleware cache_control mutations after a reset, before fetch (0.445667ms)
+  ✔ retains the in-flight guard and releases it after completion (0.460125ms)
+✔ Anthropic attribution lineage recovery (#14) (34.025208ms)
+▶ global Anthropic attribution extension
+  ✔ matches all SPS exact-line variants while preserving unrelated blocks and cache controls (1.261208ms)
+  ✔ BUG-192 strips Codex/ZAI opaque and redacted reasoning before Anthropic transport (0.696958ms)
+  ✔ BUG-193 owns hookless compaction attribution from request-scoped sessionId (5.572084ms)
+  ✔ leaves non-Anthropic payloads untouched (0.082791ms)
+  ✔ adds package attribution to attested Anthropic argv only (0.2335ms)
+  ✔ allows exactly one independently loaded copy to own global registration (0.163417ms)
+✔ global Anthropic attribution extension (8.499625ms)
+ℹ tests 23
+ℹ suites 2
+ℹ pass 23
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 828.503

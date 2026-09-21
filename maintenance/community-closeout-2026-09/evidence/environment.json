@@ -1,0 +1,34 @@
+{
+  "node": "v24.16.0",
+  "git": "git version 2.50.1 (Apple Git-155)",
+  "pi_host_version": "0.86.0",
+  "package_pi_test_dependency": "0.84.0",
+  "host_platform": "macOS",
+  "native_windows_qualified": false,
+  "compiled_bun_qualified": false,
+  "sol_5_6_max_route_auth_qualified": false,
+  "cli_accepts_thinking_max": true,
+  "worktree_proof": {
+    "common_git_dir": "/Users/lizavasilyeva/work/ai-pipeline/.git/modules/packages/pi-background-tasks",
+    "baseline_commit": "14aa4ef382952f073bd4d540f57d6e8e3c2789a2",
+    "tracked_files": 202,
+    "checkout_size_approx_mib": 17,
+    "forbidden_parent_directories_absent": [
+      "orchestrator",
+      "products",
+      "knowledge",
+      "blocks"
+    ],
+    "removed_cleanly": true,
+    "prune_dry_run_empty": true
+  },
+  "forwarding_probe": {
+    "network_calls": 0,
+    "provider": "minimax",
+    "api": "anthropic-messages",
+    "outcome": "error",
+    "error_code": "ERR_PACKAGE_PATH_NOT_EXPORTED",
+    "missing_import": "@earendil-works/pi-ai/anthropic",
+    "qualification": "Node no-network probe only, NOT compiled Bun reproduction"
+  }
+}

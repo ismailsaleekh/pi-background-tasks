@@ -1,0 +1,162 @@
+diff --git a/docs/reference/runtime-contracts.md b/docs/reference/runtime-contracts.md
+index 18eac93..fea1625 100644
+--- a/docs/reference/runtime-contracts.md
++++ b/docs/reference/runtime-contracts.md
+@@ -33,7 +33,7 @@ This generated registry lists production environment-variable references, runtim
+ | `OPENROUTER_BASE_URL` | remove | `src/core/attested-pi-run.ts:135`<br>`src/core/fusion/pi-child.ts:100` |
+ | `path` | read | `src/core/common.ts:681` |
+ | `Path` | read | `src/core/common.ts:681` |
+-| `PATH` | read | `src/core/common.ts:681` |
++| `PATH` | read | `src/core/common.ts:681`<br>`src/core/pi-launch.ts:142` |
+ | `PI_API_BASE_URL` | remove | `src/core/attested-pi-run.ts:135`<br>`src/core/fusion/pi-child.ts:100` |
+ | `PI_API_KEY` | remove | `src/core/attested-pi-run.ts:135`<br>`src/core/fusion/pi-child.ts:100` |
+ | `PI_AUTH_FILE` | remove | `src/core/attested-pi-run.ts:135`<br>`src/core/fusion/pi-child.ts:100` |
+diff --git a/src/core/pi-launch.ts b/src/core/pi-launch.ts
+index e803a43..77fe895 100644
+--- a/src/core/pi-launch.ts
++++ b/src/core/pi-launch.ts
+@@ -1,7 +1,7 @@
+ import { readFileSync, realpathSync, statSync } from 'node:fs';
+ import type { Stats } from 'node:fs';
+ import { createRequire } from 'node:module';
+-import { dirname, extname, isAbsolute, join, relative, sep } from 'node:path';
++import { delimiter, dirname, extname, isAbsolute, join, relative, sep } from 'node:path';
+ import { fileURLToPath } from 'node:url';
+ 
+ export interface PiLaunchSpec {
+@@ -13,6 +13,8 @@ export interface PiLaunchSpec {
+ export interface PiLaunchDependencies {
+   readonly platform?: NodeJS.Platform;
+   readonly execPath?: string;
++  readonly hostScript?: string;
++  readonly path?: string;
+   readonly resolvePackageJson?: (specifier: string) => string;
+   readonly readFile?: (path: string) => string | Buffer;
+   readonly realpath?: (path: string) => string;
+@@ -134,9 +136,50 @@ function pathInside(parent: string, child: string): boolean {
+   return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel) && !rel.split(sep).includes('..'));
+ }
+ 
++// A standalone `pi` on PATH stays the preferred launcher.
++export function hasPiExecutable(deps: { platform?: NodeJS.Platform; path?: string } = {}): boolean {
++  const platform = deps.platform ?? process.platform;
++  const rawPath = deps.path ?? process.env['PATH'] ?? '';
++  const suffixes = platform === 'win32' ? ['.exe', '.cmd', '.bat'] : [''];
++  for (const dir of rawPath.split(delimiter)) {
++    if (!dir) continue;
++    for (const suffix of suffixes) {
++      try {
++        if (statSync(join(dir, `pi${suffix}`)).isFile()) return true;
++      } catch {
++        // absent here; keep scanning
++      }
++    }
++  }
++  return false;
++}
++
++// The process that loaded this extension is itself a Pi CLI, so it can launch the
++// child when no standalone `pi` is installed: npx runs, project-local installs,
++// and rebranded hosts all land here.
++function resolveHostSelfLaunch(deps: PiLaunchDependencies): PiLaunchSpec {
++  const execPath = deps.execPath ?? process.execPath;
++  const hostScript = deps.hostScript ?? process.argv[1];
++  const realpath = deps.realpath ?? realpathSync;
++  const stat = deps.stat ?? statSync;
++  if (!hostScript) failResolution('no `pi` on PATH and the host CLI script path is unavailable');
++  // Resolve first: the launcher is usually a bin symlink whose own name carries no extension.
++  const targetReal = readPath('host CLI realpath', hostScript, () => realpath(hostScript));
++  const extension = extname(targetReal).toLowerCase();
++  if (extension !== '.js' && extension !== '.cjs' && extension !== '.mjs')
++    failResolution(`no \`pi\` on PATH and the host CLI is not a node entry point: ${targetReal}`);
++  const targetStat = readPath('host CLI stat', targetReal, () => stat(targetReal));
++  if (!targetStat.isFile()) failResolution('host CLI script is not a regular file');
++  return { executable: execPath, argvPrefix: [targetReal], kind: 'package-node-cli' };
++}
++
+ export function resolvePiLaunch(deps: PiLaunchDependencies = {}): PiLaunchSpec {
+   const platform = deps.platform ?? process.platform;
+-  if (platform !== 'win32') return { executable: 'pi', argvPrefix: [], kind: 'path' };
++  if (platform !== 'win32') {
++    if (hasPiExecutable({ platform, ...(deps.path === undefined ? {} : { path: deps.path }) }))
++      return { executable: 'pi', argvPrefix: [], kind: 'path' };
++    return resolveHostSelfLaunch(deps);
++  }
+ 
+   const resolvePackageJson = deps.resolvePackageJson ?? defaultResolvePackageJson;
+   const readFile = deps.readFile ?? readFileSync;
+diff --git a/tests/unit/pi-launch.test.ts b/tests/unit/pi-launch.test.ts
+index ccfe19c..ec70cb9 100644
+--- a/tests/unit/pi-launch.test.ts
++++ b/tests/unit/pi-launch.test.ts
+@@ -53,17 +53,59 @@ async function removeFixture(root: string): Promise<void> {
+ }
+ 
+ void describe('Pi launch resolution', () => {
+-  void it('returns the bare path form on POSIX without package lookup', () => {
+-    let resolved = false;
+-    const spec = resolvePiLaunch({
+-      platform: 'darwin',
+-      resolvePackageJson: () => {
+-        resolved = true;
+-        throw new Error('should not run');
+-      },
+-    });
+-    assert.deepEqual(spec, { executable: 'pi', argvPrefix: [], kind: 'path' });
+-    assert.equal(resolved, false);
++  void it('returns the bare path form on POSIX when pi is on PATH, without package lookup', async () => {
++    const root = await mkdtemp(join(tmpdir(), 'pi-launch-path-'));
++    try {
++      await writeNestedFile(join(root, 'pi'), '#!/bin/sh\n');
++      let resolved = false;
++      const spec = resolvePiLaunch({
++        platform: 'darwin',
++        path: root,
++        resolvePackageJson: () => {
++          resolved = true;
++          throw new Error('should not run');
++        },
++      });
++      assert.deepEqual(spec, { executable: 'pi', argvPrefix: [], kind: 'path' });
++      assert.equal(resolved, false);
++    } finally {
++      await removeFixture(root);
++    }
++  });
++
++  void it('falls back to the running host CLI on POSIX when pi is absent', async () => {
++    const root = await mkdtemp(join(tmpdir(), 'pi-launch-host-'));
++    try {
++      const hostScript = join(root, 'dist', 'cli.js');
++      await writeNestedFile(hostScript, '#!/usr/bin/env node\n');
++      const spec = resolvePiLaunch({
++        platform: 'darwin',
++        path: join(root, 'empty-bin'),
++        execPath: '/usr/bin/node',
++        hostScript,
++      });
++      assert.deepEqual(spec, {
++        executable: '/usr/bin/node',
++        argvPrefix: [realpathSync(hostScript)],
++        kind: 'package-node-cli',
++      });
++    } finally {
++      await removeFixture(root);
++    }
++  });
++
++  void it('fails closed on POSIX when neither pi nor a node host CLI is available', async () => {
++    const root = await mkdtemp(join(tmpdir(), 'pi-launch-none-'));
++    try {
++      const hostScript = join(root, 'bin', 'launcher.sh');
++      await writeNestedFile(hostScript, '#!/bin/sh\n');
++      assert.throws(
++        () => resolvePiLaunch({ platform: 'darwin', path: join(root, 'empty-bin'), hostScript }),
++        /pi_executable_resolution_failed/,
++      );
++    } finally {
++      await removeFixture(root);
++    }
+   });
+ 
+   void it('resolves a Windows string bin JavaScript CLI through Node', async () => {

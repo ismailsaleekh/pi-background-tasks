@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { canonicalJson } from '../attested-pi-run.js';
+import { canonicalJson } from '../canonical-json.js';
 import { normalizeFusionDeclaredSources, type DeclaredFusionSourceInput } from './source-policy.js';
 import {
   FUSION_INPUT_SCHEMA_VERSION,
@@ -47,10 +47,13 @@ export function buildFusionCleanTaskCanonicalInput(
     });
   }
   if (!['investigate', 'research', 'validate'].includes(options.workflow)) {
-    throw new FusionError('clean-task fusion input is available only to investigate, research, and validate workflows', {
-      code: 'context_capture_failed',
-      childCreated: false,
-    });
+    throw new FusionError(
+      'clean-task fusion input is available only to investigate, research, and validate workflows',
+      {
+        code: 'context_capture_failed',
+        childCreated: false,
+      },
+    );
   }
   const declaredSources = normalizeFusionDeclaredSources(options.declaredSources ?? []);
   if (options.workflow === 'research' && declaredSources.length === 0) {

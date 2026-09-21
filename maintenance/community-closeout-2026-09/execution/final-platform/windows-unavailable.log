@@ -1,0 +1,366 @@
+
+> pi-background-tasks@2.5.0 test:windows
+> tsx --test tests/windows/**/*.test.ts
+
+[windows-integration] this suite requires Windows; current platform is darwin.
+▶ windows integration
+  ✖ runs on Windows (1.526917ms)
+  ✖ writes terminal metadata durably on NTFS through a single writable handle (0.135292ms)
+  ✖ launches the Pi CLI through node without touching the npm .cmd shim (0.094792ms)
+  ✖ passes shell metacharacters through structured argv without executing them (0.072958ms)
+  ✖ keeps cmd.exe as the default dialect and honours the documented bash opt-in (0.091458ms)
+  ✖ runs a non-login bash so profile banners cannot pollute captured output (0.084541ms)
+  ✖ terminates a grandchild process tree with taskkill (0.083875ms)
+  ✖ tolerates taskkill against an already-exited process (0.07375ms)
+  ✖ D1 native 1/6 keeps the same cmd process, nonce, path, and output over real reload (0.109ms)
+  ✖ D1 native 2/6 removes a retained grandchild tree with bg_kill after reload (0.120291ms)
+  ✖ D1 native 3/6 keeps the original timeout and cumulative output cap over reload (0.105709ms)
+  ✖ D1 native 4/6 queues a real nonzero close during the reload gap (0.090417ms)
+  ✖ D1 native 5/6 survives repeated reload without duplicate terminal/taskkill or residual handles (0.098208ms)
+  ✖ D1 native 6/6 removes a real tree when the short no-claim owner deadline fires (0.080208ms)
+  ✖ keeps the event loop responsive while taskkill runs (0.071083ms)
+✖ windows integration (3.351083ms)
+ℹ tests 15
+ℹ suites 1
+ℹ pass 0
+ℹ fail 15
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 993.548625
+
+✖ failing tests:
+
+test at tests/windows/windows-integration.test.ts:1:5943
+✖ runs on Windows (1.526917ms)
+  AssertionError [ERR_ASSERTION]: the Windows integration suite must run on Windows; saw darwin. Run it through the windows-latest CI job (npm run test:windows).
+  
+  'darwin' !== 'win32'
+  
+      at requireWindows (/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/windows/windows-integration.test.ts:40:10)
+      at TestContext.<anonymous> (/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/windows/windows-integration.test.ts:230:5)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Test.start (node:internal/test_runner/test:1177:17)
+      at node:internal/test_runner/test:1769:71
+      at node:internal/per_context/primordials:466:82
+      at new Promise (<anonymous>)
+      at new SafePromise (node:internal/per_context/primordials:435:3)
+      at node:internal/per_context/primordials:466:9 {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'darwin',
+    expected: 'win32',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/windows/windows-integration.test.ts:1:5993
+✖ writes terminal metadata durably on NTFS through a single writable handle (0.135292ms)
+  AssertionError [ERR_ASSERTION]: the Windows integration suite must run on Windows; saw darwin. Run it through the windows-latest CI job (npm run test:windows).
+  
+  'darwin' !== 'win32'
+  
+      at requireWindows (/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/windows/windows-integration.test.ts:40:10)
+      at TestContext.<anonymous> (/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/windows/windows-integration.test.ts:234:5)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1771:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'darwin',
+    expected: 'win32',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/windows/windows-integration.test.ts:3:321
+✖ launches the Pi CLI through node without touching the npm .cmd shim (0.094792ms)
+  AssertionError [ERR_ASSERTION]: the Windows integration suite must run on Windows; saw darwin. Run it through the windows-latest CI job (npm run test:windows).
+  
+  'darwin' !== 'win32'
+  
+      at requireWindows (/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/windows/windows-integration.test.ts:40:10)
+      at TestContext.<anonymous> (/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/windows/windows-integration.test.ts:257:5)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'darwin',
+    expected: 'win32',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/windows/windows-integration.test.ts:3:989
+✖ passes shell metacharacters through structured argv without executing them (0.072958ms)
+  AssertionError [ERR_ASSERTION]: the Windows integration suite must run on Windows; saw darwin. Run it through the windows-latest CI job (npm run test:windows).
+  
+  'darwin' !== 'win32'
+  
+      at requireWindows (/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/windows/windows-integration.test.ts:40:10)
+      at TestContext.<anonymous> (/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/windows/windows-integration.test.ts:274:5)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'darwin',
+    expected: 'win32',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/windows/windows-integration.test.ts:3:1684
+✖ keeps cmd.exe as the default dialect and honours the documented bash opt-in (0.091458ms)
+  AssertionError [ERR_ASSERTION]: the Windows integration suite must run on Windows; saw darwin. Run it through the windows-latest CI job (npm run test:windows).
+  
+  'darwin' !== 'win32'
+  
+      at requireWindows (/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/windows/windows-integration.test.ts:40:10)
+      at TestContext.<anonymous> (/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/windows/windows-integration.test.ts:299:5)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'darwin',
+    expected: 'win32',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/windows/windows-integration.test.ts:3:2639
+✖ runs a non-login bash so profile banners cannot pollute captured output (0.084541ms)
+  AssertionError [ERR_ASSERTION]: the Windows integration suite must run on Windows; saw darwin. Run it through the windows-latest CI job (npm run test:windows).
+  
+  'darwin' !== 'win32'
+  
+      at requireWindows (/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/windows/windows-integration.test.ts:40:10)
+      at TestContext.<anonymous> (/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/windows/windows-integration.test.ts:324:5)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'darwin',
+    expected: 'win32',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/windows/windows-integration.test.ts:3:3254
+✖ terminates a grandchild process tree with taskkill (0.083875ms)
+  AssertionError [ERR_ASSERTION]: the Windows integration suite must run on Windows; saw darwin. Run it through the windows-latest CI job (npm run test:windows).
+  
+  'darwin' !== 'win32'
+  
+      at requireWindows (/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/windows/windows-integration.test.ts:40:10)
+      at TestContext.<anonymous> (/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/windows/windows-integration.test.ts:342:5)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'darwin',
+    expected: 'win32',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/windows/windows-integration.test.ts:8:837
+✖ tolerates taskkill against an already-exited process (0.07375ms)
+  AssertionError [ERR_ASSERTION]: the Windows integration suite must run on Windows; saw darwin. Run it through the windows-latest CI job (npm run test:windows).
+  
+  'darwin' !== 'win32'
+  
+      at requireWindows (/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/windows/windows-integration.test.ts:40:10)
+      at TestContext.<anonymous> (/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/windows/windows-integration.test.ts:391:5)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'darwin',
+    expected: 'win32',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/windows/windows-integration.test.ts:8:1483
+✖ D1 native 1/6 keeps the same cmd process, nonce, path, and output over real reload (0.109ms)
+  AssertionError [ERR_ASSERTION]: the Windows integration suite must run on Windows; saw darwin. Run it through the windows-latest CI job (npm run test:windows).
+  
+  'darwin' !== 'win32'
+  
+      at requireWindows (/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/windows/windows-integration.test.ts:40:10)
+      at TestContext.<anonymous> (/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/windows/windows-integration.test.ts:413:5)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'darwin',
+    expected: 'win32',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/windows/windows-integration.test.ts:8:2991
+✖ D1 native 2/6 removes a retained grandchild tree with bg_kill after reload (0.120291ms)
+  AssertionError [ERR_ASSERTION]: the Windows integration suite must run on Windows; saw darwin. Run it through the windows-latest CI job (npm run test:windows).
+  
+  'darwin' !== 'win32'
+  
+      at requireWindows (/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/windows/windows-integration.test.ts:40:10)
+      at TestContext.<anonymous> (/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/windows/windows-integration.test.ts:455:5)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'darwin',
+    expected: 'win32',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/windows/windows-integration.test.ts:8:4550
+✖ D1 native 3/6 keeps the original timeout and cumulative output cap over reload (0.105709ms)
+  AssertionError [ERR_ASSERTION]: the Windows integration suite must run on Windows; saw darwin. Run it through the windows-latest CI job (npm run test:windows).
+  
+  'darwin' !== 'win32'
+  
+      at requireWindows (/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/windows/windows-integration.test.ts:40:10)
+      at TestContext.<anonymous> (/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/windows/windows-integration.test.ts:500:5)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'darwin',
+    expected: 'win32',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/windows/windows-integration.test.ts:8:6209
+✖ D1 native 4/6 queues a real nonzero close during the reload gap (0.090417ms)
+  AssertionError [ERR_ASSERTION]: the Windows integration suite must run on Windows; saw darwin. Run it through the windows-latest CI job (npm run test:windows).
+  
+  'darwin' !== 'win32'
+  
+      at requireWindows (/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/windows/windows-integration.test.ts:40:10)
+      at TestContext.<anonymous> (/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/windows/windows-integration.test.ts:554:5)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'darwin',
+    expected: 'win32',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/windows/windows-integration.test.ts:8:7313
+✖ D1 native 5/6 survives repeated reload without duplicate terminal/taskkill or residual handles (0.098208ms)
+  AssertionError [ERR_ASSERTION]: the Windows integration suite must run on Windows; saw darwin. Run it through the windows-latest CI job (npm run test:windows).
+  
+  'darwin' !== 'win32'
+  
+      at requireWindows (/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/windows/windows-integration.test.ts:40:10)
+      at TestContext.<anonymous> (/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/windows/windows-integration.test.ts:599:5)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'darwin',
+    expected: 'win32',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/windows/windows-integration.test.ts:8:8746
+✖ D1 native 6/6 removes a real tree when the short no-claim owner deadline fires (0.080208ms)
+  AssertionError [ERR_ASSERTION]: the Windows integration suite must run on Windows; saw darwin. Run it through the windows-latest CI job (npm run test:windows).
+  
+  'darwin' !== 'win32'
+  
+      at requireWindows (/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/windows/windows-integration.test.ts:40:10)
+      at TestContext.<anonymous> (/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/windows/windows-integration.test.ts:642:5)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'darwin',
+    expected: 'win32',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/windows/windows-integration.test.ts:8:10304
+✖ keeps the event loop responsive while taskkill runs (0.071083ms)
+  AssertionError [ERR_ASSERTION]: the Windows integration suite must run on Windows; saw darwin. Run it through the windows-latest CI job (npm run test:windows).
+  
+  'darwin' !== 'win32'
+  
+      at requireWindows (/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/windows/windows-integration.test.ts:40:10)
+      at TestContext.<anonymous> (/Users/lizavasilyeva/work/ai-pipeline/packages/pi-background-tasks/tests/windows/windows-integration.test.ts:690:5)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1306:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:897:18)
+      at Test.postRun (node:internal/test_runner/test:1447:19)
+      at Test.run (node:internal/test_runner/test:1372:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'darwin',
+    expected: 'win32',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

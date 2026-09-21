@@ -1,7 +1,7 @@
 import { spawn as nodeSpawn, type SpawnOptions } from 'node:child_process';
-import { createHash, randomBytes } from 'node:crypto';
-import { mkdir, readFile, realpath, stat } from 'node:fs/promises';
-import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { randomBytes } from 'node:crypto';
+import { readFile, realpath, stat } from 'node:fs/promises';
+import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import type { Api, Model } from '@earendil-works/pi-ai';
 import type {
   BackgroundTaskChildProcess,
@@ -9,7 +9,26 @@ import type {
   BackgroundTaskSpawn,
 } from './registry.js';
 import { isJsonObject, parseJsonText, type BgTaskSnapshot, type JsonObject } from './common.js';
-import { replaceFileDurable, writeFileDurable } from './durable-fs.js';
+import { canonicalJson, sha256Buffer } from './canonical-json.js';
+import {
+  ATTESTED_GIT_KILL_GRACE_MS,
+  ATTESTED_GIT_MAX_OUTPUT_BYTES,
+  ATTESTED_GIT_TIMEOUT_MS,
+} from './attested-pi-contract.js';
+export { canonicalJson, sha256Buffer } from './canonical-json.js';
+export {
+  ATTESTED_GIT_KILL_GRACE_MS,
+  ATTESTED_GIT_MAX_OUTPUT_BYTES,
+  ATTESTED_GIT_TIMEOUT_MS,
+  ATTESTED_TASK_ID_PATTERN,
+} from './attested-pi-contract.js';
+export { closeAndFsyncOutputStream, writeFileFsynced, writeJsonAtomic } from './task-durable.js';
+import {
+  runWindowsTaskkill,
+  type TaskkillOutcome,
+  type WindowsKillPhase,
+  type WindowsTaskkillOptions,
+} from './windows-taskkill.js';
 import {
   assertWindowsCommandLineWithinLimit,
   piLaunchArgv,
@@ -18,7 +37,6 @@ import {
 } from './pi-launch.js';
 
 export const PI_TASK_ATTESTATION_SCHEMA_VERSION = 'phase2.pi_task_attestation.v1';
-export const ATTESTED_TASK_ID_PATTERN = /^b[0-9a-f]{32}$/;
 
 export interface StructuredPiLaunchRequest {
   name: string;
@@ -50,6 +68,101 @@ export interface GitAuthoritySnapshot {
   commit: string;
   tree: string;
   clean: boolean;
+}
+
+interface AttestedGitOutputStream {
+  on(event: 'data', listener: (data: Buffer | string) => void): unknown;
+  off(event: 'data', listener: (data: Buffer | string) => void): unknown;
+}
+
+export interface AttestedGitChildProcess {
+  readonly pid?: number | undefined;
+  readonly stdout?: AttestedGitOutputStream | null | undefined;
+  readonly stderr?: AttestedGitOutputStream | null | undefined;
+  kill(signal?: NodeJS.Signals): boolean;
+  on(event: 'error', listener: (error: Error) => void): unknown;
+  on(
+    event: 'close',
+    listener: (code: number | null, signal: NodeJS.Signals | null) => void,
+  ): unknown;
+  off(event: 'error', listener: (error: Error) => void): unknown;
+  off(
+    event: 'close',
+    listener: (code: number | null, signal: NodeJS.Signals | null) => void,
+  ): unknown;
+}
+
+export type AttestedGitSpawn = (
+  command: string,
+  args: string[],
+  options: SpawnOptions,
+) => AttestedGitChildProcess;
+
+export type AttestedGitKillProcess = (pid: number, signal?: NodeJS.Signals | number) => boolean;
+
+export type AttestedGitKillTree = (
+  pid: number,
+  phase: WindowsKillPhase,
+  signal?: AbortSignal,
+) => Promise<TaskkillOutcome>;
+
+export interface GitCommandOptions {
+  readonly signal?: AbortSignal | undefined;
+  readonly deadlineAt?: number | undefined;
+  readonly spawn?: AttestedGitSpawn | undefined;
+  readonly killProcess?: AttestedGitKillProcess | undefined;
+  readonly killTree?: AttestedGitKillTree | undefined;
+  readonly platform?: NodeJS.Platform | undefined;
+  readonly env?: NodeJS.ProcessEnv | undefined;
+  readonly killGraceMs?: number | undefined;
+  readonly maxOutputBytes?: number | undefined;
+}
+
+interface GitCloseRecord {
+  readonly code: number | null;
+  readonly signal: NodeJS.Signals | null;
+}
+
+export class AttestedGitCommandError extends Error {
+  readonly code = 'attested_git_failed';
+
+  constructor(message: string) {
+    super(message);
+    this.name = 'AttestedGitCommandError';
+  }
+}
+
+export class AttestedGitTimeoutError extends Error {
+  readonly code = 'attested_git_timeout';
+
+  constructor(args: readonly string[]) {
+    super(`git ${args.join(' ')} timed out during attested Pi preflight`);
+    this.name = 'AttestedGitTimeoutError';
+  }
+}
+
+export class AttestedGitOutputLimitError extends Error {
+  readonly code = 'attested_git_output_limit';
+
+  constructor(args: readonly string[], maxBytes: number) {
+    super(
+      `git ${args.join(' ')} output exceeded the explicit ${String(maxBytes)} bytes per-stream limit`,
+    );
+    this.name = 'AttestedGitOutputLimitError';
+  }
+}
+
+class AttestedGitCleanupError extends Error {
+  readonly code = 'attested_git_cleanup_failed';
+  readonly primaryError: Error;
+  readonly cleanupErrors: readonly string[];
+
+  constructor(primaryError: Error, cleanupErrors: readonly string[]) {
+    super(`${primaryError.message}; Git process-tree cleanup failed: ${cleanupErrors.join('; ')}`);
+    this.name = 'AttestedGitCleanupError';
+    this.primaryError = primaryError;
+    this.cleanupErrors = [...cleanupErrors];
+  }
 }
 
 export interface ParsedPiEvents {
@@ -182,35 +295,363 @@ export async function resolveReportPath(cwd: string, reportPath: string): Promis
   return resolved;
 }
 
-export async function gitAuthoritySnapshot(cwd: string): Promise<GitAuthoritySnapshot> {
-  const commit = await runGit(cwd, ['rev-parse', 'HEAD']);
-  const tree = await runGit(cwd, ['rev-parse', 'HEAD^{tree}']);
-  const status = await runGit(cwd, ['status', '--porcelain=v1', '--untracked-files=all']);
+function positiveInteger(value: number | undefined, fallback: number, label: string): number {
+  const candidate = value ?? fallback;
+  if (!Number.isFinite(candidate) || candidate <= 0) {
+    throw new Error(`${label} must be a positive finite number`);
+  }
+  return Math.max(1, Math.floor(candidate));
+}
+
+function errorCode(error: unknown): string | undefined {
+  if (typeof error !== 'object' || error === null) return undefined;
+  const code = Reflect.get(error, 'code');
+  return typeof code === 'string' ? code : undefined;
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function signalError(signal: AbortSignal): Error {
+  return signal.reason instanceof Error
+    ? signal.reason
+    : new Error(
+        `Attested Git preflight cancelled${signal.reason === undefined ? '' : `: ${String(signal.reason)}`}`,
+      );
+}
+
+function gitDeadline(options: GitCommandOptions): number {
+  const configured = options.deadlineAt;
+  return typeof configured === 'number' && Number.isFinite(configured)
+    ? configured
+    : Date.now() + ATTESTED_GIT_TIMEOUT_MS;
+}
+
+function assertGitBoundary(options: GitCommandOptions, args: readonly string[]): void {
+  if (options.signal?.aborted === true) throw signalError(options.signal);
+  if (Date.now() >= gitDeadline(options)) throw new AttestedGitTimeoutError(args);
+}
+
+class BoundedGitCapture {
+  private readonly chunks: Buffer[] = [];
+  private bytes = 0;
+  private exceeded = false;
+
+  constructor(private readonly maxBytes: number) {}
+
+  append(data: Buffer | string): boolean {
+    const buffer = Buffer.isBuffer(data) ? data : Buffer.from(data, 'utf8');
+    const remaining = this.maxBytes - this.bytes;
+    if (remaining > 0) {
+      const kept = buffer.length <= remaining ? buffer : buffer.subarray(0, remaining);
+      this.chunks.push(kept);
+      this.bytes += kept.length;
+    }
+    if (buffer.length > Math.max(0, remaining)) this.exceeded = true;
+    return this.exceeded;
+  }
+
+  text(): string {
+    return Buffer.concat(this.chunks, this.bytes).toString('utf8');
+  }
+
+  diagnostic(): string {
+    const text = this.text().trim();
+    return this.exceeded
+      ? `${text}${text.length > 0 ? ' ' : ''}[output exceeded ${String(this.maxBytes)} bytes]`
+      : text;
+  }
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolvePromise) => {
+    setTimeout(resolvePromise, ms);
+  });
+}
+
+function posixTreeSignal(
+  child: AttestedGitChildProcess,
+  pid: number | undefined,
+  signal: NodeJS.Signals,
+  killProcess: AttestedGitKillProcess,
+): string[] {
+  const errors: string[] = [];
+  if (pid !== undefined) {
+    try {
+      if (killProcess(-pid, signal)) return errors;
+      errors.push(`process group ${signal} returned false`);
+    } catch (error) {
+      if (errorCode(error) === 'ESRCH') return [];
+      errors.push(`process group ${signal} failed: ${errorMessage(error)}`);
+    }
+  }
+  try {
+    if (child.kill(signal)) return errors;
+    errors.push(`child ${signal} returned false`);
+  } catch (error) {
+    if (errorCode(error) === 'ESRCH') return errors;
+    errors.push(`child ${signal} failed: ${errorMessage(error)}`);
+  }
+  return errors;
+}
+
+function windowsTaskkillSucceeded(outcome: TaskkillOutcome): boolean {
+  return outcome.exitCode === 0 || outcome.exitCode === 128;
+}
+
+function describeTaskkill(phase: WindowsKillPhase, outcome: TaskkillOutcome): string {
+  const stderr = outcome.stderr.trim();
+  const stdout = outcome.stdout.trim();
+  const detail = stderr || stdout;
+  const truncated = outcome.stderrTruncated || outcome.stdoutTruncated ? ' (output truncated)' : '';
+  return `taskkill ${phase} exited ${String(outcome.exitCode)}${detail ? `: ${detail}` : ''}${truncated}`;
+}
+
+interface GitTerminationOptions {
+  readonly platform: NodeJS.Platform;
+  readonly killProcess: AttestedGitKillProcess;
+  readonly killTree: AttestedGitKillTree;
+}
+
+async function terminateGitProcessTree(
+  child: AttestedGitChildProcess,
+  options: GitTerminationOptions,
+  killGraceMs: number,
+  isClosed: () => boolean,
+): Promise<string[]> {
+  const pid = child.pid;
+  if (options.platform !== 'win32') {
+    const errors = posixTreeSignal(child, pid, 'SIGTERM', options.killProcess);
+    // Keep the grace timer referenced and always probe/force the process group
+    // once. The direct Git process can exit before a descendant that ignored
+    // TERM; forcing the detached group closes that tree-shaped race.
+    await delay(killGraceMs);
+    errors.push(...posixTreeSignal(child, pid, 'SIGKILL', options.killProcess));
+    return errors;
+  }
+
+  if (pid === undefined) return ['Git process has no pid for Windows tree termination'];
+  const softController = new AbortController();
+  let softOutcome: TaskkillOutcome | undefined;
+  let softError: unknown;
+  let softSettled = false;
+  const soft = Promise.resolve()
+    .then(() => options.killTree(pid, 'terminate', softController.signal))
+    .then(
+      (outcome) => {
+        softOutcome = outcome;
+        softSettled = true;
+      },
+      (error: unknown) => {
+        softError = error;
+        softSettled = true;
+      },
+    );
+  await delay(killGraceMs);
+  const softSucceeded = softOutcome !== undefined && windowsTaskkillSucceeded(softOutcome);
+  const needsForce = !softSettled || !softSucceeded || !isClosed();
+  if (!softSettled) softController.abort();
+  await soft;
+
+  const errors: string[] = [];
+  if (softError !== undefined) errors.push(`taskkill terminate failed: ${errorMessage(softError)}`);
+  else if (softOutcome !== undefined && !windowsTaskkillSucceeded(softOutcome))
+    errors.push(describeTaskkill('terminate', softOutcome));
+  if (!needsForce) return errors;
+
+  try {
+    const forceOutcome = await options.killTree(pid, 'force');
+    if (!windowsTaskkillSucceeded(forceOutcome))
+      errors.push(describeTaskkill('force', forceOutcome));
+  } catch (error) {
+    errors.push(`taskkill force failed: ${errorMessage(error)}`);
+  }
+  return errors;
+}
+
+function defaultGitSpawn(
+  command: string,
+  args: string[],
+  options: SpawnOptions,
+): AttestedGitChildProcess {
+  return nodeSpawn(command, args, options);
+}
+
+export async function runGitCommand(
+  cwd: string,
+  args: string[],
+  options: GitCommandOptions = {},
+): Promise<string> {
+  const deadlineAt = gitDeadline(options);
+  const boundedOptions: GitCommandOptions = { ...options, deadlineAt };
+  assertGitBoundary(boundedOptions, args);
+  const platform = options.platform ?? process.platform;
+  const env = options.env ?? process.env;
+  const spawn = options.spawn ?? defaultGitSpawn;
+  const killProcess = options.killProcess ?? process.kill.bind(process);
+  const killTree: AttestedGitKillTree =
+    options.killTree ??
+    ((pid, phase, signal) => {
+      const taskkillOptions: WindowsTaskkillOptions =
+        signal === undefined ? { env } : { env, signal };
+      return runWindowsTaskkill(pid, phase, taskkillOptions);
+    });
+  const killGraceMs = positiveInteger(
+    options.killGraceMs,
+    ATTESTED_GIT_KILL_GRACE_MS,
+    'killGraceMs',
+  );
+  const maxOutputBytes = positiveInteger(
+    options.maxOutputBytes,
+    ATTESTED_GIT_MAX_OUTPUT_BYTES,
+    'maxOutputBytes',
+  );
+
+  let child: AttestedGitChildProcess;
+  try {
+    child = spawn('git', args, {
+      cwd,
+      detached: platform !== 'win32',
+      env,
+      shell: false,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      windowsHide: true,
+    });
+  } catch (error) {
+    throw new AttestedGitCommandError(
+      `git ${args.join(' ')} failed to spawn: ${errorMessage(error)}`,
+    );
+  }
+
+  const admissionSignal = options.signal;
+  const stdout = new BoundedGitCapture(maxOutputBytes);
+  const stderr = new BoundedGitCapture(maxOutputBytes);
+  let closed = false;
+  let closeRecord: GitCloseRecord | undefined;
+  let resolveClose: (() => void) | undefined;
+  const closePromise = new Promise<void>((resolvePromise) => {
+    resolveClose = resolvePromise;
+  });
+  let primaryError: Error | undefined;
+  let processError: Error | undefined;
+  let termination: Promise<string[]> | undefined;
+  let deadlineTimer: NodeJS.Timeout | undefined;
+
+  const requestTermination = (error: Error): void => {
+    if (closed) return;
+    primaryError ??= error;
+    termination ??= terminateGitProcessTree(
+      child,
+      { platform, killProcess, killTree },
+      killGraceMs,
+      () => closed,
+    );
+  };
+  const stdoutListener = (data: Buffer | string): void => {
+    if (stdout.append(data))
+      requestTermination(new AttestedGitOutputLimitError(args, maxOutputBytes));
+  };
+  const stderrListener = (data: Buffer | string): void => {
+    if (stderr.append(data))
+      requestTermination(new AttestedGitOutputLimitError(args, maxOutputBytes));
+  };
+  const errorListener = (error: Error): void => {
+    processError = error;
+    const wrapped = new AttestedGitCommandError(
+      `git ${args.join(' ')} process error: ${error.message}`,
+    );
+    if (child.pid === undefined) {
+      primaryError ??= wrapped;
+      closed = true;
+      closeRecord = { code: null, signal: null };
+      resolveClose?.();
+      return;
+    }
+    requestTermination(wrapped);
+  };
+  const closeListener = (code: number | null, signal: NodeJS.Signals | null): void => {
+    if (closed) return;
+    closed = true;
+    closeRecord = { code, signal };
+    if (deadlineTimer !== undefined) {
+      clearTimeout(deadlineTimer);
+      deadlineTimer = undefined;
+    }
+    resolveClose?.();
+  };
+  const abortListener = (): void => {
+    if (admissionSignal !== undefined) requestTermination(signalError(admissionSignal));
+  };
+
+  child.stdout?.on('data', stdoutListener);
+  child.stderr?.on('data', stderrListener);
+  child.on('error', errorListener);
+  child.on('close', closeListener);
+  admissionSignal?.addEventListener('abort', abortListener, { once: true });
+  const remainingMs = Math.max(0, deadlineAt - Date.now());
+  deadlineTimer = setTimeout(() => {
+    requestTermination(new AttestedGitTimeoutError(args));
+  }, remainingMs);
+  if (admissionSignal?.aborted === true) abortListener();
+
+  try {
+    await closePromise;
+    const cleanupErrors = termination === undefined ? [] : await termination;
+    if (primaryError !== undefined) {
+      if (cleanupErrors.length > 0) throw new AttestedGitCleanupError(primaryError, cleanupErrors);
+      throw primaryError;
+    }
+    if (processError !== undefined) {
+      throw new AttestedGitCommandError(
+        `git ${args.join(' ')} process error: ${processError.message}`,
+      );
+    }
+    const close = closeRecord;
+    if (close?.code === 0) return stdout.text().trim();
+    const exit = close?.code === null || close === undefined ? 'null' : String(close.code);
+    const signal = close?.signal ? ` (${close.signal})` : '';
+    throw new AttestedGitCommandError(
+      `git ${args.join(' ')} failed with exit ${exit}${signal}: ${stderr.diagnostic()}`,
+    );
+  } finally {
+    if (deadlineTimer !== undefined) clearTimeout(deadlineTimer);
+    admissionSignal?.removeEventListener('abort', abortListener);
+    child.stdout?.off('data', stdoutListener);
+    child.stderr?.off('data', stderrListener);
+    child.off('error', errorListener);
+    child.off('close', closeListener);
+  }
+}
+
+function withDefaultGitDeadline(options: GitCommandOptions): GitCommandOptions {
+  return options.deadlineAt === undefined
+    ? { ...options, deadlineAt: Date.now() + ATTESTED_GIT_TIMEOUT_MS }
+    : options;
+}
+
+export async function gitAuthoritySnapshot(
+  cwd: string,
+  options: GitCommandOptions = {},
+): Promise<GitAuthoritySnapshot> {
+  const bounded = withDefaultGitDeadline(options);
+  const commit = await runGitCommand(cwd, ['rev-parse', 'HEAD'], bounded);
+  const tree = await runGitCommand(cwd, ['rev-parse', 'HEAD^{tree}'], bounded);
+  const status = await runGitCommand(
+    cwd,
+    ['status', '--porcelain=v1', '--untracked-files=all'],
+    bounded,
+  );
   return { commit, tree, clean: status.length === 0 };
 }
 
-export async function gitRepoRoot(cwd: string): Promise<string> {
-  return realpath(await runGit(cwd, ['rev-parse', '--show-toplevel']));
-}
-
-function runGit(cwd: string, args: string[]): Promise<string> {
-  return new Promise((resolvePromise, reject) => {
-    const child = nodeSpawn('git', args, { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
-    const out: Buffer[] = [];
-    const err: Buffer[] = [];
-    child.stdout.on('data', (chunk: Buffer) => out.push(chunk));
-    child.stderr.on('data', (chunk: Buffer) => err.push(chunk));
-    child.on('error', reject);
-    child.on('close', (code) => {
-      if (code === 0) {
-        resolvePromise(Buffer.concat(out).toString('utf8').trim());
-        return;
-      }
-      reject(
-        new Error(`git ${args.join(' ')} failed: ${Buffer.concat(err).toString('utf8').trim()}`),
-      );
-    });
-  });
+export async function gitRepoRoot(cwd: string, options: GitCommandOptions = {}): Promise<string> {
+  const bounded = withDefaultGitDeadline(options);
+  const root = await runGitCommand(cwd, ['rev-parse', '--show-toplevel'], bounded);
+  assertGitBoundary(bounded, ['rev-parse', '--show-toplevel']);
+  const resolved = await realpath(root);
+  assertGitBoundary(bounded, ['rev-parse', '--show-toplevel']);
+  return resolved;
 }
 
 export function observePiOAuth(
@@ -406,63 +847,9 @@ export function parsePiJsonEvents(raw: Buffer): ParsedPiEvents {
   };
 }
 
-export function sha256Buffer(buffer: Buffer): string {
-  return `sha256:${createHash('sha256').update(buffer).digest('hex')}`;
-}
-
 export async function sha256File(path: string): Promise<{ byteLength: number; sha256: string }> {
   const bytes = await readFile(path);
   return { byteLength: bytes.length, sha256: sha256Buffer(bytes) };
-}
-
-export function canonicalJson(value: unknown): string {
-  return JSON.stringify(sortJson(value));
-}
-
-function sortJson(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(sortJson);
-  if (!isJsonObject(value)) return value;
-  return Object.fromEntries(
-    Object.keys(value)
-      .sort()
-      .map((key) => [key, sortJson(value[key])]),
-  );
-}
-
-export async function writeFileFsynced(path: string, data: Buffer | string): Promise<void> {
-  await mkdir(dirname(path), { recursive: true });
-  await writeFileDurable(path, data);
-}
-
-export async function writeJsonAtomic(path: string, value: unknown): Promise<void> {
-  await replaceFileDurable(path, `${JSON.stringify(value, null, 2)}\n`);
-}
-
-export async function closeAndFsyncOutputStream(
-  stream: NodeJS.WritableStream | undefined,
-): Promise<void> {
-  if (!stream) return;
-  await new Promise<void>((resolvePromise, reject) => {
-    let settled = false;
-    const finish = () => {
-      if (settled) return;
-      settled = true;
-      stream.off('error', fail);
-      stream.off('close', finish);
-      stream.off('finish', finish);
-      resolvePromise();
-    };
-    const fail = (error: Error) => {
-      if (settled) return;
-      settled = true;
-      stream.off('close', finish);
-      reject(error);
-    };
-    stream.once('close', finish);
-    stream.once('finish', finish);
-    stream.once('error', fail);
-    stream.end();
-  });
 }
 
 export function spawnAndCapturePi(

@@ -1,0 +1,17 @@
+▶ global Anthropic attribution extension
+  ✔ matches all SPS exact-line variants while preserving unrelated blocks and cache controls (1.118042ms)
+  ✔ BUG-192 strips Codex/ZAI opaque and redacted reasoning before Anthropic transport (0.682667ms)
+  ✔ BUG-193 owns hookless compaction attribution from request-scoped sessionId (5.700958ms)
+  ✔ normalizes observed cross-provider tool-call IDs while preserving valid IDs and images (1.011958ms)
+  ✔ leaves non-Anthropic payloads untouched (0.062625ms)
+  ✔ adds package attribution to attested Anthropic argv only (0.250708ms)
+  ✔ allows exactly one independently loaded copy to own global registration (0.170375ms)
+✔ global Anthropic attribution extension (9.466541ms)
+ℹ tests 7
+ℹ suites 1
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1198.135791

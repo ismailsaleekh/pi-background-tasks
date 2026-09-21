@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { canonicalJson } from '../attested-pi-run.js';
+import { canonicalJson } from '../canonical-json.js';
 import {
   UnsupportedConversationBlockError,
   projectVisibleConversationV2,
@@ -241,11 +241,7 @@ export function verifyDelegateSeedBytes(
   return rebuildSeed(parsed, expected.taskId);
 }
 
-function requireString(
-  record: Record<PropertyKey, unknown>,
-  key: string,
-  taskId: string,
-): string {
+function requireString(record: Record<PropertyKey, unknown>, key: string, taskId: string): string {
   const value = record[key];
   if (typeof value !== 'string') {
     throw new DelegateError(`delegate seed field ${key} must be a string`, {
@@ -404,7 +400,9 @@ function rebuildSeed(record: Record<PropertyKey, unknown>, taskId: string): Dele
  * so it is carried through without re-deriving values that would only duplicate
  * the parent's computation.
  */
-function readDelegateProjection(record: Record<PropertyKey, unknown>): DelegateConversationProjection {
+function readDelegateProjection(
+  record: Record<PropertyKey, unknown>,
+): DelegateConversationProjection {
   const projection: unknown = record;
   if (!isDelegateProjection(projection)) {
     throw new DelegateError('delegate seed conversation_projection is malformed', {

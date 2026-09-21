@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { chmod, mkdir, open, readFile, rename, rm } from 'node:fs/promises';
 import { basename, isAbsolute, join, relative, sep } from 'node:path';
-import { canonicalJson } from '../attested-pi-run.js';
+import { canonicalJson } from '../canonical-json.js';
 import { sanitizePathSegment } from '../common.js';
 import { replaceFileDurable, writeFileDurable } from '../durable-fs.js';
 import {
@@ -92,11 +92,14 @@ function sha256Bytes(bytes: Buffer): string {
 
 function pathInside(parent: string, child: string): boolean {
   const rel = relative(parent, child);
-  return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel) && !rel.split(sep).includes('..'));
+  return (
+    rel === '' || (!rel.startsWith('..') && !isAbsolute(rel) && !rel.split(sep).includes('..'))
+  );
 }
 
 function artifactError(message: string, cause?: unknown): DelegateError {
-  const suffix = cause === undefined ? '' : `: ${cause instanceof Error ? cause.message : String(cause)}`;
+  const suffix =
+    cause === undefined ? '' : `: ${cause instanceof Error ? cause.message : String(cause)}`;
   return new DelegateError(`${message}${suffix}`, {
     code: 'artifact_error',
     childCreated: true,
@@ -150,9 +153,7 @@ export class DelegateArtifactStore {
    * directory is created with `recursive: false` so a pre-existing directory is
    * a loud failure rather than a silent reuse.
    */
-  static async create(
-    options: CreateDelegateArtifactStoreOptions,
-  ): Promise<DelegateArtifactStore> {
+  static async create(options: CreateDelegateArtifactStoreOptions): Promise<DelegateArtifactStore> {
     const sessionSegment = sanitizePathSegment(
       options.sessionId ?? `session-${String(process.pid)}`,
     );
@@ -260,9 +261,12 @@ export class DelegateArtifactStore {
           taskId: this.manifest.task_id,
           artifactDir: this.rootDisplay,
           preserved: diagnosticNames,
-          remediation: diagnosticNames.length === 0
-            ? ['No diagnostic control artifact exists; inspect the background task merged output if one was created.']
-            : [`Inspect the existing delegate control artifacts: ${diagnosticNames.join(', ')}.`],
+          remediation:
+            diagnosticNames.length === 0
+              ? [
+                  'No diagnostic control artifact exists; inspect the background task merged output if one was created.',
+                ]
+              : [`Inspect the existing delegate control artifacts: ${diagnosticNames.join(', ')}.`],
         },
       );
     }

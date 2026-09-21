@@ -353,7 +353,10 @@ expect {
   -re "bg: PTY Scroll" {}
   timeout { puts "SCROLL_DETAIL_TIMEOUT"; exit 35 }
 }
-after 700
+expect {
+  -re "PTYSCROLL-60" {}
+  timeout { puts "SCROLL_OUTPUT_TIMEOUT"; exit 37 }
+}
 send "\\033\\[A"
 send "\\033\\[A"
 send "\\033\\[A"
@@ -461,7 +464,10 @@ expect {
   -re "Started PTY Done Rerun" {}
   timeout { puts "RERUN_COMPLETE_START_TIMEOUT"; exit 22 }
 }
-after 400
+expect {
+  -re "bg completed.*PTY Done Rerun" {}
+  timeout { puts "RERUN_COMPLETE_TERMINAL_TIMEOUT"; exit 33 }
+}
 send "\\033\\[1;2B"
 expect {
   -re "bg tasks focused" {}
@@ -487,18 +493,23 @@ expect {
 }
 send "k"
 expect {
-  -re "Stopping|Stopped|stopped" {}
+  -re "Stopped PTY Stop Rerun" {}
   timeout { puts "RERUN_KILLED_STOP_TIMEOUT"; exit 27 }
 }
 send "R"
 expect {
-  -re "Reran as PTY Stop Rerun|Rerunning PTY Stop Rerun" {}
+  -re "Reran as PTY Stop Rerun" {}
   timeout { puts "RERUN_KILLED_ACTION_TIMEOUT"; exit 28 }
 }
-send "k"
+send "a"
 expect {
-  -re "Stopping|Stopped|stopped" {}
-  timeout { puts "RERUN_KILLED_RERUN_STOP_TIMEOUT"; exit 29 }
+  -re "Press a/K again to stop all" {}
+  timeout { puts "RERUN_KILLED_STOP_ALL_ARM_TIMEOUT"; exit 29 }
+}
+send "K"
+expect {
+  -re {Stopped [1-9][0-9]* running task} {}
+  timeout { puts "RERUN_KILLED_RERUN_STOP_TIMEOUT"; exit 34 }
 }
 send "x"
 after 200
@@ -508,7 +519,10 @@ expect {
   -re "Started PTY Bad Rerun" {}
   timeout { puts "RERUN_FAILED_START_TIMEOUT"; exit 30 }
 }
-after 500
+expect {
+  -re "bg failed.*PTY Bad Rerun" {}
+  timeout { puts "RERUN_FAILED_TERMINAL_TIMEOUT"; exit 35 }
+}
 send "\\033\\[1;2B"
 expect {
   -re "bg tasks focused" {}
