@@ -83,6 +83,85 @@ function recordingHost(bus: SynchronousTestBus): {
 }
 
 void describe('global Anthropic attribution extension', () => {
+  for (const reasoning of ['low', 'medium', 'high', 'xhigh', 'max'] as const) {
+    void it(`preserves Opus 5.5 ${reasoning} effort in the serialized request`, () => {
+      const params = buildAnthropicRequestParams(
+        {
+          provider: 'anthropic',
+          id: 'claude-opus-5-5',
+          maxTokens: 128_000,
+          reasoning: true,
+        },
+        { messages: [{ role: 'user', content: 'Research the assigned topic.' }] },
+        { reasoning },
+      );
+      const serialized: unknown = JSON.parse(JSON.stringify(params));
+      assert.ok(isJsonObject(serialized));
+      assert.deepEqual(serialized['thinking'], { type: 'adaptive' });
+      assert.deepEqual(serialized['output_config'], { effort: reasoning });
+    });
+  }
+
+  void it('rejects max effort for fixed-budget models instead of serializing a null budget', () => {
+    assert.throws(
+      () =>
+        buildAnthropicRequestParams(
+          {
+            provider: 'anthropic',
+            id: 'claude-sonnet-4-5',
+            maxTokens: 64_000,
+            reasoning: true,
+          },
+          { messages: [{ role: 'user', content: 'Research the assigned topic.' }] },
+          { reasoning: 'max' },
+        ),
+      /reasoning=max requires an adaptive-effort model/,
+    );
+  });
+
+  void it('sends max effort through the attributed OAuth transport', async (t) => {
+    const sessionId = '11111111-2222-4333-8444-555555555555';
+    let captured: Record<string, unknown> | undefined;
+    t.mock.method(globalThis, 'fetch', async (_input: unknown, init: RequestInit) => {
+      assert.ok(typeof init.body === 'string');
+      const payload: unknown = JSON.parse(init.body);
+      assert.ok(isJsonObject(payload));
+      captured = payload;
+      assert.equal(new Headers(init.headers).get('X-Claude-Code-Session-Id'), sessionId);
+      const events = [
+        { type: 'message_start', message: { id: 'msg_max_effort', usage: {} } },
+        { type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage: {} },
+        { type: 'message_stop' },
+      ];
+      return new Response(
+        events.map((event) => `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`).join(''),
+        { status: 200, headers: { 'content-type': 'text/event-stream' } },
+      );
+    });
+    const result = await streamAnthropicViaBetaMessages(
+      {
+        provider: 'anthropic',
+        api: 'anthropic-messages',
+        id: 'claude-opus-5-5',
+        baseUrl: 'https://api.anthropic.com',
+        maxTokens: 128_000,
+        reasoning: true,
+      },
+      { messages: [{ role: 'user', content: 'Research the assigned topic.' }] },
+      { apiKey: 'sk-ant-oat-test', sessionId, reasoning: 'max' },
+      {
+        loadAccount: () => ({
+          deviceId: 'd'.repeat(64),
+          accountUuid: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',
+        }),
+      },
+    ).result();
+    assert.equal(result.stopReason, 'stop', result.errorMessage);
+    assert.ok(captured);
+    assert.deepEqual(captured['thinking'], { type: 'adaptive' });
+    assert.deepEqual(captured['output_config'], { effort: 'max' });
+  });
+
   void it('matches all SPS exact-line variants while preserving unrelated blocks and cache controls', () => {
     const original = {
       model: 'claude-sonnet-4-5',

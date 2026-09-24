@@ -460,7 +460,7 @@ export interface PiSimpleStreamOptions {
   readonly apiKey?: string;
   readonly headers?: Record<string, string>;
   readonly maxTokens?: number;
-  readonly reasoning?: 'off' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh';
+  readonly reasoning?: 'off' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
   readonly thinkingBudgets?: Partial<
     Record<'minimal' | 'low' | 'medium' | 'high' | 'xhigh', number>
   >;
@@ -2055,6 +2055,9 @@ function thinkingBudgetFor(
   maxTokens: number,
   custom?: PiSimpleStreamOptions['thinkingBudgets'],
 ): number {
+  if (level === 'max') {
+    throw new Error('Anthropic attribution reasoning=max requires an adaptive-effort model');
+  }
   const defaults = {
     minimal: 1024,
     low: 4096,
@@ -2069,16 +2072,17 @@ function thinkingBudgetFor(
 
 function adaptiveEffortFor(
   level: Exclude<NonNullable<PiSimpleStreamOptions['reasoning']>, 'off'>,
-): 'low' | 'medium' | 'high' | 'xhigh' {
+): 'low' | 'medium' | 'high' | 'xhigh' | 'max' {
   switch (level) {
     case 'low':
     case 'medium':
     case 'high':
     case 'xhigh':
+    case 'max':
       return level;
     case 'minimal':
       throw new Error(
-        'Anthropic attribution cannot map Pi reasoning=minimal to Claude adaptive effort; use low, medium, high, or xhigh',
+        'Anthropic attribution cannot map Pi reasoning=minimal to Claude adaptive effort; use low, medium, high, xhigh, or max',
       );
   }
 }

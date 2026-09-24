@@ -1269,6 +1269,9 @@ function convertTools(tools, cacheControl) {
     });
 }
 function thinkingBudgetFor(level, maxTokens, custom) {
+    if (level === 'max') {
+        throw new Error('Anthropic attribution reasoning=max requires an adaptive-effort model');
+    }
     const defaults = {
         minimal: 1024,
         low: 4096,
@@ -1286,9 +1289,10 @@ function adaptiveEffortFor(level) {
         case 'medium':
         case 'high':
         case 'xhigh':
+        case 'max':
             return level;
         case 'minimal':
-            throw new Error('Anthropic attribution cannot map Pi reasoning=minimal to Claude adaptive effort; use low, medium, high, or xhigh');
+            throw new Error('Anthropic attribution cannot map Pi reasoning=minimal to Claude adaptive effort; use low, medium, high, xhigh, or max');
     }
 }
 function conversationStaticHash(system, tools) {
