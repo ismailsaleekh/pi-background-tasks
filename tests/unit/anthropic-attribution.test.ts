@@ -345,6 +345,108 @@ void describe('global Anthropic attribution extension', () => {
     }
   });
 
+  void it('mints a distinct request-local routing session id when options.sessionId is absent', async (t) => {
+    // Pi documents StreamOptions.sessionId as optional. Extension-owned one-off calls
+    // (for example side-question panels) omit it; they must neither fail nor share a
+    // lineage lane with each other or with the parent session.
+    const seen: Array<{ header: string | null; metadataSessionId: unknown }> = [];
+    let releaseBoth: () => void = () => undefined;
+    const bothInFlight = new Promise<void>((resolve) => {
+      releaseBoth = resolve;
+    });
+    t.mock.method(globalThis, 'fetch', async (_input: unknown, init: RequestInit) => {
+      assert.ok(typeof init.body === 'string');
+      const payload: unknown = JSON.parse(init.body);
+      assert.ok(isJsonObject(payload));
+      const metadata = payload['metadata'];
+      assert.ok(isJsonObject(metadata) && typeof metadata['user_id'] === 'string');
+      seen.push({
+        header: new Headers(init.headers).get('X-Claude-Code-Session-Id'),
+        metadataSessionId: (JSON.parse(metadata['user_id']) as Record<string, unknown>)[
+          'session_id'
+        ],
+      });
+      if (seen.length === 2) releaseBoth();
+      // Hold both requests in flight together so a shared lineage key would collide.
+      await Promise.race([
+        bothInFlight,
+        new Promise((_resolve, reject) =>
+          setTimeout(() => reject(new Error('second request never reached transport')), 2_000),
+        ),
+      ]);
+      const events = [
+        { type: 'message_start', message: { id: `msg_minted_${seen.length}`, usage: {} } },
+        { type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage: {} },
+        { type: 'message_stop' },
+      ];
+      return new Response(
+        events.map((event) => `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`).join(''),
+        { status: 200, headers: { 'content-type': 'text/event-stream' } },
+      );
+    });
+    const request = () =>
+      streamAnthropicViaBetaMessages(
+        {
+          provider: 'anthropic',
+          api: 'anthropic-messages',
+          id: 'claude-opus-5-5',
+          baseUrl: 'https://api.anthropic.com',
+          maxTokens: 128_000,
+          reasoning: true,
+        },
+        { messages: [{ role: 'user', content: 'side question' }] },
+        { apiKey: 'sk-ant-oat-test', reasoning: 'low' },
+        {
+          loadAccount: () => ({
+            deviceId: 'd'.repeat(64),
+            accountUuid: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',
+          }),
+        },
+      ).result();
+
+    const results = await Promise.all([request(), request()]);
+    for (const result of results) assert.equal(result.stopReason, 'stop', result.errorMessage);
+    assert.equal(seen.length, 2);
+    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+    for (const request of seen) {
+      assert.match(request.header ?? '', uuid);
+      assert.equal(request.metadataSessionId, request.header);
+    }
+    assert.notEqual(seen[0]?.header, seen[1]?.header);
+  });
+
+  for (const sessionId of ['', '   ']) {
+    void it(`still refuses a malformed options.sessionId (${JSON.stringify(sessionId)})`, async (t) => {
+      const fetchMock = t.mock.method(globalThis, 'fetch', async () => {
+        throw new Error('transport must not be reached');
+      });
+      const result = await streamAnthropicViaBetaMessages(
+        {
+          provider: 'anthropic',
+          api: 'anthropic-messages',
+          id: 'claude-opus-5-5',
+          baseUrl: 'https://api.anthropic.com',
+          maxTokens: 128_000,
+          reasoning: true,
+        },
+        { messages: [{ role: 'user', content: 'side question' }] },
+        { apiKey: 'sk-ant-oat-test', sessionId, reasoning: 'low' },
+        {
+          loadAccount: () => ({
+            deviceId: 'd'.repeat(64),
+            accountUuid: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',
+          }),
+        },
+      ).result();
+      assert.equal(result.stopReason, 'error');
+      assert.match(
+        result.errorMessage ?? '',
+        /Anthropic attribution requires a non-empty options\.sessionId/,
+      );
+      assert.equal(fetchMock.mock.callCount(), 0);
+    });
+  }
+
   void it('normalizes observed cross-provider tool-call IDs while preserving valid IDs and images', async () => {
     const originalFetch = globalThis.fetch;
     const invalidToolId = 'call_x|fc_y';

@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { appendFileSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { isAbsolute, join } from 'node:path';
@@ -1899,7 +1899,12 @@ export function streamAnthropicViaBetaMessages(model, context, options, dependen
             if (!apiKey.includes('sk-ant-oat')) {
                 throw new Error('Anthropic attribution refuses non-OAuth Anthropic credential; subscription OAuth token is required');
             }
-            const sessionId = requireSessionId(options?.sessionId, 'options.sessionId');
+            // Pi documents StreamOptions.sessionId as optional; its own one-off requests mint a
+            // fresh routing id. Do the same for callers that omit it, so they get a
+            // request-local lineage lane. A supplied but malformed id is still refused.
+            const sessionId = options?.sessionId === undefined
+                ? randomUUID()
+                : requireSessionId(options.sessionId, 'options.sessionId');
             const account = requireAttributionAccount(dependencies.loadAccount?.() ?? loadClaudeAttributionAccount(undefined, options?.env));
             const url = resolveAnthropicBetaMessagesUrl(model);
             const policy = resolveClaudeCodeModelPolicy(model);
