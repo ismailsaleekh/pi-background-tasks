@@ -87,12 +87,21 @@ if (transcriptHost) {
 }
 
 let responseNumber = 0;
+let failConnections = 0;
 const requests = [];
+const wireRequests = [];
 const originalFetch = globalThis.fetch;
 globalThis.fetch = async (_input, init) => {
   assert.equal(String(_input), 'https://api.anthropic.com/v1/messages?beta=true');
   const payload = JSON.parse(String(init?.body));
   requests.push(payload);
+  wireRequests.push({ body: String(init.body), headers: [...new Headers(init.headers)] });
+  if (failConnections > 0) {
+    failConnections -= 1;
+    throw new TypeError('fetch failed', {
+      cause: Object.assign(new Error('fixture socket closed'), { code: 'UND_ERR_SOCKET' }),
+    });
+  }
   responseNumber += 1;
   const events = [
     { type: 'message_start', message: { id: `msg_${responseNumber}`, usage: { input_tokens: 1 } } },
@@ -235,6 +244,64 @@ try {
     .runtime.pendingProviderRegistrations.find((r) => r.name === 'anthropic')?.config.streamSimple;
   assert.equal(typeof childTransport, 'function');
   await send(childTransport, context, 'packed-child-transcript');
+  checkPayload(requests.at(-1));
+
+  // #33/#34 and #32 through both actual packed gateways: the one-off identity
+  // and protected wire bytes survive a connection retry without private SDK peers.
+  const oneOffIds = [];
+  for (const transport of [ambient, childTransport]) {
+    const start = wireRequests.length;
+    failConnections = 1;
+    const result = await send(transport, context, undefined);
+    assert.equal(wireRequests.length, start + 2);
+    assert.deepEqual(wireRequests[start], wireRequests[start + 1]);
+    const header = new Headers(wireRequests[start].headers).get('X-Claude-Code-Session-Id');
+    assert.match(header, /^[a-f\d]{8}-[a-f\d]{4}-4[a-f\d]{3}-[89ab][a-f\d]{3}-[a-f\d]{12}$/u);
+    assert.equal(JSON.parse(requests.at(-1).metadata.user_id).session_id, header);
+    oneOffIds.push(header);
+    assert.equal(
+      result.diagnostics.find((d) => d.type === 'anthropic-connection-retry').details
+        .retries_scheduled,
+      1,
+    );
+    checkPayload(requests.at(-1));
+  }
+  assert.notEqual(oneOffIds[0], oneOffIds[1]);
+
+  // Reproduce the extension-owned modelRegistry.streamSimple call, not just the
+  // transport function. Legacy hosts expose the same operation on ModelRuntime.
+  // Do not let a missing modern facade silently hide a future host regression.
+  const registryHasSimple = typeof registry.streamSimple === 'function';
+  if (!registryHasSimple) assert.match(manifest.version, /^0\.8[1-6]\./u);
+  const sideCaller = registryHasSimple ? registry : modelRuntime;
+  assert.equal(typeof sideCaller.streamSimple, 'function');
+  await modelRuntime.setRuntimeApiKey('anthropic', 'sk-ant-oat-offline');
+  let sidePayloads = 0;
+  let sideResponses = 0;
+  const startSide = wireRequests.length;
+  failConnections = 1;
+  const side = await sideCaller
+    .streamSimple(target, context, {
+      reasoning: 'low',
+      cacheRetention: 'none',
+      maxRetries: 1,
+      onPayload: () => {
+        sidePayloads += 1;
+      },
+      onResponse: () => {
+        sideResponses += 1;
+      },
+    })
+    .result();
+  assert.equal(side.stopReason, 'stop', side.errorMessage);
+  assert.equal(
+    side.diagnostics.find((d) => d.type === 'anthropic-connection-retry').details.retries_scheduled,
+    1,
+  );
+  assert.equal(sidePayloads, 1);
+  assert.equal(sideResponses, 1);
+  assert.equal(wireRequests.length, startSide + 2);
+  assert.deepEqual(wireRequests[startSide], wireRequests[startSide + 1]);
   checkPayload(requests.at(-1));
 
   // The compaction marker must be found after the leading system checkpoint.
@@ -422,7 +489,7 @@ else {
   );
   assert.equal((await readFile(fake.logPath, 'utf8')).trim().split('\n').length, 10);
   console.log(
-    `packed transcript runtime PASS: Pi ${manifest.version}; ${transcriptHost ? 'system replay' : 'legacy context'}; ambient + child Anthropic; delegate + fusion verified results before/after real compaction`,
+    `packed transcript runtime PASS: Pi ${manifest.version}; ${transcriptHost ? 'system replay' : 'legacy context'}; ambient + child Anthropic + ${registryHasSimple ? 'ModelRegistry' : 'legacy ModelRuntime'} one-offs/retries; delegate + fusion verified results before/after real compaction`,
   );
 } finally {
   globalThis.fetch = originalFetch;

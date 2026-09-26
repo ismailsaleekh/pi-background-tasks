@@ -113,6 +113,12 @@ PI_BG_TEST_HOST_PACKAGE=/absolute/path/to/@earendil-works/pi-coding-agent \
 
 Build `dist/` first and use the isolated environment below. The supplied package identity is checked; a missing/invalid host is an error, not an automatic fallback. This focused host witness is not full support-matrix certification and makes no network/model calls.
 
+### Anthropic interoperability regressions (#32–#35)
+
+`anthropic-attribution-session.test.ts` adapts PR #34's concurrent one-off requests and includes an active supplied parent ID plus malformed-ID controls. `anthropic-attribution-network.test.ts` uses owned loopback sockets to prove real Undici disconnect/retry and post-header cancellation. `anthropic-attribution-retry.test.ts` uses fake fetch and a controlled clock for exact retry counts/backoff, immutable wire identity, middleware/terminal-event counts, in-flight ownership, cancellation/deadline cleanup, safe diagnostics, aggregate/cyclic causes, explicit zero and malformed options, and refusal to replay HTTP responses, middleware failures, or partial streams.
+
+The production-only packed transcript fixture additionally drives one-off/retried calls through both real gateways and the host's `ModelRegistry.streamSimple` API (the public `ModelRuntime.streamSimple` path on legacy hosts, with explicit version assertions). The packed `attribution-host-capabilities.mjs` fixture links actual compiled entrypoints against missing/malformed compat exports: disabled ambient attribution must load without importing its transport; enabled ambient and mandatory child activation must refuse without publishing registrations. Supported controls preserve foreign-provider argument/stream identity. This simulated ESM shim reproduces #35's linking failure but is not native OMP/Windows qualification. Run via `tests/package/lazy-packed-missing-module.test.ts` after building `dist/`, using the explicit installed-host seam and isolation above. No real inference or credentials are used.
+
 ### Fusion byte-immutability gates
 
 Two unit gates protect Fusion's persisted artifact bytes, which are a frozen format:

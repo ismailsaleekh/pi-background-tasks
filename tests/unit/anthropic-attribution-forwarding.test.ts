@@ -115,11 +115,14 @@ void describe('non-target anthropic-messages forwarding (#19)', () => {
       readFile('extensions/anthropic-attribution-child.ts', 'utf8'),
     ]);
     const runtimeAdapterImport =
-      /^import \{ anthropicMessagesApi \} from '@earendil-works\/pi-ai\/compat';$/mu;
+      /^import \* as hostPiAiCompat from '@earendil-works\/pi-ai\/compat';$/mu;
     assert.doesNotMatch(core, runtimeAdapterImport);
-    assert.match(core, /hostAnthropicMessagesApi\(\)\.streamSimple/u);
+    assert.match(core, /const hostApi = hostAnthropicMessagesApi\(\)/u);
+    assert.match(core, /hostApi\.streamSimple/u);
     assert.match(ambientGateway, runtimeAdapterImport);
     assert.match(childGateway, runtimeAdapterImport);
+    assert.match(ambientGateway, /resolveHostAnthropicMessagesApi\(hostPiAiCompat\)/u);
+    assert.match(childGateway, /resolveHostAnthropicMessagesApi\(hostPiAiCompat\)/u);
     assert.match(ambientGateway, /hostAnthropicMessagesApi: anthropicMessagesApi/u);
     assert.match(childGateway, /hostAnthropicMessagesApi: anthropicMessagesApi/u);
     assert.equal(/localForwarded(?:ContentBlock|Message|Event)/u.test(core), false);

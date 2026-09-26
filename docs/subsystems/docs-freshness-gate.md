@@ -16,7 +16,7 @@ The finite grammar recognizes only a top-level immutable binding returned by the
 Every registration-owning function, imported registrar, and supported activation callback is checked as a whole, including parameter declarations and initializers. Destructured registration bindings, computed or property registration methods on unknown hosts, default-parameter host aliases, initializer calls/throws/control flow, and unmodeled body returns or throws are rejected. The sole early-return form is the structurally validated synchronous Anthropic duplicate-owner guard: the exact production claim channel, exact schema field/value and closed probe shape, one local empty acknowledgement array, one adjacent direct claim emit with the exact acknowledgement append, and the positive-length bare return. A local pre-probe claim listener is not accepted. Returns inside command/tool/event handlers that own no registrations remain unrelated and legal. Extracted surfaces carry a normalized availability expression and source-derived default status through the manifest, INDEX/read gate, README facts, and generated surface contracts.
 
 <!-- pi-docs:begin name="docs-freshness-gate" generator="scripts/docs/generate.mjs" -->
-- Canonical package version: `2.6.6`
+- Canonical package version: `2.6.7`
 - Governed markdown docs: 42
 - Public surfaces extracted: 32
 - Public surfaces available by default: 31

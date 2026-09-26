@@ -133,7 +133,7 @@ Generated navigation for every package-local documentation page. This index inte
 | command | `bg-clear` | `command:bg-clear` | `always` | yes | `src/extension.ts:793` |
 | command | `bg-tasks` | `command:bg-tasks` | `always` | yes | `src/extension.ts:785` |
 | command | `bg-update` | `command:bg-update` | `always` | yes | `src/extension.ts:801` |
-| command | `claude-cache` | `command:claude-cache` | `feature:attribution` | yes | `src/core/anthropic-attribution.ts:3369` |
+| command | `claude-cache` | `command:claude-cache` | `feature:attribution` | yes | `src/core/anthropic-attribution.ts:3579` |
 | command | `fusion` | `command:fusion` | `feature:fusion` | yes | `src/fusion-extension.ts:1083` |
 | command | `fusion-models` | `command:fusion-models` | `feature:fusion` | yes | `src/fusion-extension.ts:1123` |
 | command | `jobs` | `command:jobs` | `always` | yes | `src/extension.ts:850` |

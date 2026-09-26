@@ -141,6 +141,14 @@ SDK/RPC/scripted-provider/package/compatibility coverage asserts exactly four to
 - Delegate and Fusion reason capture one effective prompt, exclude known system state and the active/sibling tool leaf from visible conversation, and retain the unchanged v2 ledger/golden contracts.
 - Production-only packed public launch → fake child → verified result succeeds against the locked host and an explicitly supplied installed Pi 0.86 host (`PI_BG_TEST_HOST_PACKAGE`), with no private Pi SDK/TypeBox or inference/network calls. This is a focused witness, not an expanded peer-range claim.
 
+## Anthropic interoperability acceptance (#32–#35)
+
+- Omitted/undefined routing IDs mint one request-local UUID; overlapping one-offs and a supplied parent ID remain independent. Headers/metadata agree. Supplied malformed IDs fail before fetch. Contributor: LiangRui He, #33 / PR #34.
+- Connection-only retries preserve one identity/body/header set, one payload middleware pass, and one in-flight reservation. Defaults/explicit limits, exponential cap/jitter, bounded causes/aggregates, safe diagnostics, cancellation during fetch/backoff, per-attempt pre-header deadlines with actual fetch abort/settlement before retry, timer/listener cleanup, exhaustion/recovery, and strict terminal event counts are exercised offline.
+- No transport retry for HTTP responses, permanent/unknown errors, middleware exceptions, partial content, or malformed SSE; failed attempts cannot anchor lineage. Non-target forwarding retains host behavior and unmodified options.
+- Packed ambient and child gateways plus the host `ModelRegistry.streamSimple` route successfully handle anonymous/retried requests without package-local Pi SDK copies.
+- A simulated host shim with no `anthropicMessagesApi` can link/activate the packed ambient gateway with attribution disabled and does not load the transport. Enabled ambient and mandatory child activation refuse missing/malformed capabilities before registrations; malformed factory results fail on forwarding. Native OMP qualification remains separate.
+
 ## Residual hardening coverage
 
 Lane A residual hardening is now covered by automated tests. No remaining hardening-only gaps are intentionally left open in this plan. Future feature work should add new rows instead of weakening these gates.
