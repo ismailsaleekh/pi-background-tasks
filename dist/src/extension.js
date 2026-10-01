@@ -7,7 +7,7 @@ import { DEFAULT_LOG_BYTES, MAX_LOG_BYTES, deriveCompletionDeliveryGuidance, der
 import { fetchLatestVersion, readPackageInfo, } from './core/update-check.js';
 import { BackgroundTaskRegistry } from './core/registry.js';
 import { getProcessReloadShellOwnerV1, makeReloadShellIdentity, } from './core/reload-shell-owner.js';
-import { createShellPolicyGuidanceHandler, initializeShellPolicy } from './core/shell-policy.js';
+import { initializeShellPolicy, shellPolicyGuidance } from './core/shell-policy.js';
 import { installBackgroundTaskExtensionApi, } from './core/extension-api.js';
 import { dockShortcutFooterHint, parseBackgroundTasksConfig } from './core/config.js';
 import { LazyModule, SynchronousActivationCloseFence } from './core/lazy-module.js';
@@ -106,7 +106,12 @@ export default async function backgroundTasksExtension(pi) {
     const dockEntryHint = dockShortcutFooterHint(config.dockShortcut);
     const shellPolicy = initializeShellPolicy();
     const reloadShellOwner = getProcessReloadShellOwnerV1();
-    pi.on('before_agent_start', createShellPolicyGuidanceHandler(shellPolicy));
+    // Shell guidance is static for the activation, so it rides on bg_run's promptGuidelines
+    // (part of the base system prompt). A before_agent_start hook does not run for turns
+    // started by sendMessage({triggerTurn}) (earendil-works/pi#5581): the guidance then
+    // flips off and back on around every completion notification, and each flip rewrites
+    // the system prompt and invalidates the whole provider prompt cache.
+    const runtimeShellGuidelines = shellPolicyGuidance(shellPolicy).split('\n');
     const seenTaskIds = new Set();
     let currentCtx;
     let currentRegistryCtx;
@@ -731,6 +736,7 @@ export default async function backgroundTasksExtension(pi) {
             'Treat <background-task-notification> as durable terminal truth. Do not call bg_status to reconfirm it; call bg_logs only when the task output is needed.',
             'Use bg_status/bg_logs only when the user explicitly requests an update, automatic notification or wake-up was deliberately disabled, there is concrete evidence the task is hung, or a terminal notification arrived and output details are needed.',
             'Do not set notifyOnCompletion:false or triggerOnCompletion:false unless intentionally opting out of automatic completion handling.',
+            ...runtimeShellGuidelines,
         ],
         parameters: BgRunParams,
         prepareArguments(args) {

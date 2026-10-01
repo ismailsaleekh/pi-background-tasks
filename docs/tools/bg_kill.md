@@ -11,7 +11,7 @@ covers_sources: []
 
 <!-- pi-docs:begin name="tool-contract-bg_kill" generator="scripts/docs/generate.mjs" -->
 - Label: **Background Kill**
-- Source: `src/extension.ts:1181`
+- Source: `src/extension.ts:1187`
 - Availability: `always`
 - Available by default: **yes**
 - Description: Stop a running background task by ID. Fails loudly if the task is unknown or already finished.
