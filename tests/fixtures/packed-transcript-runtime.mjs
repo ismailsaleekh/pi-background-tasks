@@ -173,63 +173,21 @@ const loader = new sdk.DefaultResourceLoader({
   noContextFiles: true,
   noThemes: true,
 });
-// #35 follow-up: exercise the handler registered by the packed public root, not
-// a direct import of a private chunk. OMP 18.3.0 passes systemPrompt:string[] and
-// no systemPromptOptions (extensions/runner.ts:1806 at tag v18.3.0). This models
-// that event contract only; it is not native OMP/Windows execution evidence.
+// Shell guidance rides on bg_run's promptGuidelines (base system prompt), not a
+// before_agent_start hook: that hook is skipped for sendMessage({triggerTurn})
+// turns (earendil-works/pi#5581), which flipped the system prompt around every
+// completion notification and invalidated the provider prompt cache.
 async function checkPackedShellGuidance(loaded) {
   assert.deepEqual(loaded.errors, []);
   const background = loaded.extensions.find((extension) => extension.tools.has('bg_status'));
   assert.ok(background, 'background public tool registration must remain intact');
-  const hooks = background.handlers.get('before_agent_start');
-  assert.equal(hooks?.length, 1);
-  const handler = hooks[0];
-  let expectedBlock;
-  for (const mode of ['print', 'tui']) {
-    const noUiContext = {
-      mode,
-      get ui() {
-        throw new Error('prompt guidance must not access UI');
-      },
-    };
-    const prompt = Object.freeze(['HOST_BASE, literal comma\r\nΩ', '', 'PEER_SECTION\n']);
-    const event = {
-      type: 'before_agent_start',
-      prompt: 'hello',
-      images: undefined,
-      systemPrompt: prompt,
-    };
-    const result = await handler(event, noUiContext);
-    assert.ok(Array.isArray(result.systemPrompt));
-    assert.deepEqual(result.systemPrompt.slice(0, -1), [...prompt]);
-    const block = result.systemPrompt.at(-1);
-    assert.match(block, /^<pi_background_shell_policy>\n/u);
-    assert.match(block, /activation shell policy/u);
-    assert.match(block, /<\/pi_background_shell_policy>$/u);
-    expectedBlock ??= block;
-    assert.equal(block, expectedBlock);
-    const second = await handler({ ...event, systemPrompt: result.systemPrompt }, noUiContext);
-    assert.deepEqual(second, result);
-    assert.deepEqual(prompt, ['HOST_BASE, literal comma\r\nΩ', '', 'PEER_SECTION\n']);
-    const peerAfter = [...result.systemPrompt, 'LATER_EXTENSION'];
-    assert.deepEqual(
-      (await handler({ ...event, systemPrompt: peerAfter }, noUiContext)).systemPrompt,
-      peerAfter,
-    );
-  }
-  const stringResult = await handler({ systemPrompt: 'LEGACY_BASE' }, {});
-  assert.equal(stringResult.systemPrompt, `LEGACY_BASE\n\n${expectedBlock}`);
-  const options = { sections: { peer: 'MODERN_PEER' }, forceSystemPrompt: 'FORCED_BASE' };
-  assert.equal(
-    await handler({ systemPrompt: 'RENDERED', systemPromptOptions: options }, {}),
-    undefined,
-  );
-  assert.equal(options.sections.peer, 'MODERN_PEER');
-  assert.equal(options.forceSystemPrompt, `FORCED_BASE\n\n${expectedBlock}`);
-  assert.equal(
-    `<pi_background_shell_policy>\n${options.sections.pi_background_shell_policy}\n</pi_background_shell_policy>`,
-    expectedBlock,
-  );
+  assert.equal(background.handlers.get('before_agent_start'), undefined);
+  const bgRun = background.tools.get('bg_run');
+  const guidelines = (bgRun.definition ?? bgRun).promptGuidelines;
+  assert.ok(Array.isArray(guidelines));
+  const shellLines = guidelines.filter((line) => /activation shell policy/u.test(line));
+  assert.equal(shellLines.length, 1);
+  assert.doesNotMatch(guidelines.join('\n'), /pi_background_shell_policy/u);
 }
 let session;
 try {

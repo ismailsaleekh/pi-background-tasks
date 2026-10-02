@@ -12,7 +12,7 @@ covers_sources: []
 <!-- pi-docs:begin name="command-contract-kill" generator="scripts/docs/generate.mjs" -->
 | Command | Availability | Default | Description | Provenance |
 | --- | --- | --- | --- | --- |
-| `/kill` | `always` | yes | Stop a running background task: /kill <id> | `src/extension.ts:894` |
+| `/kill` | `always` | yes | Stop a running background task: /kill <id> | `src/extension.ts:899` |
 <!-- pi-docs:end name="command-contract-kill" -->
 
 Stop a running background task.

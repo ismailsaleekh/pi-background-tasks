@@ -211,7 +211,7 @@ function unionPeerAndProviderExtension(
         observations.push({
           guidance: guidanceFrom(prompt),
           peerGuidanceCount: prompt.split(PEER_GUIDANCE).length - 1,
-          shellGuidanceCount: prompt.split('<pi_background_shell_policy>').length - 1,
+          shellGuidanceCount: prompt.split('with the activation shell policy').length - 1,
           toolNames: sorted(context.tools?.map((tool) => tool.name) ?? []),
         });
         return stoppedStream();

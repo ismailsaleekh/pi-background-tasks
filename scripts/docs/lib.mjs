@@ -324,7 +324,14 @@ function literalValue(ts, root, rel, expr, cache, stack = []) {
     for (const span of e.templateSpans) out += String(literalValue(ts, root, rel, span.expression, cache, stack)) + span.literal.text;
     return out;
   }
-  if (ts.isArrayLiteralExpression(e)) return e.elements.map((x) => literalValue(ts, root, rel, x, cache, stack));
+  if (ts.isArrayLiteralExpression(e)) {
+    // `...runtimeX` spreads carry activation-dependent entries (for example the shell
+    // policy guidance); they are not static documentation and are omitted on purpose.
+    const elements = e.elements.filter(
+      (x) => !(ts.isSpreadElement(x) && ts.isIdentifier(x.expression) && /^runtime[A-Z]/u.test(x.expression.text)),
+    );
+    return elements.map((x) => literalValue(ts, root, rel, x, cache, stack));
+  }
   if (ts.isObjectLiteralExpression(e)) {
     const obj = {};
     for (const prop of e.properties) {

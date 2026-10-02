@@ -12,7 +12,7 @@ covers_sources: []
 <!-- pi-docs:begin name="command-contract-bg" generator="scripts/docs/generate.mjs" -->
 | Command | Availability | Default | Description | Provenance |
 | --- | --- | --- | --- | --- |
-| `/bg` | `always` | yes | Start a tracked shell command: /bg [--survive-reload] [--agent] [--name "Task name"] <command> | `src/extension.ts:750` |
+| `/bg` | `always` | yes | Start a tracked shell command: /bg [--survive-reload] [--agent] [--name "Task name"] <command> | `src/extension.ts:755` |
 <!-- pi-docs:end name="command-contract-bg" -->
 
 Start a shell command as a tracked background task from the command line.
