@@ -27,7 +27,7 @@ type Scenario =
   | 'failed-follow-up'
   | 'display-only-bg';
 
-async function harness(scenario: Scenario) {
+async function harness(scenario: Scenario, footerDisplay = 'all') {
   const root = await mkdtemp(join(tmpdir(), 'pi-bg-agent-loop-'));
   roots.push(root);
   const cwd = join(root, 'project');
@@ -38,7 +38,11 @@ async function harness(scenario: Scenario) {
   const previousScenario = process.env['PI_BG_SCRIPTED_SCENARIO'];
   const previousEvents = process.env['PI_BG_SCRIPTED_EVENTS'];
   const previousApiKey = process.env['PI_BG_SCRIPTED_API_KEY'];
+  const previousFooter = process.env['PI_BG_FOOTER_DISPLAY'];
+  const previousAgentDir = process.env['PI_CODING_AGENT_DIR'];
   Object.assign(process.env, isolatedTestEnv, {
+    PI_CODING_AGENT_DIR: agentDir,
+    PI_BG_FOOTER_DISPLAY: footerDisplay,
     PI_BG_SCRIPTED_SCENARIO: scenario,
     PI_BG_SCRIPTED_EVENTS: eventsPath,
     PI_BG_SCRIPTED_API_KEY: 'scripted-api-key',
@@ -81,6 +85,8 @@ async function harness(scenario: Scenario) {
     restoreEnvValue('PI_BG_SCRIPTED_SCENARIO', previousScenario);
     restoreEnvValue('PI_BG_SCRIPTED_EVENTS', previousEvents);
     restoreEnvValue('PI_BG_SCRIPTED_API_KEY', previousApiKey);
+    restoreEnvValue('PI_BG_FOOTER_DISPLAY', previousFooter);
+    restoreEnvValue('PI_CODING_AGENT_DIR', previousAgentDir);
   };
   return { session, cwd, root, eventsPath, restoreEnv };
 }
@@ -246,11 +252,12 @@ async function disposeHarness(h: Awaited<ReturnType<typeof harness>>) {
 }
 
 void describe('scripted-provider completion follow-up behavior', { concurrency: false }, () => {
+  for (const footerDisplay of ['all', 'running', 'off']) {
   void it(
-    'BUG-181 bg_run yields without polling and its completion event triggers one real follow-up turn',
+    `BUG-181 bg_run yields without polling and triggers one real follow-up with footer ${footerDisplay}`,
     { timeout: 15_000 },
     async () => {
-      const h = await harness('bg-run-follow-up');
+      const h = await harness('bg-run-follow-up', footerDisplay);
       try {
         await h.session.prompt('Start the scripted background task.');
         await waitFor(() => customNotifications(h.session).length === 1, 'background notification');
@@ -302,6 +309,8 @@ void describe('scripted-provider completion follow-up behavior', { concurrency: 
       }
     },
   );
+
+  }
 
   void it(
     'notifyOnCompletion:false suppresses notification and prevents completion wakeup',

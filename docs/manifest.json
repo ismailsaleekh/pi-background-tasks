@@ -135,7 +135,7 @@
       "state": "stale-authored-prose"
     },
     {
-      "authored_body_sha256": "sha256:5f3b9307c4e159c6e7f0ce52474c98222446dd670bd23826618f7437d7f3b39e",
+      "authored_body_sha256": "sha256:b3d4a4a15485f59ebd568adb80e17f4a5ca530b3c1cd1f1fc8149869352c9842",
       "covers_sources": [
         "extensions/background-tasks.ts",
         "src/core/config.ts",
@@ -159,6 +159,7 @@
       "attested",
       "attribution"
     ],
+    "default_footer_display": "all",
     "dock_shortcut_values": [
       "shift+down",
       "ctrl+alt+b",
@@ -171,11 +172,17 @@
       "attested",
       "attribution"
     ],
+    "footer_display_values": [
+      "all",
+      "running",
+      "off"
+    ],
     "source": "src/core/config.ts"
   },
   "default_public_surface_ids": [
     "command:bg",
     "command:bg-clear",
+    "command:bg-display",
     "command:bg-tasks",
     "command:bg-update",
     "command:claude-cache",
@@ -257,6 +264,17 @@
       ],
       "mode": "mixed",
       "rel": "docs/commands/bg-clear.md",
+      "review_policy": "contract",
+      "stability": "stable"
+    },
+    "commands/bg-display": {
+      "audience": "user",
+      "covers_sources": [],
+      "covers_surfaces": [
+        "command:bg-display"
+      ],
+      "mode": "authored",
+      "rel": "docs/commands/bg-display.md",
       "review_policy": "contract",
       "stability": "stable"
     },
@@ -914,6 +932,7 @@
   "public_surface_ids": [
     "command:bg",
     "command:bg-clear",
+    "command:bg-display",
     "command:bg-tasks",
     "command:bg-update",
     "command:claude-cache",
@@ -954,7 +973,7 @@
         "id": "command:bg",
         "kind": "command",
         "name": "bg",
-        "source": "src/extension.ts:750"
+        "source": "src/extension.ts:796"
       },
       {
         "availability": "always",
@@ -963,7 +982,16 @@
         "id": "command:bg-clear",
         "kind": "command",
         "name": "bg-clear",
-        "source": "src/extension.ts:793"
+        "source": "src/extension.ts:895"
+      },
+      {
+        "availability": "always",
+        "default_available": true,
+        "description": "Show or set background task footer display for this session branch",
+        "id": "command:bg-display",
+        "kind": "command",
+        "name": "bg-display",
+        "source": "src/extension.ts:839"
       },
       {
         "availability": "always",
@@ -972,7 +1000,7 @@
         "id": "command:bg-tasks",
         "kind": "command",
         "name": "bg-tasks",
-        "source": "src/extension.ts:785"
+        "source": "src/extension.ts:831"
       },
       {
         "availability": "always",
@@ -981,7 +1009,7 @@
         "id": "command:bg-update",
         "kind": "command",
         "name": "bg-update",
-        "source": "src/extension.ts:801"
+        "source": "src/extension.ts:903"
       },
       {
         "availability": "feature:attribution",
@@ -1017,7 +1045,7 @@
         "id": "command:jobs",
         "kind": "command",
         "name": "jobs",
-        "source": "src/extension.ts:850"
+        "source": "src/extension.ts:952"
       },
       {
         "availability": "always",
@@ -1026,7 +1054,7 @@
         "id": "command:kill",
         "kind": "command",
         "name": "kill",
-        "source": "src/extension.ts:894"
+        "source": "src/extension.ts:996"
       },
       {
         "availability": "always",
@@ -1035,7 +1063,7 @@
         "id": "command:logs",
         "kind": "command",
         "name": "logs",
-        "source": "src/extension.ts:863"
+        "source": "src/extension.ts:965"
       },
       {
         "availability": "always",
@@ -1044,7 +1072,7 @@
         "id": "command:tasks",
         "kind": "command",
         "name": "tasks",
-        "source": "src/extension.ts:777"
+        "source": "src/extension.ts:823"
       }
     ],
     "eventbus": [
@@ -1076,7 +1104,7 @@
         "id": "renderer:background-task-notification",
         "kind": "renderer",
         "name": "background-task-notification",
-        "source": "src/extension.ts:627"
+        "source": "src/extension.ts:666"
       },
       {
         "availability": "feature:fusion",
@@ -1095,7 +1123,7 @@
         "id": "shortcut:ctrl+alt+b",
         "kind": "shortcut",
         "name": "ctrl+alt+b",
-        "source": "src/extension.ts:834"
+        "source": "src/extension.ts:936"
       },
       {
         "availability": "always",
@@ -1104,7 +1132,7 @@
         "id": "shortcut:ctrl+alt+c",
         "kind": "shortcut",
         "name": "ctrl+alt+c",
-        "source": "src/extension.ts:842"
+        "source": "src/extension.ts:944"
       },
       {
         "availability": "dock:shift+down",
@@ -1113,7 +1141,7 @@
         "id": "shortcut:shift+down",
         "kind": "shortcut",
         "name": "shift+down",
-        "source": "src/extension.ts:825"
+        "source": "src/extension.ts:927"
       }
     ],
     "tool": [
@@ -1230,7 +1258,7 @@
           ],
           "type": "object"
         },
-        "source": "src/extension.ts:1181"
+        "source": "src/extension.ts:1283"
       },
       {
         "availability": "always",
@@ -1266,7 +1294,7 @@
           ],
           "type": "object"
         },
-        "source": "src/extension.ts:1136"
+        "source": "src/extension.ts:1238"
       },
       {
         "availability": "any(feature:delegate,feature:fusion)",
@@ -1361,7 +1389,7 @@
           ],
           "type": "object"
         },
-        "source": "src/extension.ts:927"
+        "source": "src/extension.ts:1029"
       },
       {
         "availability": "feature:attested",
@@ -1424,7 +1452,7 @@
           ],
           "type": "object"
         },
-        "source": "src/extension.ts:1036"
+        "source": "src/extension.ts:1138"
       },
       {
         "availability": "always",
@@ -1450,7 +1478,7 @@
           "required": [],
           "type": "object"
         },
-        "source": "src/extension.ts:1105"
+        "source": "src/extension.ts:1207"
       },
       {
         "availability": "feature:fusion",
@@ -2003,6 +2031,9 @@
     ],
     "command:bg-clear": [
       "commands/bg-clear"
+    ],
+    "command:bg-display": [
+      "commands/bg-display"
     ],
     "command:bg-tasks": [
       "commands/task-manager"

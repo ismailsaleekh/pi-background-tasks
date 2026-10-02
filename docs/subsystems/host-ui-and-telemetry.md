@@ -17,7 +17,7 @@ The published `dist/extensions/background-tasks.js` entrypoint is compiled from 
 
 Before creating the registry or registering a surface, the extension strictly parses the shared capability/shortcut configuration. It dynamically imports delegate/Fusion facade registration only for enabled capabilities; the dock component is imported only when an interactive manager is opened. `process` is mandatory and registers:
 
-- commands: `/bg`, `/tasks`, `/bg-tasks`, `/bg-clear`, `/bg-update`, `/jobs`, `/logs`, `/kill`;
+- commands: `/bg`, `/tasks`, `/bg-tasks`, `/bg-clear`, `/bg-display`, `/bg-update`, `/jobs`, `/logs`, `/kill`;
 - tools: `bg_run`, `bg_status`, `bg_logs`, `bg_kill`;
 - shortcut: the selected dock key (`shift+down`, `ctrl+alt+b`, or none for `off`) plus unconditional `ctrl+alt+c`;
 - renderer: `background-task-notification`;
@@ -33,7 +33,13 @@ An inherited Nu, fish, csh, or unknown shell is explicitly described as `user-no
 
 ## Footer status
 
-The footer widget is updated on task changes and once per second while a session is active. If there are no running tasks and no unseen finished tasks, the background-task footer is cleared unless an update segment is available.
+`PI_BG_FOOTER_DISPLAY` strictly selects `all`, `running`, or `off` at activation, with `all` as the default. [`/bg-display`](../commands/bg-display.md) stores a versioned branch-local custom entry that overrides that default. `default` records a reset. Startup and `session_tree` restore from `getBranch()`, never all session entries or a per-second branch scan. A malformed matching entry reports an error and suppresses the package footer until a clean branch restores. It cannot reuse another branch's state.
+
+`all` retains the original footer bytes and count order. `running` omits finished badges and the clear hint, but keeps update notices. Without running tasks it shows only an available update notice. `off` clears only the `background-tasks` keyed widget and status, even when an update is available or the manager is open. None of these modes changes `seenTaskIds`, task records, commands, shortcut registration, completion delivery, or EventBus behavior.
+
+Pi owns custom-entry persistence. Custom-only session writes can be deferred until an assistant message exists. In-memory and no-session choices do not survive exit. Reload, resume, and forks follow the host's current branch and require initialized lifecycle bindings, as described in [configuration](../operations/configuration.md#initialized-host-sdk-contract).
+
+The footer widget is updated on task changes and once per second while a session is active. In `all` mode, if there are no running tasks and no unseen finished tasks, the background-task footer is cleared unless an update segment is available.
 
 When visible, the footer label includes counts in this order:
 

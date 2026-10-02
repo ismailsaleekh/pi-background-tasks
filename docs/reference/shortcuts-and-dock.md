@@ -12,9 +12,9 @@ covers_sources: []
 <!-- pi-docs:begin name="shortcut-contracts" generator="scripts/docs/generate.mjs" -->
 | Shortcut | Availability | Default | Description | Provenance |
 | --- | --- | --- | --- | --- |
-| `ctrl+alt+b` | `dock:ctrl+alt+b` | no | Open focused background task footer dock | `src/extension.ts:834` |
-| `ctrl+alt+c` | `always` | yes | Clear finished background task footer notices (terminal-dependent fallback for /bg-clear) | `src/extension.ts:842` |
-| `shift+down` | `dock:shift+down` | yes | Open focused background task footer dock | `src/extension.ts:825` |
+| `ctrl+alt+b` | `dock:ctrl+alt+b` | no | Open focused background task footer dock | `src/extension.ts:936` |
+| `ctrl+alt+c` | `always` | yes | Clear finished background task footer notices (terminal-dependent fallback for /bg-clear) | `src/extension.ts:944` |
+| `shift+down` | `dock:shift+down` | yes | Open focused background task footer dock | `src/extension.ts:927` |
 <!-- pi-docs:end name="shortcut-contracts" -->
 
 ## Registered shortcuts
@@ -33,7 +33,9 @@ Only the configured literal key is registered, so selecting the alternate key or
 
 ## Footer states
 
-The footer appears when there are running tasks, unseen finished tasks, or an update segment. Count labels are:
+With the default `all` display, the footer appears when there are running tasks, unseen finished tasks, or an update segment. [`/bg-display`](../commands/bg-display.md) can switch to `running`, which hides finished counts and the clear hint but keeps updates. `off` hides the entire package footer, including updates. Neither mode changes dock shortcut registration or marks tasks seen. Returning to `all` restores unread badges.
+
+Count labels are:
 
 - `running` for active tasks;
 - `failed` for status `failed`;
@@ -60,7 +62,7 @@ The `/bg-clear` hint is hidden while the dock is open, where the entry hint beco
 - [`/tasks`](../commands/task-manager.md);
 - [`/bg-tasks`](../commands/task-manager.md).
 
-All enabled entry points open the same task manager when an interactive UI is available. The commands remain available with the shortcut off and are the conflict-free fallback.
+All enabled entry points open the same task manager when an interactive UI is available. The commands remain available with the shortcut off and are the conflict-free fallback. They also work with `/bg-display off`; footer visibility is independent of manager access.
 
 ## Rerun and reload survival
 

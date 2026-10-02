@@ -26,9 +26,16 @@ export interface PiBackgroundFeatureSelection {
   readonly attribution: boolean;
 }
 
+export const PI_BG_FOOTER_DISPLAY_VALUES = Object.freeze(['all', 'running', 'off'] as const);
+export type PiBackgroundFooterDisplay = (typeof PI_BG_FOOTER_DISPLAY_VALUES)[number];
+export const PI_BG_DEFAULT_FOOTER_DISPLAY: PiBackgroundFooterDisplay = 'all';
+export const BG_DISPLAY_ENTRY = 'pi-background-tasks.footer-display';
+export const BG_DISPLAY_SCHEMA = 'pi-background-tasks.footer-display.v1';
+
 export interface PiBackgroundConfig {
   readonly features: PiBackgroundFeatureSelection;
   readonly dockShortcut: PiBackgroundDockShortcut;
+  readonly footerDisplay: PiBackgroundFooterDisplay;
 }
 
 const CONFIG_VALUE_EXCERPT_CHARS = 96;
@@ -106,12 +113,50 @@ function parseDockShortcut(rawValue: string | undefined): PiBackgroundDockShortc
   return raw as PiBackgroundDockShortcut;
 }
 
+function parseFooterDisplay(rawValue: string | undefined): PiBackgroundFooterDisplay {
+  const raw = rawValue ?? PI_BG_DEFAULT_FOOTER_DISPLAY;
+  if (!(PI_BG_FOOTER_DISPLAY_VALUES as readonly string[]).includes(raw)) {
+    invalidConfig(
+      'PI_BG_FOOTER_DISPLAY',
+      `accepted values are exactly ${PI_BG_FOOTER_DISPLAY_VALUES.join(',')}`,
+      raw,
+    );
+  }
+  return raw as PiBackgroundFooterDisplay;
+}
+
+export function restoreBackgroundTasksFooterDisplay(
+  entries: readonly unknown[],
+): PiBackgroundFooterDisplay | undefined {
+  let restored: PiBackgroundFooterDisplay | undefined;
+  for (const entry of entries) {
+    if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) continue;
+    const record = entry as Record<string, unknown>;
+    if (record['type'] !== 'custom' || record['customType'] !== BG_DISPLAY_ENTRY) continue;
+    const data = record['data'];
+    if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+      throw new Error('pi_bg_footer_entry_invalid: malformed footer display entry');
+    }
+    const value = data as Record<string, unknown>;
+    const mode = value['mode'];
+    if (
+      value['schema_version'] !== BG_DISPLAY_SCHEMA ||
+      (mode !== 'default' && mode !== 'all' && mode !== 'running' && mode !== 'off')
+    ) {
+      throw new Error('pi_bg_footer_entry_invalid: malformed footer display entry');
+    }
+    restored = mode === 'default' ? undefined : mode;
+  }
+  return restored;
+}
+
 export function parseBackgroundTasksConfig(
   env: Readonly<Record<string, string | undefined>> = process.env,
 ): PiBackgroundConfig {
   const features = parseFeatures(env['PI_BG_FEATURES']);
   const dockShortcut = parseDockShortcut(env['PI_BG_DOCK_SHORTCUT']);
-  return Object.freeze({ features, dockShortcut });
+  const footerDisplay = parseFooterDisplay(env['PI_BG_FOOTER_DISPLAY']);
+  return Object.freeze({ features, dockShortcut, footerDisplay });
 }
 
 export function dockShortcutFooterHint(shortcut: PiBackgroundDockShortcut): string {

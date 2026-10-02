@@ -44,6 +44,8 @@ const DOCS_FEATURE_VALUES = ['process', 'delegate', 'fusion', 'attested', 'attri
 const DOCS_DEFAULT_FEATURES = ['process', 'delegate', 'fusion', 'attested', 'attribution'];
 const DOCS_DOCK_SHORTCUT_VALUES = ['shift+down', 'ctrl+alt+b', 'off'];
 const DOCS_DEFAULT_DOCK_SHORTCUT = 'shift+down';
+const DOCS_FOOTER_DISPLAY_VALUES = ['all', 'running', 'off'];
+const DOCS_DEFAULT_FOOTER_DISPLAY = 'all';
 const ALWAYS_AVAILABLE = 'always';
 const ANTHROPIC_ATTRIBUTION_CLAIM_CHANNEL = 'pi-anthropic-attribution:claim:v1';
 const ANTHROPIC_ATTRIBUTION_CLAIM_SCHEMA = 'pi-anthropic-attribution.claim.v1';
@@ -469,9 +471,9 @@ function assertImmutableVariantParser(ts, root, rel, cache) {
     }
     returnedKeys.push(property.name.text);
   }
-  if (JSON.stringify(returnedKeys) !== JSON.stringify(['features', 'dockShortcut'])) {
+  if (JSON.stringify(returnedKeys) !== JSON.stringify(['features', 'dockShortcut', 'footerDisplay'])) {
     throw new DocsGateError(
-      `${rel} variant parser must freeze exactly the features and dockShortcut bindings`,
+      `${rel} variant parser must freeze exactly the features, dockShortcut and footerDisplay bindings`,
     );
   }
 
@@ -488,6 +490,17 @@ function assertImmutableVariantParser(ts, root, rel, cache) {
   const featuresParser = info.localFunctions.get(featuresParserName);
   if (!featuresParser?.body || !parserBindings.has('dockShortcut')) {
     throw new DocsGateError(`${rel} variant parser must bind local feature and dock parsers`);
+  }
+  const footerInitializer = stripAsConst(ts, parserBindings.get('footerDisplay'));
+  if (
+    !footerInitializer || !ts.isCallExpression(footerInitializer) ||
+    !ts.isIdentifier(footerInitializer.expression) ||
+    footerInitializer.expression.text !== 'parseFooterDisplay' ||
+    footerInitializer.arguments.length !== 1 ||
+    footerInitializer.arguments[0].getText(info.sf) !== "env['PI_BG_FOOTER_DISPLAY']" ||
+    !info.localFunctions.get('parseFooterDisplay')?.body
+  ) {
+    throw new DocsGateError(`${rel} footerDisplay binding must call its local environment parser`);
   }
   const featureReturn = soleDirectReturn(ts, info, featuresParser, 'feature parser');
   const returnedFeatures = frozenObjectLiteral(
@@ -541,6 +554,8 @@ function variantContractFromModule(ts, root, rel, cache) {
   const defaultFeatures = read('PI_BG_DEFAULT_FEATURES');
   const dockShortcutValues = read('PI_BG_DOCK_SHORTCUT_VALUES');
   const defaultDockShortcut = read('PI_BG_DEFAULT_DOCK_SHORTCUT');
+  const footerDisplayValues = read('PI_BG_FOOTER_DISPLAY_VALUES');
+  const defaultFooterDisplay = read('PI_BG_DEFAULT_FOOTER_DISPLAY');
   const assertExact = (label, actual, expected) => {
     if (JSON.stringify(actual) !== JSON.stringify(expected)) {
       throw new DocsGateError(
@@ -552,11 +567,15 @@ function variantContractFromModule(ts, root, rel, cache) {
   assertExact('PI_BG_DEFAULT_FEATURES', defaultFeatures, DOCS_DEFAULT_FEATURES);
   assertExact('PI_BG_DOCK_SHORTCUT_VALUES', dockShortcutValues, DOCS_DOCK_SHORTCUT_VALUES);
   assertExact('PI_BG_DEFAULT_DOCK_SHORTCUT', defaultDockShortcut, DOCS_DEFAULT_DOCK_SHORTCUT);
+  assertExact('PI_BG_FOOTER_DISPLAY_VALUES', footerDisplayValues, DOCS_FOOTER_DISPLAY_VALUES);
+  assertExact('PI_BG_DEFAULT_FOOTER_DISPLAY', defaultFooterDisplay, DOCS_DEFAULT_FOOTER_DISPLAY);
   return {
     feature_values: [...featureValues],
     default_features: [...defaultFeatures],
     dock_shortcut_values: [...dockShortcutValues],
     default_dock_shortcut: defaultDockShortcut,
+    footer_display_values: [...footerDisplayValues],
+    default_footer_display: defaultFooterDisplay,
     source: rel,
   };
 }
@@ -1052,6 +1071,18 @@ function collectRegistrationsInFunction(
       return true;
     }
     const directAccess = node.parent;
+    if (
+      ts.isPropertyAccessExpression(directAccess) &&
+      directAccess.expression === node && directAccess.name.text === 'footerDisplay' &&
+      ts.isVariableDeclaration(directAccess.parent) &&
+      directAccess.parent.initializer === directAccess &&
+      ts.isIdentifier(directAccess.parent.name) &&
+      directAccess.parent.name.text === 'footerDisplayDefault' &&
+      ts.isVariableDeclarationList(directAccess.parent.parent) &&
+      (directAccess.parent.parent.flags & ts.NodeFlags.Const) !== 0 &&
+      ts.isVariableStatement(directAccess.parent.parent.parent) &&
+      directAccess.parent.parent.parent.parent === fn.body
+    ) return true;
     if (
       ts.isPropertyAccessExpression(directAccess) &&
       directAccess.expression === node &&

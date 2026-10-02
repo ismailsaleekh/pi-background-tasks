@@ -36,14 +36,14 @@
 <!-- pi-docs:begin name="readme-public-surfaces" generator="scripts/docs/generate.mjs" -->
 | Surface kind | Configured variants | Available by default |
 | --- | --- | --- |
-| command | 11 | 11 |
+| command | 12 | 12 |
 | tool | 11 | 11 |
 | shortcut | 3 | 2 |
 | renderer | 2 | 2 |
 | eventbus | 1 | 1 |
 | workflow | 4 | 4 |
 
-Public commands: `/bg`, `/bg-clear`, `/bg-tasks`, `/bg-update`, `/claude-cache`, `/fusion`, `/fusion-models`, `/jobs`, `/kill`, `/logs`, `/tasks`.
+Public commands: `/bg`, `/bg-clear`, `/bg-display`, `/bg-tasks`, `/bg-update`, `/claude-cache`, `/fusion`, `/fusion-models`, `/jobs`, `/kill`, `/logs`, `/tasks`.
 
 Public tools: `bg_delegate`, `bg_kill`, `bg_logs`, `bg_result`, `bg_run`, `bg_run_pi_attested`, `bg_status`, `fusion_investigate`, `fusion_reason`, `fusion_research`, `fusion_validate`.
 
@@ -306,12 +306,13 @@ Use with `fusion_validate` for advisory read-only review.
   <img src="docs/assets/footer-dock.svg" alt="Illustration of the pi-background-tasks footer dock with running and completed tasks" width="760">
 </p>
 
-When tasks are running or unseen completions exist, the footer shows a compact `bg ...` segment. Press the configured **Shift↓** (default) or **Ctrl+Alt+B** binding to open the focused bottom dock, or use `/tasks` when the key is off. Use `/bg-clear` to acknowledge finished-task footer notices in any terminal.
+With the default `all` display, running tasks or unseen completions produce a compact `bg ...` footer segment. Press the configured **Shift↓** (default) or **Ctrl+Alt+B** binding to open the focused bottom dock, or use `/tasks` when the key is off. Use `/bg-clear` to acknowledge finished-task footer notices in any terminal.
 
 | Control | Action |
 |---|---|
 | configured `Shift↓` / `Ctrl+Alt+B`, or `/tasks` | Open the dock |
 | `/bg-clear` | Clear finished-task notices |
+| `/bg-display [status\|all\|running\|off\|default]` | Report or change footer visibility for the current session branch |
 | `↑` / `↓`, `PageUp` / `PageDown` | Move through list or scroll output tail |
 | `Enter` / `→` | Inspect details |
 | `←` | Return to list |
@@ -319,6 +320,10 @@ When tasks are running or unseen completions exist, the footer shows a compact `
 | `R` | Rerun selected command |
 | `c` | Show copyable output path |
 | `x` / `Esc` / `q` | Close dock |
+
+Set `PI_BG_FOOTER_DISPLAY=running` before startup to show running counts without finished badges or the clear hint. `off` hides this package's footer, including update notices. `/tasks`, `/bg-tasks`, the configured dock shortcut, notifications, and wake turns still work. Returning to `all` restores unseen badges.
+
+[`/bg-display`](docs/commands/bg-display.md) stores a branch-local override. `default` resets to the activation environment default. Resume and reload retain branch selections; forks inherit their copied path, and new sessions use the environment default. Pi owns custom-entry persistence and can defer a custom-only write until an assistant message exists. In-memory and no-session selections disappear on exit. No global setting file changes.
 
 Agent tasks launched through `pi -p ...` or `pi --mode json ...` and marked `isAgent:true` can show task-owned model/context/token/tool telemetry. Missing child telemetry is shown as unavailable, not synthesized as zero.
 

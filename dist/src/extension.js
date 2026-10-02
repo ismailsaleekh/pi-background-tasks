@@ -9,7 +9,7 @@ import { BackgroundTaskRegistry } from './core/registry.js';
 import { getProcessReloadShellOwnerV1, makeReloadShellIdentity, } from './core/reload-shell-owner.js';
 import { createShellPolicyGuidanceHandler, initializeShellPolicy } from './core/shell-policy.js';
 import { installBackgroundTaskExtensionApi, } from './core/extension-api.js';
-import { dockShortcutFooterHint, parseBackgroundTasksConfig } from './core/config.js';
+import { BG_DISPLAY_ENTRY, BG_DISPLAY_SCHEMA, PI_BG_FOOTER_DISPLAY_VALUES, dockShortcutFooterHint, parseBackgroundTasksConfig, restoreBackgroundTasksFooterDisplay, } from './core/config.js';
 import { LazyModule, SynchronousActivationCloseFence } from './core/lazy-module.js';
 /**
  * Project-local Pi background task manager.
@@ -104,6 +104,8 @@ function renderPlainResult(result, options, theme) {
 export default async function backgroundTasksExtension(pi) {
     const config = parseBackgroundTasksConfig();
     const dockEntryHint = dockShortcutFooterHint(config.dockShortcut);
+    const footerDisplayDefault = config.footerDisplay;
+    let footerDisplayState = { kind: 'ready', override: undefined };
     const shellPolicy = initializeShellPolicy();
     const reloadShellOwner = getProcessReloadShellOwnerV1();
     pi.on('before_agent_start', createShellPolicyGuidanceHandler(shellPolicy));
@@ -183,6 +185,7 @@ export default async function backgroundTasksExtension(pi) {
         // racing continuation is still disposed rather than hidden by idempotence.
         currentCtx = undefined;
         currentRegistryCtx = undefined;
+        footerDisplayState = { kind: 'invalid' };
         if (statusInterval !== undefined) {
             clearInterval(statusInterval);
             statusInterval = undefined;
@@ -209,6 +212,7 @@ export default async function backgroundTasksExtension(pi) {
     pi.on('session_start', async (event, ctx) => {
         if (disposed)
             return;
+        restoreFooterDisplay(ctx);
         const nextRegistryCtx = registryContext(ctx);
         const identity = makeReloadShellIdentity(nextRegistryCtx.sessionId ?? '', realpathSync(ctx.cwd));
         if (activationLease !== undefined && registry.hasCurrentReloadLease()) {
@@ -319,20 +323,46 @@ export default async function backgroundTasksExtension(pi) {
             ? `Cleared ${String(cleared)} finished background task notice${cleared === 1 ? '' : 's'}.`
             : 'No finished background task notices to clear.', cleared > 0 ? 'info' : 'warning');
     }
+    function restoreFooterDisplay(ctx) {
+        try {
+            footerDisplayState = {
+                kind: 'ready',
+                override: restoreBackgroundTasksFooterDisplay(ctx.sessionManager.getBranch()),
+            };
+            return true;
+        }
+        catch (error) {
+            footerDisplayState = { kind: 'invalid' };
+            updateUi(ctx);
+            const message = error instanceof Error ? error.message : 'pi_bg_footer_entry_invalid';
+            if (ctx.hasUI)
+                ctx.ui.notify(message, 'error');
+            else
+                console.error(`[background-tasks] ${message}`);
+            return false;
+        }
+    }
     function updateUi(ctx = currentCtx) {
         if (registry.isShuttingDown() || !ctx)
             return;
         try {
             if (!ctx.hasUI)
                 return;
+            ctx.ui.setWidget('background-tasks', undefined);
+            const display = footerDisplayState.kind === 'ready'
+                ? footerDisplayState.override ?? footerDisplayDefault
+                : 'off';
+            if (display === 'off') {
+                ctx.ui.setStatus('background-tasks', undefined);
+                return;
+            }
             const allTasks = registry.allTasks();
             const running = allTasks.filter((task) => task.status === 'running');
-            const unseenFailed = allTasks.filter((task) => task.status === 'failed' && !seenTaskIds.has(task.id));
-            const unseenStopped = allTasks.filter((task) => task.status === 'killed' && !seenTaskIds.has(task.id));
-            const unseenDone = allTasks.filter((task) => task.status === 'completed' && !seenTaskIds.has(task.id));
+            const unseenFailed = allTasks.filter((task) => display === 'all' && task.status === 'failed' && !seenTaskIds.has(task.id));
+            const unseenStopped = allTasks.filter((task) => display === 'all' && task.status === 'killed' && !seenTaskIds.has(task.id));
+            const unseenDone = allTasks.filter((task) => display === 'all' && task.status === 'completed' && !seenTaskIds.has(task.id));
             const unseenFinishedCount = unseenFailed.length + unseenStopped.length + unseenDone.length;
             const updateSegment = formatUpdateSegment(latestKnownVersion, PACKAGE_VERSION ?? '');
-            ctx.ui.setWidget('background-tasks', undefined);
             if (running.length === 0 && unseenFinishedCount === 0) {
                 ctx.ui.setStatus('background-tasks', updateSegment ? lightBlue(` bg ${updateSegment} `) : undefined);
                 return;
@@ -524,6 +554,13 @@ export default async function backgroundTasksExtension(pi) {
         if (!disposed)
             void scheduleUpdateCheck(ctx);
     });
+    pi.on('session_tree', (_event, ctx) => {
+        if (disposed)
+            return;
+        currentCtx = ctx;
+        restoreFooterDisplay(ctx);
+        updateUi(ctx);
+    });
     pi.on('session_shutdown', async (event, ctx) => {
         beginSessionShutdown(event.reason);
         if (shutdownCleanupStarted)
@@ -600,6 +637,54 @@ export default async function backgroundTasksExtension(pi) {
         handler: async (args, ctx) => {
             const taskId = optionalTrimmed(args);
             await openTaskManager(ctx, taskId);
+        },
+    });
+    pi.registerCommand('bg-display', {
+        description: 'Show or set background task footer display for this session branch',
+        getArgumentCompletions: (prefix) => {
+            const matches = [...PI_BG_FOOTER_DISPLAY_VALUES, 'default', 'status']
+                .filter((value) => value.startsWith(prefix.trim().toLowerCase()))
+                .map((value) => ({ value, label: value, description: 'Session branch footer display' }));
+            return matches.length > 0 ? matches : null;
+        },
+        handler: async (args, ctx) => {
+            if (disposed)
+                return;
+            const action = args.trim().toLowerCase();
+            if (action !== '' && action !== 'status' && action !== 'default' &&
+                action !== 'all' && action !== 'running' && action !== 'off') {
+                ctx.ui.notify('Usage: /bg-display [status|all|running|off|default]', 'error');
+                return;
+            }
+            currentCtx = ctx;
+            if (!restoreFooterDisplay(ctx) || footerDisplayState.kind !== 'ready')
+                return;
+            const override = footerDisplayState.override;
+            if (action === '' || action === 'status') {
+                ctx.ui.notify(`Background task footer: ${override ?? footerDisplayDefault} (${override === undefined
+                    ? 'activation default; scope: this activation'
+                    : `branch override; scope: this session branch; activation default: ${footerDisplayDefault}`}).`, 'info');
+                return;
+            }
+            const nextOverride = action === 'default' ? undefined : action;
+            try {
+                if (override !== nextOverride) {
+                    pi.appendEntry(BG_DISPLAY_ENTRY, { schema_version: BG_DISPLAY_SCHEMA, mode: action });
+                }
+            }
+            catch (error) {
+                // Pi can update its branch in memory before persistence throws.
+                restoreFooterDisplay(ctx);
+                updateUi(ctx);
+                ctx.ui.notify(`Background task footer save failed: ${error instanceof Error ? error.message : String(error)}`, 'error');
+                return;
+            }
+            if (!restoreFooterDisplay(ctx))
+                return;
+            updateUi(ctx);
+            ctx.ui.notify(action === 'default'
+                ? `Background task footer reset to ${footerDisplayDefault} (activation default).`
+                : `Background task footer set to ${action} for this session branch.`, 'info');
         },
     });
     pi.registerCommand('bg-clear', {

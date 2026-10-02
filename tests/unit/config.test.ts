@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
+  BG_DISPLAY_ENTRY,
+  BG_DISPLAY_SCHEMA,
+  PI_BG_FOOTER_DISPLAY_VALUES,
+  restoreBackgroundTasksFooterDisplay,
   dockShortcutFooterHint,
   parseBackgroundTasksConfig,
   PI_BG_DEFAULT_DOCK_SHORTCUT,
@@ -21,6 +25,9 @@ void describe('background task capability configuration', () => {
       attested: true,
       attribution: true,
     });
+    assert.equal(config.footerDisplay, 'all');
+    assert.ok(Object.isFrozen(config));
+    assert.ok(Object.isFrozen(config.features));
     assert.equal(config.dockShortcut, 'shift+down');
     assert.equal(dockShortcutFooterHint(config.dockShortcut), 'Shift↓');
   });
@@ -55,6 +62,32 @@ void describe('background task capability configuration', () => {
         ['off', '/tasks'],
       ],
     );
+  });
+
+  void it('accepts exactly all, running and off as activation defaults', () => {
+    assert.deepEqual(PI_BG_FOOTER_DISPLAY_VALUES, ['all', 'running', 'off']);
+    for (const mode of PI_BG_FOOTER_DISPLAY_VALUES) {
+      assert.equal(parseBackgroundTasksConfig({ PI_BG_FOOTER_DISPLAY: mode }).footerDisplay, mode);
+    }
+    for (const value of ['', 'ALL', ' running', 'off ', 'none', 'all,running', 'x'.repeat(10000)]) {
+      assert.throws(() => parseBackgroundTasksConfig({ PI_BG_FOOTER_DISPLAY: value }),
+        /pi_bg_config_invalid: PI_BG_FOOTER_DISPLAY.*all,running,off/);
+    }
+  });
+
+  void it('restores only the ordered current-branch custom entries and reset', () => {
+    const entry = (mode: string) => ({ type: 'custom', customType: BG_DISPLAY_ENTRY,
+      data: { schema_version: BG_DISPLAY_SCHEMA, mode } });
+    assert.equal(restoreBackgroundTasksFooterDisplay([]), undefined);
+    assert.equal(restoreBackgroundTasksFooterDisplay([null, {}, { ...entry('off'), customType: 'other' }]), undefined);
+    assert.equal(restoreBackgroundTasksFooterDisplay([entry('all'), entry('running'), entry('off')]), 'off');
+    assert.equal(restoreBackgroundTasksFooterDisplay([entry('off'), entry('default')]), undefined);
+    for (const data of [null, [], {}, { schema_version: 'v2', mode: 'off' },
+      { schema_version: BG_DISPLAY_SCHEMA, mode: 'OFF' }]) {
+      assert.throws(() => restoreBackgroundTasksFooterDisplay([
+        { type: 'custom', customType: BG_DISPLAY_ENTRY, data }, entry('all'),
+      ]), /pi_bg_footer_entry_invalid/);
+    }
   });
 
   void it('rejects malformed values without fallback or unbounded echo', () => {
