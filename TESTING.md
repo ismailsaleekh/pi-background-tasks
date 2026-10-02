@@ -197,6 +197,22 @@ actually sent. Both are now pinned by unit and mutation-guard tests.
 
 Smoke proves loadability only; completion requires `npm run test`, `npm run test:full`, `npm run pack:dry-run`, and the release-only compatibility gate when preparing a release.
 
+### Footer display gates
+
+`tests/unit/config.test.ts` covers strict `PI_BG_FOOTER_DISPLAY` values and malformed versioned branch entries. `tests/sdk/footer-display-sdk.test.ts` loads both the source and compiled public entrypoints. It checks exact default footer bytes, unread preservation across hidden modes, keyed peer status/widget isolation, manager commands and shortcut access, invalid command non-persistence, reset precedence, current-branch navigation, counted reload, durable resume, inherited/root forks, new sessions, corrupt entries, append failure, and off-mode update lookup.
+
+`tests/sdk/feature-selection-sdk.test.ts` retains the feature and dock registration matrix and rejects invalid footer environment values before registration. `tests/scripted-provider/follow-up.test.ts` repeats the event-driven wake case in all three footer modes. `tests/pty/pty.test.ts` exercises display command completion, mode changes, terminal notification, and manager commands through the compiled entrypoint. Accumulated PTY output proves interactions, not current-screen absence; the keyed SDK UI assertions prove hidden state. A PTY capability skip remains unverified.
+
+Focused offline commands after `npm run build:runtime`:
+
+```bash
+node --import tsx --test --test-concurrency=1 tests/unit/config.test.ts tests/sdk/footer-display-sdk.test.ts tests/sdk/sdk.test.ts tests/sdk/feature-selection-sdk.test.ts
+node --import tsx --test tests/scripted-provider/follow-up.test.ts
+node --import tsx --test --test-name-pattern='changes footer display' tests/pty/pty.test.ts
+npm run docs:verify
+npm run test:docs
+```
+
 ### Docs/gateway focused checks
 
 Current package docs gates are `npm run docs:generate` and `npm run docs:verify`; semantic receipt freshness is advisory there. Use `npm run docs:verify:attestations` only when a release or operator explicitly requires fresh independent receipts, and record them with `npm run docs:attest/record -- <doc_id> --reviewer <identity-after-semantic-review> --verdict PASS --notes <review-notes>`.

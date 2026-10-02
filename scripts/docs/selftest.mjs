@@ -36,9 +36,9 @@ function mustThrow(name, fn, pattern) {
 const codeFacts = buildCodeFacts();
 const docsModel = loadDocsModel();
 
-assert.equal(docsModel.docs.length, 42, 'all docs/**/*.md are governed');
-assert.equal(codeFacts.public_surface_ids.length, 32, 'all command/tool/shortcut/renderer/EventBus/workflow surfaces are extracted');
-assert.equal(codeFacts.default_public_surface_ids.length, 31, 'alternate dock shortcut is the only non-default surface');
+assert.equal(docsModel.docs.length, 43, 'all docs/**/*.md are governed');
+assert.equal(codeFacts.public_surface_ids.length, 33, 'all command/tool/shortcut/renderer/EventBus/workflow surfaces are extracted');
+assert.equal(codeFacts.default_public_surface_ids.length, 32, 'alternate dock shortcut is the only non-default surface');
 assert.ok(codeFacts.public_surface_ids.includes('eventbus:background-task-v1'));
 assert.ok(codeFacts.public_surface_ids.includes('workflow:research'));
 const surfaceById = new Map(
@@ -58,7 +58,7 @@ assert.equal(surfaceById.get('shortcut:ctrl+alt+b').default_available, false);
 assert.equal(docsModel.docs.find((doc) => doc.doc_id === 'INDEX').frontmatter.covers_surfaces.length, 0, 'INDEX must not own public surfaces');
 assert.equal(docsModel.docs.find((doc) => doc.doc_id === 'read-before-edit').frontmatter.covers_sources.length, 0, 'read-before-edit must not own sources');
 const envNames = new Set(codeFacts.environment_variables.map((entry) => entry.name));
-for (const expectedEnv of ['PI_BG_FEATURES', 'PI_BG_DOCK_SHORTCUT', 'PI_BG_SHELL', 'PI_BG_SHELL_PATH', 'PI_BG_DISABLE_PI_TELEMETRY', 'ComSpec', 'SystemRoot', 'WINDIR']) assert.ok(envNames.has(expectedEnv), `missing env extraction for ${expectedEnv}`);
+for (const expectedEnv of ['PI_BG_FEATURES', 'PI_BG_DOCK_SHORTCUT', 'PI_BG_FOOTER_DISPLAY', 'PI_BG_SHELL', 'PI_BG_SHELL_PATH', 'PI_BG_DISABLE_PI_TELEMETRY', 'ComSpec', 'SystemRoot', 'WINDIR']) assert.ok(envNames.has(expectedEnv), `missing env extraction for ${expectedEnv}`);
 assert.ok(!envNames.has('FUSION_CHILD_IDLE_TIMEOUT_MS'), 'fixed timeout constant must not be classified as env');
 const runtimeArtifacts = new Set(codeFacts.runtime_paths_and_artifacts.map((entry) => entry.value));
 for (const expectedArtifact of [
@@ -182,6 +182,35 @@ mustThrow(
   /must not use object spread/,
 );
 const finiteVariantConfig = readFileSync(resolve('src/core/config.ts'), 'utf8');
+assertRegistrationFixture({
+  entry: 'entry.ts',
+  files: {
+    'entry.ts': "import { parseBackgroundTasksConfig } from './config.js'; export default function x(pi){ const config = parseBackgroundTasksConfig(); const footerDisplayDefault = config.footerDisplay; pi.registerCommand('bg-display', {}); }",
+    'config.ts': finiteVariantConfig,
+  },
+});
+for (const [name, statement] of [
+  ['mutable footer alias', 'let footerDisplayDefault = config.footerDisplay;'],
+  ['different footer alias', 'const preference = config.footerDisplay;'],
+  ['footer argument escape', 'save(config.footerDisplay);'],
+  ['footer registration gate', "if (config.footerDisplay === 'off') { pi.registerCommand('hidden', {}); }"],
+]) {
+  mustThrow(name, () => assertRegistrationFixture({ entry: 'entry.ts', files: {
+    'entry.ts': `import { parseBackgroundTasksConfig } from './config.js'; export default function x(pi){ const config = parseBackgroundTasksConfig(); ${statement} pi.registerCommand('bg-display', {}); }`,
+    'config.ts': finiteVariantConfig,
+  } }), /finite config binding|unrecognized finite variant condition/);
+}
+for (const [name, source] of [
+  ['footer enum drift', finiteVariantConfig.replace("['all', 'running', 'off'] as const", "['all', 'running', 'off', 'auto'] as const")],
+  ['footer default drift', finiteVariantConfig.replace("PiBackgroundFooterDisplay = 'all'", "PiBackgroundFooterDisplay = 'off'")],
+  ['footer parser bypass', finiteVariantConfig.replace("parseFooterDisplay(env['PI_BG_FOOTER_DISPLAY'])", "env['PI_BG_FOOTER_DISPLAY']")],
+  ['footer wrong input', finiteVariantConfig.replace("parseFooterDisplay(env['PI_BG_FOOTER_DISPLAY'])", "parseFooterDisplay(env['PI_BG_DOCK_SHORTCUT'])")],
+]) {
+  mustThrow(name, () => assertRegistrationFixture({ entry: 'entry.ts', files: {
+    'entry.ts': "import { parseBackgroundTasksConfig } from './config.js'; export default function x(pi){ const config = parseBackgroundTasksConfig(); pi.registerCommand('bg-display', {}); }",
+    'config.ts': source,
+  } }), /variant enum drift|footerDisplay binding/);
+}
 assert.deepEqual(
   assertRegistrationFixture({
     entry: 'entry.ts',

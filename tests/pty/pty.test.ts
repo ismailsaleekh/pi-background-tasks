@@ -78,6 +78,7 @@ interface RunExpectOptions {
   model?: string | undefined;
   env?: Readonly<Record<string, string>> | undefined;
   fusionFakeMergedText?: string | undefined;
+  rawOutputPath?: string | undefined;
 }
 
 async function runExpect(
@@ -122,7 +123,7 @@ set env(NPM_CONFIG_CACHE) "/tmp/pi-npm-cache"
 set env(TERM) "xterm-256color"
 ${pathEnv}
 ${optionEnv}
-spawn -noecho /usr/local/bin/pi --offline --no-session --no-extensions ${extensionArgs} --no-skills --no-prompt-templates --no-context-files --no-tools${modelArg}
+spawn -noecho ${tclQuote(process.execPath)} ${tclQuote(resolve('node_modules/@earendil-works/pi-coding-agent/dist/cli.js'))} --offline --no-session --no-extensions ${extensionArgs} --no-skills --no-prompt-templates --no-context-files --no-tools${modelArg}
 expect {
   -re {\\[\\?u} { send "\\033\\[?0u"; exp_continue }
   -re {\\[c} { send "\\033\\[?1;2c"; exp_continue }
@@ -143,6 +144,7 @@ exit 0
       timeout: (timeoutSeconds + 5) * 1000,
     });
     const output = `${result.stdout}\n${result.stderr}`;
+    if (options.rawOutputPath) await writeFile(options.rawOutputPath, output, 'utf8');
     assert.equal(result.status, 0, stripAnsi(output));
     return stripAnsi(output).replace(/\r/g, '');
   } finally {
@@ -151,6 +153,76 @@ exit 0
 }
 
 void describe('interactive PTY', () => {
+  void it('changes footer display with public commands and opens task history while hidden',
+    { timeout: 90_000 }, async (t) => {
+      if (!(await ptyInputSupported())) { t.skip(PTY_SKIP_REASON); return; }
+      const output = await runExpect(`
+send "/bg-display off"
+send "\\r"
+expect {
+  -re "footer set to off" {}
+  timeout { puts "DISPLAY_OFF_TIMEOUT"; exit 61 }
+}
+send "/bg --name FooterPty echo footer-pty"
+send "\\r"
+expect {
+  -re "Started FooterPty" {}
+  timeout { puts "DISPLAY_LAUNCH_TIMEOUT"; exit 62 }
+}
+expect {
+  -re "bg completed" {}
+  timeout { puts "DISPLAY_COMPLETION_TIMEOUT"; exit 63 }
+}
+after 1100
+puts "SCREEN_OFF"
+send "/tasks"
+send "\\r"
+expect {
+  -re "bg tasks focused" {}
+  timeout { puts "HIDDEN_TASKS_TIMEOUT"; exit 64 }
+}
+send "x"
+after 300
+send "/bg-display running"
+send "\\r"
+expect {
+  -re "footer set to running" {}
+  timeout { puts "DISPLAY_RUNNING_TIMEOUT"; exit 65 }
+}
+after 1100
+puts "SCREEN_RUNNING"
+send "/bg-tasks"
+send "\\r"
+expect {
+  -re "bg tasks focused" {}
+  timeout { puts "HIDDEN_BG_TASKS_TIMEOUT"; exit 66 }
+}
+send "x"
+after 300
+send "/bg-display all"
+send "\\r"
+expect {
+  -re "footer set to all" {}
+  timeout { puts "DISPLAY_ALL_TIMEOUT"; exit 67 }
+}
+send "/bg-display status"
+send "\\r"
+expect {
+  -re "branch override; scope: this session branch" {}
+  timeout { puts "DISPLAY_STATUS_TIMEOUT"; exit 68 }
+}
+after 1100
+puts "SCREEN_ALL"
+`, 15, { rows: 30, cols: 80 }, {
+        rawOutputPath: process.env['PI_BG_PTY_RAW_OUTPUT'],
+        extensionPaths: [resolve('dist/extensions/background-tasks.js')],
+        env: { PI_BG_FEATURES: 'process', PI_BG_FOOTER_DISPLAY: 'all' } });
+      assert.match(output, /footer set to off/);
+      assert.match(output, /footer set to running/);
+      assert.match(output, /footer set to all/);
+      assert.match(output, /bg completed/);
+      // Accumulated PTY bytes prove interactions, not absence on the current screen.
+    });
   void it(
     'opens the focused dock from /tasks and closes with x',
     { timeout: 45_000 },

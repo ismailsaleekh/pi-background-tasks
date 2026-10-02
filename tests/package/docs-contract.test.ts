@@ -94,6 +94,8 @@ void describe('docs package integration contract', () => {
     assert.match(text('docs/reference/shortcuts-and-dock.md'), /ctrl\+alt\+b/);
     assert.match(text('docs/operations/configuration.md'), /PI_BG_FEATURES/);
     assert.match(text('docs/operations/configuration.md'), /PI_BG_DOCK_SHORTCUT/);
+    assert.match(text('docs/operations/configuration.md'), /PI_BG_FOOTER_DISPLAY/);
+    assert.equal(byId.get('command:bg-display')?.availability, 'always');
   });
 
   void it('evaluates the exact manifest inventory for all 48 feature and dock profiles', () => {
@@ -107,7 +109,8 @@ void describe('docs package integration contract', () => {
     const always = new Set(
       surfaces.filter((surface) => surface.availability === 'always').map((surface) => surface.id),
     );
-    assert.equal(always.size, 15);
+    assert.equal(always.size, 16);
+    assert.ok(always.has('command:bg-display'));
     const byFeature = new Map<string, ReadonlySet<string>>([
       ['delegate', new Set(['tool:bg_delegate'])],
       [

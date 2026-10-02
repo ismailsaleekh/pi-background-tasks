@@ -33,7 +33,7 @@ const compiledBackgroundPath = resolve('dist/extensions/background-tasks.js');
 const shortcutOwnerPath = resolve('tests/fixtures/shortcut-owner.ts');
 const featureToolCollisionsPath = resolve('tests/fixtures/feature-tool-collisions.ts');
 const attributionCopyPath = resolve('tests/fixtures/anthropic-attribution-copy.ts');
-const FEATURE_ENV_KEYS = ['PI_BG_FEATURES', 'PI_BG_DOCK_SHORTCUT'] as const;
+const FEATURE_ENV_KEYS = ['PI_BG_FEATURES', 'PI_BG_DOCK_SHORTCUT', 'PI_BG_FOOTER_DISPLAY'] as const;
 const roots: string[] = [];
 const originalEnv = new Map<string, string | undefined>(
   FEATURE_ENV_KEYS.map((key) => [key, process.env[key]]),
@@ -43,6 +43,7 @@ const PROCESS_TOOLS = ['bg_kill', 'bg_logs', 'bg_run', 'bg_status'] as const;
 const PROCESS_COMMANDS = [
   'bg',
   'bg-clear',
+  'bg-display',
   'bg-tasks',
   'bg-update',
   'jobs',
@@ -71,9 +72,10 @@ function setEnv(key: (typeof FEATURE_ENV_KEYS)[number], value: string | undefine
   else process.env[key] = value;
 }
 
-function configure(features?: string, shortcut?: string): void {
+function configure(features?: string, shortcut?: string, footer?: string): void {
   setEnv('PI_BG_FEATURES', features);
   setEnv('PI_BG_DOCK_SHORTCUT', shortcut);
+  setEnv('PI_BG_FOOTER_DISPLAY', footer);
 }
 
 function sorted(values: Iterable<string>): string[] {
@@ -378,7 +380,7 @@ void describe('C1a feature selection and dock configuration', { concurrency: fal
   });
 
   void it('fails malformed settings before any package registration with bounded diagnostics', async () => {
-    const invalidCases: Array<{ features?: string; shortcut?: string; expected: RegExp }> = [
+    const invalidCases: Array<{ features?: string; shortcut?: string; footer?: string; expected: RegExp }> = [
       { features: '', expected: /PI_BG_FEATURES.*empty/i },
       { features: 'process,', expected: /blank/i },
       { features: 'process, delegate', expected: /whitespace/i },
@@ -389,9 +391,12 @@ void describe('C1a feature selection and dock configuration', { concurrency: fal
       { features: 'PROCESS', expected: /PROCESS.*accepted/i },
       { features: 'process', shortcut: 'shift+up', expected: /PI_BG_DOCK_SHORTCUT.*accepted/i },
       { features: `process,${'x'.repeat(10_000)}`, expected: /pi_bg_config_invalid/i },
+      ...['', 'ALL', ' off', 'running ', 'all,running', 'auto'].map((footer) => ({
+        features: 'process', footer, expected: /PI_BG_FOOTER_DISPLAY.*accepted/i,
+      })),
     ];
     for (const testCase of invalidCases) {
-      configure(testCase.features, testCase.shortcut);
+      configure(testCase.features, testCase.shortcut, testCase.footer);
       const { result } = await loadPackage();
       assert.ok(result.errors.length >= 1, `expected load error for ${JSON.stringify(testCase)}`);
       const message = result.errors.map((error) => error.error).join('\n');
@@ -937,7 +942,7 @@ void describe('C1a feature selection and dock configuration', { concurrency: fal
           `${name} must not stay active`,
         );
       }
-      assert.equal(session.extensionRunner.hasHandlers('session_tree'), false);
+      assert.equal(session.extensionRunner.hasHandlers('session_tree'), true);
       const restoredProvider = session.extensionRunner.getModelRegistry().getProvider('anthropic');
       assert.ok(restoredProvider);
       assert.notEqual(

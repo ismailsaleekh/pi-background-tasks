@@ -82,6 +82,7 @@ Every production file under `src/**` and `extensions/**` has exactly one primary
 | --- | --- | --- |
 | `command:bg` | `always` | yes |
 | `command:bg-clear` | `always` | yes |
+| `command:bg-display` | `always` | yes |
 | `command:bg-tasks` | `always` | yes |
 | `command:bg-update` | `always` | yes |
 | `command:claude-cache` | `feature:attribution` | yes |

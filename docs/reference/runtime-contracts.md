@@ -25,6 +25,7 @@ This generated registry lists production environment-variable references, runtim
     "attested",
     "attribution"
   ],
+  "default_footer_display": "all",
   "dock_shortcut_values": [
     "shift+down",
     "ctrl+alt+b",
@@ -36,6 +37,11 @@ This generated registry lists production environment-variable references, runtim
     "fusion",
     "attested",
     "attribution"
+  ],
+  "footer_display_values": [
+    "all",
+    "running",
+    "off"
   ],
   "source": "src/core/config.ts"
 }
@@ -73,13 +79,14 @@ This generated registry lists production environment-variable references, runtim
 | `PI_BG_DELEGATE_SEED_SHA256` | read, write | `src/core/delegate/launch.ts:355`<br>`src/delegate-child-extension.ts:386` |
 | `PI_BG_DELEGATE_TASK_ID` | read, write | `src/core/delegate/launch.ts:356`<br>`src/delegate-child-extension.ts:387` |
 | `PI_BG_DISABLE_PI_TELEMETRY` | read | `src/core/registry.ts:271` |
-| `PI_BG_DISABLE_UPDATE_CHECK` | read | `src/extension.ts:656` |
-| `PI_BG_DOCK_SHORTCUT` | read | `src/core/config.ts:113` |
-| `PI_BG_FEATURES` | read | `src/core/config.ts:112` |
+| `PI_BG_DISABLE_UPDATE_CHECK` | read | `src/extension.ts:695` |
+| `PI_BG_DOCK_SHORTCUT` | read | `src/core/config.ts:157` |
+| `PI_BG_FEATURES` | read | `src/core/config.ts:156` |
+| `PI_BG_FOOTER_DISPLAY` | read | `src/core/config.ts:158` |
 | `PI_BG_MAX_OUTPUT_BYTES` | read | `src/core/registry.ts:78` |
 | `PI_BG_POSIX_SHELL` | read | `src/core/common.ts:1085` |
 | `PI_BG_POSIX_SHELL_PATH` | read | `src/core/common.ts:1095` |
-| `PI_BG_REGISTRY_URL` | read | `src/extension.ts:665` |
+| `PI_BG_REGISTRY_URL` | read | `src/extension.ts:704` |
 | `PI_BG_SHELL` | read | `src/core/common.ts:1042` |
 | `PI_BG_SHELL_PATH` | read | `src/core/common.ts:1043` |
 | `PI_CACHE_RETENTION` | read, write | `src/core/anthropic-attribution.ts:819`<br>`src/core/anthropic-attribution.ts:830`<br>`src/core/fusion/claude-cache.ts:57`<br>`src/core/fusion/pi-child.ts:273`<br>`src/core/fusion/pi-child.ts:274` |
@@ -89,7 +96,7 @@ This generated registry lists production environment-variable references, runtim
 | `PI_FUSION_SOURCE_POLICY_SHA256` | read, remove, write | `src/core/fusion/pi-child.ts:100`<br>`src/core/fusion/pi-child.ts:1904`<br>`src/fusion-child-extension.ts:556` |
 | `PI_FUSION_TOOL_CALL_LOG_PATH` | read, remove, write | `src/core/fusion/pi-child.ts:100`<br>`src/core/fusion/pi-child.ts:1891`<br>`src/fusion-child-extension.ts:598` |
 | `PI_MODEL` | remove | `src/core/delegate/launch.ts:330`<br>`src/core/fusion/pi-child.ts:100` |
-| `PI_OFFLINE` | read | `src/extension.ts:657` |
+| `PI_OFFLINE` | read | `src/extension.ts:696` |
 | `PI_PROVIDER` | remove | `src/core/delegate/launch.ts:330`<br>`src/core/fusion/pi-child.ts:100` |
 | `PI_REASONING_LEVEL` | remove | `src/core/delegate/launch.ts:330`<br>`src/core/fusion/pi-child.ts:100` |
 | `PI_SESSION_FILE` | remove | `src/core/delegate/launch.ts:330`<br>`src/core/fusion/pi-child.ts:100` |
@@ -164,6 +171,7 @@ This generated registry lists production environment-variable references, runtim
 | `pi-background-tasks.extension-request.v1` | `src/core/extension-api.ts:15` |
 | `pi-background-tasks.extension-response.v1` | `src/core/extension-api.ts:16` |
 | `pi-background-tasks.extension-terminal.v1` | `src/core/extension-api.ts:17` |
+| `pi-background-tasks.footer-display.v1` | `src/core/config.ts:33` |
 | `pi-background-tasks.fusion-blind-candidates.v1` | `src/core/fusion/prompts.ts:309` |
 | `pi-background-tasks.fusion-budget-plan.v4` | `src/core/fusion/types.ts:27` |
 | `pi-background-tasks.fusion-calibration-violation.v2` | `src/core/fusion/types.ts:29` |

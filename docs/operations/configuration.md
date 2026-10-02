@@ -19,6 +19,7 @@ Configuration is read before any package registration on each extension activati
 |---|---|---|
 | `PI_BG_FEATURES` | `process,delegate,fusion,attested,attribution` | A comma-separated set of exact lowercase, unique tokens from `process`, `delegate`, `fusion`, `attested`, `attribution`. Whitespace, blanks, duplicates, unknown values, and omission of mandatory `process` are errors. |
 | `PI_BG_DOCK_SHORTCUT` | `shift+down` | Exactly `shift+down`, `ctrl+alt+b`, or `off`. Only the selected literal key is registered; `off` registers no dock shortcut. |
+| `PI_BG_FOOTER_DISPLAY` | `all` | Exactly `all`, `running`, or `off`. `running` hides finished counts and the clear hint but keeps update notices. `off` hides this package's footer only. |
 
 Capabilities are independent except for the derived result surface:
 
@@ -34,6 +35,12 @@ Disabled package tools, commands, renderers, and shortcuts are absent from regis
 Ambient attribution selection does not weaken package-owned isolated Anthropic children. Delegate, Fusion, and attested child argv always loads `extensions/anthropic-attribution-child.ts` before the child guard/governor, regardless of the parent `attribution` token.
 
 These flags select functionality only. They do not claim to reduce cold-start import cost; deferred loading and performance measurement are separate work.
+
+## Footer display override
+
+[`/bg-display [status|all|running|off|default]`](../commands/bg-display.md) reports the effective mode and source or stores an override on the current session branch. The latest valid branch entry takes precedence over the immutable activation default. `default` resets to that default. Reload rereads the environment and restores the branch choice. Tree navigation restores the selected branch, and forks inherit only entries on their copied path. New sessions use the activation default.
+
+The command changes no global preference file or user setting. Pi custom entries stay outside model context and use host session persistence. Pi can defer custom-only writes until an assistant message exists. In-memory and no-session choices disappear on exit. Malformed matching entries fail loudly without falling back to another branch. Footer settings never affect task-manager commands, configured shortcuts, history, notifications, wake turns, or update lookup.
 
 ## Initialized-host SDK contract
 
