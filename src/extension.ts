@@ -49,6 +49,7 @@ import {
   makeReloadShellIdentity,
 } from './core/reload-shell-owner.js';
 import { createShellPolicyGuidanceHandler, initializeShellPolicy } from './core/shell-policy.js';
+import { createLandstrip } from 'pi-landstrip/api';
 import {
   installBackgroundTaskExtensionApi,
   type BackgroundTaskExtensionService,
@@ -223,6 +224,7 @@ export default async function backgroundTasksExtension(pi: ExtensionAPI): Promis
   const config = parseBackgroundTasksConfig();
   const dockEntryHint = dockShortcutFooterHint(config.dockShortcut);
   const shellPolicy = initializeShellPolicy();
+  const landstrip = createLandstrip({ events: pi.events } as ExtensionAPI);
   const reloadShellOwner = getProcessReloadShellOwnerV1();
   pi.on('before_agent_start', createShellPolicyGuidanceHandler(shellPolicy));
   const seenTaskIds = new Set<string>();
@@ -250,6 +252,7 @@ export default async function backgroundTasksExtension(pi: ExtensionAPI): Promis
     sessionId: ctx.sessionManager.getSessionId(),
     modelRegistry: ctx.modelRegistry,
     model: ctx.model,
+    extensionContext: ctx,
   });
 
   const registry = new BackgroundTaskRegistry({
@@ -263,6 +266,7 @@ export default async function backgroundTasksExtension(pi: ExtensionAPI): Promis
       eventService.publishTerminal(task);
     },
     shellPolicy,
+    landstrip,
     reloadShellOwner,
   });
   const eventService: BackgroundTaskExtensionService = installBackgroundTaskExtensionApi({
@@ -277,6 +281,7 @@ export default async function backgroundTasksExtension(pi: ExtensionAPI): Promis
     if (!disposed) {
       disposed = true;
       registry.closeTaskAdmissions();
+      landstrip.dispose();
       if (pendingActivationClaim !== undefined) {
         const claim = pendingActivationClaim;
         pendingActivationClaim = undefined;

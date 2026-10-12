@@ -64,6 +64,7 @@ import {
 } from './pi-launch.js';
 import { BackgroundTaskExtensionServiceClosedError } from './extension-api.js';
 import { resolveAnthropicAttributionExtensionPath } from './anthropic-attribution-path.js';
+import type { Landstrip, LandstripPreparedProcess } from 'pi-landstrip/api';
 import {
   createReloadableShellExecutionV1,
   RELOAD_SHELL_OWNER_PROTOCOL,
@@ -142,6 +143,7 @@ export interface BackgroundTaskContext {
   sessionId?: string;
   modelRegistry: BackgroundTaskModelRegistry;
   model?: ExtensionContext['model'] | undefined;
+  extensionContext?: ExtensionContext;
 }
 
 interface OutputEventSource {
@@ -223,6 +225,7 @@ export interface BackgroundTaskRegistryOptions {
   sendCompletionNotification: CompletionNotificationSender;
   publishTerminal?: (task: BgTaskSnapshot) => void;
   spawn?: BackgroundTaskSpawn;
+  landstrip?: Landstrip;
   killProcess?: KillProcessFn;
   killTree?: KillTreeFn;
   platform?: NodeJS.Platform;
@@ -805,6 +808,8 @@ export class BackgroundTaskRegistry {
     reason: TerminalPublicationClosureReason,
   ) => void = () => {};
   private readonly spawn: BackgroundTaskSpawn;
+  private readonly landstrip: Landstrip | undefined;
+  private readonly preparedShellProcesses = new WeakMap<BgTask, LandstripPreparedProcess>();
   private readonly killProcess: KillProcessFn;
   private readonly killTree: KillTreeFn;
   private readonly platform: NodeJS.Platform;
@@ -846,6 +851,7 @@ export class BackgroundTaskRegistry {
     this.platform = options.platform ?? process.platform;
     this.env = options.env ?? process.env;
     this.shellPolicy = options.shellPolicy;
+    this.landstrip = options.landstrip;
     this.shellPolicyEnv = options.shellPolicy === undefined ? { ...this.env } : undefined;
     const taskkillEnv = this.env;
     this.killTree =
@@ -1290,9 +1296,17 @@ export class BackgroundTaskRegistry {
     task.status = 'failed';
     if (task.timeoutHandle !== undefined) clearTimeout(task.timeoutHandle);
     if (task.killEscalationTimer !== undefined) clearTimeout(task.killEscalationTimer);
-    await this.destroyTaskStream(task);
-    const removals = await Promise.allSettled(paths.map((path) => rm(path, { force: true })));
+    const cleanup = await Promise.allSettled([
+      this.disposeShellProcess(task),
+      this.destroyTaskStream(task),
+    ]);
     const failures: Error[] = [];
+    for (const result of cleanup) {
+      if (result.status === 'rejected') {
+        failures.push(new Error(`Interrupted task cleanup failed: ${BackgroundTaskRegistry.errorMessage(result.reason)}`));
+      }
+    }
+    const removals = await Promise.allSettled(paths.map((path) => rm(path, { force: true })));
     for (let index = 0; index < removals.length; index++) {
       const result = removals[index];
       if (result?.status !== 'rejected') continue;
@@ -1362,6 +1376,35 @@ export class BackgroundTaskRegistry {
     }
   }
 
+  private async prepareOwnedShellProcess(
+    ctx: BackgroundTaskContext,
+    task: BgTask,
+    invocation: { shell: string; args: string[] },
+    admission: TaskAdmission,
+  ): Promise<LandstripPreparedProcess | undefined> {
+    if (this.landstrip === undefined) return undefined;
+    if (ctx.extensionContext === undefined) {
+      throw new Error('Background shell launch requires an extension context');
+    }
+    const preparation = this.landstrip.prepareProcess({
+      command: invocation.shell,
+      args: invocation.args,
+      cwd: ctx.cwd,
+      env: this.env,
+      ctx: ctx.extensionContext,
+      signal: admission.controller.signal,
+    }).then((prepared) => {
+      if (prepared !== undefined) this.preparedShellProcesses.set(task, prepared);
+      return prepared;
+    });
+    return this.awaitTaskAdmissionBoundary(preparation, admission);
+  }
+
+  private async disposeShellProcess(task: BgTask): Promise<void> {
+    const prepared = this.preparedShellProcesses.get(task);
+    this.preparedShellProcesses.delete(task);
+    await prepared?.dispose();
+  }
   async startTask(
     ctx: BackgroundTaskContext,
     command: string,
@@ -1497,20 +1540,32 @@ export class BackgroundTaskRegistry {
     };
     const launchNonce = randomBytes(16).toString('hex');
     this.assertTaskAdmissionOpen('a background task', admission);
-    this.tasks.set(id, task);
 
     let execution: ReloadableShellExecutionV1 | undefined;
     let registered = false;
     let committed = false;
     let abortListener: (() => void) | undefined;
     try {
+      const prepared = await this.prepareOwnedShellProcess(ctx, task, invocation, admission);
+      this.assertTaskAdmissionOpen('a background task', admission);
+      this.tasks.set(id, task);
       execution = createReloadableShellExecutionV1({
         task,
         identity: this.reloadShellIdentity,
         lease,
         launchNonce,
         invocation,
-        spawn: this.spawn,
+        spawn: prepared === undefined ? this.spawn : (_command, _args, options) => {
+          const child = prepared.spawn(prepared.command, prepared.args, {
+            ...options,
+            cwd: prepared.cwd,
+            env: prepared.env,
+          });
+          child.stdin?.once('error', (error) => child.emit('error', error));
+          child.stdin?.end();
+          return child;
+        },
+        ...(prepared === undefined ? {} : { disposeProcess: () => prepared.dispose() }),
         killProcess: this.killProcess,
         killTree: this.killTree,
         platform: this.platform,
@@ -1521,6 +1576,7 @@ export class BackgroundTaskRegistry {
         now: this.now,
         logger: this.logger,
       });
+      this.preparedShellProcesses.delete(task);
       this.reloadShellOwner.registerExecution(lease, execution);
       registered = true;
       abortListener = () => {
@@ -1585,6 +1641,7 @@ export class BackgroundTaskRegistry {
       this.tasks.delete(task.id);
       if (execution === undefined) {
         const removals = await Promise.allSettled([
+          this.disposeShellProcess(task),
           rm(outputAbsPath, { force: true }),
           rm(metadataAbsPath, { force: true }),
         ]);
@@ -1709,40 +1766,44 @@ export class BackgroundTaskRegistry {
           ? WIN32_CMD_PI_TELEMETRY_UNAVAILABLE_REASON
           : NON_POSIX_SHELL_PI_TELEMETRY_UNAVAILABLE_REASON;
     }
-    this.assertTaskAdmissionOpen('a background task', admission);
-    this.tasks.set(id, task);
-
-    const stream = createWriteStream(outputAbsPath, { flags: 'a', encoding: 'utf8' });
-    task.stream = stream;
-    stream.on('error', (error) => {
-      task.error = `Output file write failed: ${error.message}`;
-      if (task.status === 'running') {
-        task.killKind = 'output_cap';
-        try {
-          this.requestKill(task, 'SIGTERM');
-        } catch (killError) {
-          void this.finalizeTask(
-            task,
-            'failed',
-            null,
-            undefined,
-            `${task.error}; kill failed: ${killError instanceof Error ? killError.message : String(killError)}`,
-          );
-        }
-      }
-    });
-
     let unbindAdmissionCancellation = (): void => undefined;
     try {
+      const prepared = await this.prepareOwnedShellProcess(ctx, task, invocation, admission);
       this.assertTaskAdmissionOpen('a background task', admission);
-      const child = this.spawn(invocation.shell, invocation.args, {
-        cwd: ctx.cwd,
+      this.tasks.set(id, task);
+
+      const stream = createWriteStream(outputAbsPath, { flags: 'a', encoding: 'utf8' });
+      task.stream = stream;
+      stream.on('error', (error) => {
+        task.error = `Output file write failed: ${error.message}`;
+        if (task.status === 'running') {
+          task.killKind = 'output_cap';
+          try {
+            this.requestKill(task, 'SIGTERM');
+          } catch (killError) {
+            void this.finalizeTask(
+              task,
+              'failed',
+              null,
+              undefined,
+              `${task.error}; kill failed: ${killError instanceof Error ? killError.message : String(killError)}`,
+            );
+          }
+        }
+      });
+      const spawnOptions: SpawnOptions = {
+        cwd: prepared?.cwd ?? ctx.cwd,
         detached: this.platform !== 'win32',
         stdio: ['ignore', 'pipe', 'pipe'],
-        env: this.env,
+        env: prepared?.env ?? this.env,
         windowsHide: true,
         windowsVerbatimArguments: invocation.windowsVerbatimArguments,
-      });
+      };
+      const child: BackgroundTaskChildProcess = (prepared?.spawn ?? this.spawn)(
+        prepared?.command ?? invocation.shell,
+        prepared === undefined ? invocation.args : [...prepared.args],
+        spawnOptions,
+      );
 
       this.captureSpawnedChild(task, child);
 
@@ -1753,10 +1814,15 @@ export class BackgroundTaskRegistry {
         this.appendChildOutput(task, data, 'stderr');
       });
 
-      child.on('error', (error) => {
+      const onSpawnError = (error: Error): void => {
         this.writeNotice(task, `\n[background task spawn error: ${error.message}]\n`);
         void this.finalizeTask(task, 'failed', null, undefined, error.message);
-      });
+      };
+      child.on('error', onSpawnError);
+      if (prepared !== undefined) {
+        child.stdin?.once('error', onSpawnError);
+        child.stdin?.end();
+      }
 
       child.on('close', (code, signalName) => {
         let status: TaskStatus;
@@ -1827,6 +1893,7 @@ export class BackgroundTaskRegistry {
         throw this.surfacedTaskAdmissionError(admission, error, cleanupError);
       }
       const message = error instanceof Error ? error.message : String(error);
+      this.tasks.set(id, task);
       this.writeNotice(task, `\n[background task spawn exception: ${message}]\n`);
       await this.finalizeTask(task, 'failed', null, undefined, message);
       throw new Error(`Failed to start background task: ${message}`);
@@ -3984,6 +4051,15 @@ export class BackgroundTaskRegistry {
     if (windowsForceFailure !== undefined) {
       finalStatus = 'failed';
       finalError = BackgroundTaskRegistry.appendTaskError(finalError, windowsForceFailure.message);
+    }
+    try {
+      await this.disposeShellProcess(task);
+    } catch (disposeError) {
+      finalStatus = 'failed';
+      finalError = BackgroundTaskRegistry.appendTaskError(
+        finalError,
+        `Landstrip cleanup failed: ${BackgroundTaskRegistry.errorMessage(disposeError)}`,
+      );
     }
     task.exitCode = exitCode;
     task.signal = signal ?? null;
