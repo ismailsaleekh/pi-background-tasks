@@ -98,6 +98,7 @@ function task(overrides: Partial<BackgroundTaskForUi> = {}): BackgroundTaskForUi
 function manager(
   options: Partial<ConstructorParameters<typeof BackgroundTasksManager>[3]> = {},
   tasks: BackgroundTaskForUi[] = [task()],
+  activeTheme = theme,
 ) {
   let closed = false;
   let renders = 0;
@@ -110,7 +111,7 @@ function manager(
         renders++;
       },
     },
-    theme,
+    activeTheme,
     () => {
       closed = true;
     },
@@ -176,6 +177,39 @@ function assertWidth(lines: string[], width: number) {
 }
 
 void describe('BackgroundTasksManager component', () => {
+  for (const detail of [false, true]) {
+    void it(`uses active theme colors for ${detail ? 'detail' : 'list'} borders and highlights`, () => {
+      const customTheme = new Theme(
+        Object.fromEntries(themeColors.map((color) => [color, '#ff8733'])) as ThemeForegrounds,
+        Object.fromEntries(themeBackgrounds.map((color) => [color, '#3b2520'])) as ThemeBackgrounds,
+        'truecolor',
+      );
+      for (const activeTheme of [theme, customTheme]) {
+        const h = manager(detail ? { initialTaskId: 'b12345678' } : {}, [task()], activeTheme);
+        try {
+          const lines = h.instance.render(100);
+          const output = lines.join('\n');
+          assert.ok(output.includes(activeTheme.fg('borderAccent', `╭${'─'.repeat(98)}╮`)));
+          const title = detail ? 'bg: Component Task' : 'bg tasks focused';
+          const paddedTitle = ` ${title}`.padEnd(98);
+          assert.ok(output.includes(activeTheme.bg('selectedBg', activeTheme.fg('text', paddedTitle))));
+          assert.doesNotMatch(output, /\x1b\[(?:48;2;183;223;255|38;2;11;70;110|38;2;83;160;215)m/u);
+          if (detail) {
+            // Output box must follow the same theme as the surrounding frame.
+            assert.ok(output.includes(activeTheme.fg('borderAccent', `╭${'─'.repeat(94)}╮`)));
+          } else {
+            const selected = lines.find((line) => stripAnsi(line).includes('›'));
+            assert.ok(selected);
+            assert.ok(selected.includes(activeTheme.getBgAnsi('selectedBg')));
+          }
+          assertWidth(lines, 100);
+        } finally {
+          h.instance.dispose();
+        }
+      }
+    });
+  }
+
   void it('passes the selected survival flag to dock rerun and accepts a new id/nonce', async () => {
     const original = task({
       id: 'bsurvive1',

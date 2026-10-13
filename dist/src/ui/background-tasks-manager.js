@@ -9,10 +9,6 @@ const STATUS_INTERVAL_MS = 1000;
 const DETAIL_TAIL_BYTES = 128 * 1024;
 const LIST_VISIBLE_ROWS = 14;
 const DETAIL_VISIBLE_OUTPUT_LINES = 12;
-const LIGHT_BLUE_BG = '\x1b[48;2;183;223;255m';
-const LIGHT_BLUE_FG = '\x1b[38;2;11;70;110m';
-const LIGHT_BLUE_BORDER = '\x1b[38;2;83;160;215m';
-const ANSI_RESET = '\x1b[0m';
 function formatTime(timestamp) {
     return new Date(timestamp).toLocaleTimeString();
 }
@@ -37,12 +33,6 @@ function toOutputLines(content) {
 }
 function padAnsi(value, width) {
     return value + ' '.repeat(Math.max(0, width - visibleWidth(value)));
-}
-function lightBlue(value) {
-    return `${LIGHT_BLUE_BG}${LIGHT_BLUE_FG}${value}${ANSI_RESET}`;
-}
-function blueBorder(value) {
-    return `${LIGHT_BLUE_BORDER}${value}${ANSI_RESET}`;
 }
 function statusLabel(status) {
     if (status === 'completed')
@@ -510,15 +500,21 @@ export class BackgroundTasksManager {
             return `+${formatSize(recent.delta)} ↑`;
         return '';
     }
+    highlight(value) {
+        return this.theme.bg('selectedBg', this.theme.fg('text', value));
+    }
+    panelBorder(value) {
+        return this.theme.fg('borderAccent', value);
+    }
     frame(title, subtitle, body, footer, width) {
         const inner = Math.max(1, width - 2);
-        const top = blueBorder(`╭${'─'.repeat(inner)}╮`);
-        const bottom = blueBorder(`╰${'─'.repeat(inner)}╯`);
-        const row = (content = '') => `${blueBorder('│')}${padAnsi(truncateToWidth(content, inner), inner)}${blueBorder('│')}`;
-        const header = lightBlue(padAnsi(` ${title}`, inner));
+        const top = this.panelBorder(`╭${'─'.repeat(inner)}╮`);
+        const bottom = this.panelBorder(`╰${'─'.repeat(inner)}╯`);
+        const row = (content = '') => `${this.panelBorder('│')}${padAnsi(truncateToWidth(content, inner), inner)}${this.panelBorder('│')}`;
+        const header = this.highlight(padAnsi(` ${title}`, inner));
         const subtitleLine = subtitle
-            ? lightBlue(padAnsi(` ${subtitle}`, inner))
-            : lightBlue(' '.repeat(inner));
+            ? this.highlight(padAnsi(` ${subtitle}`, inner))
+            : this.highlight(' '.repeat(inner));
         const lines = [top, row(header), row(subtitleLine), row()];
         for (const line of body)
             lines.push(row(line));
@@ -598,7 +594,7 @@ export class BackgroundTasksManager {
                 const exit = task.status !== 'running' ? this.theme.fg('dim', formatExitCodeText(task.exitCode)) : '';
                 let row = ` ${pointer} ${unreadMark} ${name} ${this.theme.fg('dim', task.id)} ${this.theme.fg('dim', '·')} ${status}${exit} ${this.theme.fg('dim', `${runtime} ${size}`)}${contextText}${modelText}${tokenText}${toolText}${activityText}`;
                 if (selected)
-                    row = lightBlue(padAnsi(truncateToWidth(row, width - 4), width - 4));
+                    row = this.highlight(padAnsi(truncateToWidth(row, width - 4), width - 4));
                 body.push(row);
             }
             if (tasks.length > LIST_VISIBLE_ROWS) {
@@ -651,9 +647,9 @@ export class BackgroundTasksManager {
     }
     renderOutputBox(width) {
         const inner = Math.max(1, width - 2);
-        const top = ` ${blueBorder(`╭${'─'.repeat(inner)}╮`)}`;
-        const bottom = ` ${blueBorder(`╰${'─'.repeat(inner)}╯`)}`;
-        const row = (content = '') => ` ${blueBorder('│')}${padAnsi(truncateToWidth(content, inner), inner)}${blueBorder('│')}`;
+        const top = ` ${this.panelBorder(`╭${'─'.repeat(inner)}╮`)}`;
+        const bottom = ` ${this.panelBorder(`╰${'─'.repeat(inner)}╯`)}`;
+        const row = (content = '') => ` ${this.panelBorder('│')}${padAnsi(truncateToWidth(content, inner), inner)}${this.panelBorder('│')}`;
         const lines = [top];
         if (this.tailError) {
             lines.push(row(this.theme.fg('error', this.tailError)));
