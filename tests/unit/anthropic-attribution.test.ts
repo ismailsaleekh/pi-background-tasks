@@ -173,6 +173,7 @@ void describe('global Anthropic attribution extension', () => {
   for (const [modelId, label] of [
     ['claude-opus-5-5', 'Opus 5.5'],
     ['claude-sonnet-5-5', 'Sonnet 5.5'],
+    ['claude-haiku-5-5', 'Haiku 5.5'],
   ] as const) {
     for (const reasoning of ['low', 'medium', 'high', 'xhigh', 'max'] as const) {
       void it(`preserves ${label} ${reasoning} effort in the serialized request`, () => {
@@ -215,6 +216,23 @@ void describe('global Anthropic attribution extension', () => {
     );
   });
 
+  void it('resolves Haiku 5.5 to the adaptive 200K subscription policy', () => {
+    const policy = resolveClaudeCodeModelPolicy({ provider: 'anthropic', id: 'claude-haiku-5-5' });
+    assert.deepEqual(policy, {
+      modelId: 'claude-haiku-5-5',
+      beta: ADAPTIVE_200K_SUBSCRIPTION_BETA,
+      thinkingPolicy: 'adaptive-effort',
+      contextWindow: 200_000,
+      enforcesThinkingPrefixBinding: false,
+      supportsCacheDiagnostics: false,
+    });
+    assert.equal(resolveClaudeCodeModelPolicy({ id: 'claude-haiku-4-5' }).thinkingPolicy, 'fixed-budget');
+    assert.throws(
+      () => resolveClaudeCodeModelPolicy({ id: 'claude-haiku-5-6' }),
+      /no Claude Code model policy for claude-haiku-5-6/,
+    );
+  });
+
   void it('rejects max effort for fixed-budget models instead of serializing a null budget', () => {
     assert.throws(
       () =>
@@ -232,7 +250,7 @@ void describe('global Anthropic attribution extension', () => {
     );
   });
 
-  for (const modelId of ['claude-opus-5-5', 'claude-sonnet-5-5'] as const) {
+  for (const modelId of ['claude-opus-5-5', 'claude-sonnet-5-5', 'claude-haiku-5-5'] as const) {
     void it(`sends ${modelId} max effort through the attributed OAuth transport`, async (t) => {
       const sessionId = '11111111-2222-4333-8444-555555555555';
       let captured: JsonObject | undefined;

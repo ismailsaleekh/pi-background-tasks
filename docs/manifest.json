@@ -37,7 +37,7 @@
       "state": "stale-authored-prose"
     },
     {
-      "authored_body_sha256": "sha256:29b33aba06223f0af6de3aaa6ff88c4a30c66bcf2fc903364b56d95d05893f47",
+      "authored_body_sha256": "sha256:aee1e601ef41c12a6b7f235b68bb987afc0ee6952ad8cc2ad3c6bb4e1ea38bb6",
       "covers_sources": [
         "extensions/anthropic-attribution-child.ts",
         "extensions/anthropic-attribution.ts",
@@ -1025,7 +1025,7 @@
         "id": "command:claude-cache",
         "kind": "command",
         "name": "claude-cache",
-        "source": "src/core/anthropic-attribution.ts:3599"
+        "source": "src/core/anthropic-attribution.ts:3604"
       },
       {
         "availability": "feature:fusion",

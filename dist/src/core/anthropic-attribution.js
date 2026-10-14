@@ -116,6 +116,7 @@ const CLAUDE_CODE_MODEL_POLICIES = Object.freeze({
     'claude-fable-5-1': claudeCode200KSubscriptionPolicy('claude-fable-5-1', CLAUDE_CODE_FABLE_5_1_200K_BETA, 'adaptive-effort', { enforcesThinkingPrefixBinding: true, supportsCacheDiagnostics: true }),
     'claude-haiku-4-5': claudeCode200KSubscriptionPolicy('claude-haiku-4-5', CLAUDE_CODE_BETA, 'fixed-budget'),
     'claude-haiku-4-5-20251001': claudeCode200KSubscriptionPolicy('claude-haiku-4-5-20251001', CLAUDE_CODE_BETA, 'fixed-budget'),
+    'claude-haiku-5-5': claudeCode200KSubscriptionPolicy('claude-haiku-5-5', CLAUDE_CODE_ADAPTIVE_200K_BETA, 'adaptive-effort'),
     'claude-opus-4-0': claudeCode200KSubscriptionPolicy('claude-opus-4-0', CLAUDE_CODE_BETA, 'fixed-budget'),
     'claude-opus-4-1': claudeCode200KSubscriptionPolicy('claude-opus-4-1', CLAUDE_CODE_BETA, 'fixed-budget'),
     'claude-opus-4-1-20250805': claudeCode200KSubscriptionPolicy('claude-opus-4-1-20250805', CLAUDE_CODE_BETA, 'fixed-budget'),

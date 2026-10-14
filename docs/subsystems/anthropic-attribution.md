@@ -27,7 +27,7 @@ For Anthropic sessions it registers the package-owned `anthropic` provider trans
 
 - subscription OAuth token transport only; metered Anthropic credentials are refused, the bearer token is sent only to the exact official Anthropic HTTPS origin, and HTTP redirects are disabled;
 - Claude Code session, account, device, beta, user-agent, and system-identity attribution;
-- model-specific fixed/adaptive thinking policy from an explicit per-model table: Claude 3.x, 4.0–4.5 Sonnet/Opus, and Haiku 4.5 use fixed budgets; Opus 4.6–4.8, Sonnet 4.6, Opus 5, Opus 5.5, Sonnet 5, Sonnet 5.5, and Fable 5 use adaptive effort with the adaptive 200K beta profile; Fable 5.1 additionally enforces thinking binding and cache diagnostics. An unlisted model ID fails loudly instead of borrowing a neighbouring profile;
+- model-specific fixed/adaptive thinking policy from an explicit per-model table: Claude 3.x, 4.0–4.5 Sonnet/Opus, and Haiku 4.5 use fixed budgets; Opus 4.6–4.8, Sonnet 4.6, Opus 5, Opus 5.5, Sonnet 5, Sonnet 5.5, Haiku 5.5, and Fable 5 use adaptive effort with the adaptive 200K beta profile; Fable 5.1 additionally enforces thinking binding and cache diagnostics. An unlisted model ID fails loudly instead of borrowing a neighbouring profile;
 - the conservative 200K subscription context policy;
 - provenance-aware cross-provider history projection and Fable 5.1 thinking binding;
 - system, final-tool, and final-conversation cache surfaces;
