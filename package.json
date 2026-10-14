@@ -107,6 +107,7 @@
     "node": ">=22.19.0"
   },
   "dependencies": {
+    "pi-landstrip": "^0.19.15",
     "turndown": "7.2.4"
   }
 }

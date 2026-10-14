@@ -857,6 +857,7 @@ export interface ReloadableShellExecutionOptions {
     args: string[],
     options: SpawnOptions,
   ) => ReloadShellProcessV1;
+  readonly disposeProcess?: () => Promise<void>;
   readonly killProcess?: (pid: number, signal?: NodeJS.Signals | number) => boolean;
   readonly killTree?: (
     pid: number,
@@ -1428,6 +1429,14 @@ export function createReloadableShellExecutionV1(
       const treeFailure = await awaitTreeBeforeTerminal();
       if (treeFailure !== undefined) {
         result = { status: 'failed', error: appendError(result.error, treeFailure.message) };
+      }
+      try {
+        await options.disposeProcess?.();
+      } catch (error) {
+        result = {
+          status: 'failed',
+          error: appendError(result.error, `Landstrip cleanup failed: ${boundedError(error)}`),
+        };
       }
       try {
         await closeOwnerOutputStream(execution.outputStream);
