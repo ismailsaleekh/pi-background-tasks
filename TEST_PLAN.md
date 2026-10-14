@@ -156,6 +156,7 @@ SDK/RPC/scripted-provider/package/compatibility coverage asserts exactly four to
 - Prefix rules strip only at line start: indented and mid-line look-alikes plus shorter prefixes are preserved, and a future suffix on the docs-list line is still removed.
 - A middleware that rewrites system text is still refused before fetch, and the error names the changed lineage fields (`conversation_static_sha256, cache_profile_sha256`).
 - `claude-sonnet-5-5` resolves to the adaptive 200K subscription policy identical to Opus 5.5 apart from its model ID, serializes low–max adaptive effort, and sends the adaptive beta header with no Fable-only diagnostics or thinking binding. An unlisted Sonnet ID still fails loudly.
+- `claude-haiku-5-5` resolves to the same adaptive 200K subscription policy (Pi model metadata sets `forceAdaptiveThinking`), serializes low–max adaptive effort, and sends the adaptive beta header. Haiku 4.5 stays fixed-budget, and an unlisted Haiku ID still fails loudly.
 
 ## Shell prompt-shape acceptance (#35 follow-up)
 

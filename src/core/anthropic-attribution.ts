@@ -270,6 +270,11 @@ const CLAUDE_CODE_MODEL_POLICIES: Record<string, ClaudeCodeModelPolicy> = Object
     CLAUDE_CODE_BETA,
     'fixed-budget',
   ),
+  'claude-haiku-5-5': claudeCode200KSubscriptionPolicy(
+    'claude-haiku-5-5',
+    CLAUDE_CODE_ADAPTIVE_200K_BETA,
+    'adaptive-effort',
+  ),
   'claude-opus-4-0': claudeCode200KSubscriptionPolicy(
     'claude-opus-4-0',
     CLAUDE_CODE_BETA,
