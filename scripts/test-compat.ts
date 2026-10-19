@@ -9,7 +9,7 @@ import { parseJsonText } from '../src/core/common.js';
 import { isolatedTestEnv } from '../tests/helpers/normalize.js';
 import { installFusionFakePi, resolveRealPiCli } from '../tests/helpers/fusion-fake-pi.js';
 
-const requiredVersions = ['0.81.1', '0.82.1', '0.83.0', '0.84.0'] as const;
+const requiredVersions = ['0.81.1', '0.82.1', '0.83.0', '0.84.0', '1.3.0'] as const;
 type RequiredPiVersion = (typeof requiredVersions)[number];
 // `URL.pathname` yields `/D:/...` on Windows, which then joins into `D:\D:\...`.
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -454,6 +454,7 @@ const TYPEBOX_BY_PI_VERSION: Record<
   '0.82.1': { spec: 'typebox@~1.1.38', prefix: '1.1.' },
   '0.83.0': { spec: 'typebox@1.3.7', prefix: '1.3.' },
   '0.84.0': { spec: 'typebox@1.3.7', prefix: '1.3.' },
+  '1.3.0': { spec: 'typebox@~1.3.27', prefix: '1.3.' },
 };
 
 function expectedTypeBoxLine(
@@ -554,7 +555,7 @@ async function assertDelegateContextAbortSupport(
       `Pi ${version}: ctx.abort() neither skipped stream invocation nor produced exactly one already-aborted provider call`,
     );
   }
-  const expected: ContextAbortMode = version === '0.84.0' ? 'stream_skipped' : 'aborted_signal';
+  const expected: ContextAbortMode = version === '0.84.0' || version === '1.3.0' ? 'stream_skipped' : 'aborted_signal';
   if (mode !== expected) {
     throw new Error(`Pi ${version}: expected context-abort mode ${expected}, observed ${mode}`);
   }

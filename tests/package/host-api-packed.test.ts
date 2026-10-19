@@ -335,20 +335,15 @@ async function openPackedSession(packedRoot: string, cwd: string, agentDir: stri
 async function launchDelegate(packed: PackedSession, directive: string): Promise<string> {
   const definition = packed.session.getToolDefinition('bg_delegate');
   assert.ok(definition !== undefined, 'packed bg_delegate must be registered');
-  const launched = await definition.execute(
-    randomUUID(),
-    {
-      name: 'Packed delegate',
-      prompt: directive,
-      route: { provider: PROVIDER, model: MODEL },
-      notifyOnCompletion: false,
-      triggerOnCompletion: false,
-      autoDeliver: 'never',
-    },
-    undefined,
-    undefined,
-    packed.session.extensionRunner.createContext(),
-  );
+  const callId = randomUUID();
+  const launched = await definition.execute(callId, {
+    name: 'Packed delegate',
+    prompt: directive,
+    route: { provider: PROVIDER, model: MODEL },
+    notifyOnCompletion: false,
+    triggerOnCompletion: false,
+    autoDeliver: 'never',
+  }, undefined, undefined, packed.session.extensionRunner.createToolContext(callId, undefined));
   const id = String(field(field(launched.details, 'task'), 'id'));
   await waitFor(() => packed.terminals.has(id), `delegate ${id} terminal`);
   assert.equal(field(packed.terminals.get(id), 'status'), 'completed');

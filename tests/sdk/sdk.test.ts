@@ -261,13 +261,7 @@ function requiredPrepared(value: unknown): PreparedBgRunArgs {
 async function exec(session: AgentSession, name: string, params: unknown): Promise<TestToolResult> {
   const tool = session.getToolDefinition(name);
   assert.ok(tool, `missing tool ${name}`);
-  const result: unknown = await tool.execute(
-    `call-${name}`,
-    params,
-    undefined,
-    undefined,
-    session.extensionRunner.createContext(),
-  );
+  const result: unknown = await tool.execute(`call-${name}`, params, undefined, undefined, session.extensionRunner.createToolContext(`call-${name}`, undefined));
   assert.ok(isTestToolResult(result), `${name} should return a tool result object`);
   return result;
 }
@@ -1245,7 +1239,7 @@ console.error('sdk stderr');
     try {
       const tool = session.getToolDefinition('bg_run');
       assert.ok(tool, 'bg_run tool should be registered');
-      const ctx = session.extensionRunner.createContext();
+      const ctx = session.extensionRunner.createToolContext('call-context', undefined);
       ctx.getContextUsage = () => ({ tokens: 999_000, contextWindow: 1_000_000, percent: 99.9 });
       const script = `console.log(JSON.stringify({ type: "background-task-telemetry", model: "test-provider/test-model", contextUsage: { tokens: 50000, contextWindow: 200000, percent: 25 }, tokenUsage: { input: 1000, output: 200, cacheRead: 30, cacheWrite: 20, totalTokens: 1250 }, toolUsage: { total: 2, failed: 1, byName: { read: 1, bash: 1 } } })); console.log("context");`;
       const command = `node -e ${JSON.stringify(script)}`;

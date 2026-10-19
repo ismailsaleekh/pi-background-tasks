@@ -84,13 +84,7 @@ async function execute(session: AgentSession, name: string, args: unknown): Prom
   assert.ok(tool, `missing tool ${name}`);
   const prepared = tool.prepareArguments ? tool.prepareArguments(args) : args;
   return toolResult(
-    await tool.execute(
-      `reload-survival-${name}`,
-      prepared,
-      undefined,
-      undefined,
-      session.extensionRunner.createContext(),
-    ),
+    await tool.execute(`reload-survival-${name}`, prepared, undefined, undefined, session.extensionRunner.createToolContext(`reload-survival-${name}`, undefined)),
   );
 }
 

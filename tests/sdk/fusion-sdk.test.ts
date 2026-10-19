@@ -203,13 +203,7 @@ async function retrieveFusionLaunch(h: Harness, launch: { details?: unknown }) {
   await waitForFusionTerminal(h.session, taskId);
   const resultTool = h.session.getToolDefinition('bg_result');
   assert.ok(resultTool, 'bg_result should be registered');
-  const result = await resultTool.execute(
-    `result-${taskId}`,
-    { taskId, delivery: 'inline' },
-    undefined,
-    undefined,
-    h.session.extensionRunner.createContext(),
-  );
+  const result = await resultTool.execute(`result-${taskId}`, { taskId, delivery: 'inline' }, undefined, undefined, h.session.extensionRunner.createToolContext(`result-${taskId}`, undefined));
   return { result, launchDetails: launch.details };
 }
 
@@ -633,13 +627,7 @@ void describe('fusion SDK integration', { concurrency: false }, () => {
     try {
       const tool = h.session.getToolDefinition('fusion_reason');
       assert.ok(tool, 'fusion_reason tool should be registered');
-      const launch = await tool.execute(
-        'call-fusion-reason',
-        { prompt: 'reason without repository inspection' },
-        undefined,
-        undefined,
-        h.session.extensionRunner.createContext(),
-      );
+      const launch = await tool.execute('call-fusion-reason', { prompt: 'reason without repository inspection' }, undefined, undefined, h.session.extensionRunner.createToolContext('call-fusion-reason', undefined));
       assert.ok(isFusionLaunchDetails(launch.details));
       const { launchDetails } = await retrieveFusionLaunch(h, launch);
       const details = await committedDetails(h, launchDetails);
@@ -743,13 +731,7 @@ void describe('fusion SDK integration', { concurrency: false }, () => {
         await writeFile(h.fakeLogPath, '', 'utf8');
         const tool = h.session.getToolDefinition(item.name);
         assert.ok(tool, `${item.name} should be registered`);
-        const launch = await tool.execute(
-          `call-${item.workflow}`,
-          item.params,
-          undefined,
-          undefined,
-          h.session.extensionRunner.createContext(),
-        );
+        const launch = await tool.execute(`call-${item.workflow}`, item.params, undefined, undefined, h.session.extensionRunner.createToolContext(`call-${item.workflow}`, undefined));
         assert.ok(isFusionLaunchDetails(launch.details));
         const retrieved = await retrieveFusionLaunch(h, launch);
         const details = await committedDetails(h, retrieved.launchDetails);
@@ -834,16 +816,10 @@ void describe('fusion SDK integration', { concurrency: false }, () => {
       const tool = h.session.getToolDefinition('fusion_reason');
       assert.ok(tool, 'fusion_reason tool should be registered');
       const updates: string[] = [];
-      const launch = await tool.execute(
-        'call-fusion',
-        { prompt: 'tool prompt' },
-        undefined,
-        (partial) => {
-          const text = partial.content[0]?.type === 'text' ? partial.content[0].text : '';
-          updates.push(text);
-        },
-        h.session.extensionRunner.createContext(),
-      );
+      const launch = await tool.execute('call-fusion', { prompt: 'tool prompt' }, undefined, (partial) => {
+        const text = partial.content[0]?.type === 'text' ? partial.content[0].text : '';
+        updates.push(text);
+      }, h.session.extensionRunner.createToolContext('call-fusion', undefined));
       assert.ok(isFusionLaunchDetails(launch.details));
       const retrieved = await retrieveFusionLaunch(h, launch);
       const result = retrieved.result;
@@ -868,13 +844,7 @@ void describe('fusion SDK integration', { concurrency: false }, () => {
       assert.ok(isRecord(task));
       const resultTool = h.session.getToolDefinition('bg_result');
       assert.ok(resultTool);
-      const repeated = await resultTool.execute(
-        'repeat-result',
-        { taskId: stringField(task, 'id'), delivery: 'inline' },
-        undefined,
-        undefined,
-        h.session.extensionRunner.createContext(),
-      );
+      const repeated = await resultTool.execute('repeat-result', { taskId: stringField(task, 'id'), delivery: 'inline' }, undefined, undefined, h.session.extensionRunner.createToolContext('repeat-result', undefined));
       assert.equal(
         Reflect.get(repeated, 'usage'),
         undefined,
@@ -920,13 +890,7 @@ void describe('fusion SDK integration', { concurrency: false }, () => {
       const tool = h.session.getToolDefinition('fusion_reason');
       assert.ok(tool);
       const callController = new AbortController();
-      const launch = await tool.execute(
-        'call-signal-handoff',
-        { prompt: 'continue after parent tool signal closes' },
-        callController.signal,
-        undefined,
-        h.session.extensionRunner.createContext(),
-      );
+      const launch = await tool.execute('call-signal-handoff', { prompt: 'continue after parent tool signal closes' }, callController.signal, undefined, h.session.extensionRunner.createToolContext('call-signal-handoff', callController.signal));
       callController.abort();
       const retrieved = await retrieveFusionLaunch(h, launch);
       const text =
@@ -943,13 +907,7 @@ void describe('fusion SDK integration', { concurrency: false }, () => {
     try {
       const tool = h.session.getToolDefinition('fusion_reason');
       assert.ok(tool, 'fusion_reason tool should be registered');
-      const launch = await tool.execute(
-        'call-failure-diagnostics',
-        { prompt: 'fail with coordinates' },
-        undefined,
-        undefined,
-        h.session.extensionRunner.createContext(),
-      );
+      const launch = await tool.execute('call-failure-diagnostics', { prompt: 'fail with coordinates' }, undefined, undefined, h.session.extensionRunner.createToolContext('call-failure-diagnostics', undefined));
       assert.ok(isFusionLaunchDetails(launch.details));
       const task = launch.details['task'];
       assert.ok(isRecord(task));
@@ -957,13 +915,7 @@ void describe('fusion SDK integration', { concurrency: false }, () => {
       await waitForFusionTerminal(h.session, taskId);
       const resultTool = h.session.getToolDefinition('bg_result');
       assert.ok(resultTool);
-      const terminal = await resultTool.execute(
-        'result-failure-diagnostics',
-        { taskId, delivery: 'inline' },
-        undefined,
-        undefined,
-        h.session.extensionRunner.createContext(),
-      );
+      const terminal = await resultTool.execute('result-failure-diagnostics', { taskId, delivery: 'inline' }, undefined, undefined, h.session.extensionRunner.createToolContext('result-failure-diagnostics', undefined));
       assert.ok(isRecord(terminal.details));
       assert.equal(terminal.details['state'], 'failed');
       assert.equal(terminal.details['delivery'], 'none');
@@ -975,13 +927,7 @@ void describe('fusion SDK integration', { concurrency: false }, () => {
       assert.equal(terminal.details['failure']['stage'], 'candidate');
       assert.equal('usage' in terminal, false);
       for (const delivery of [undefined, 'artifact'] as const) {
-        const repeat = await resultTool.execute(
-          `result-failure-${delivery ?? 'default'}`,
-          delivery === undefined ? { taskId } : { taskId, delivery },
-          undefined,
-          undefined,
-          h.session.extensionRunner.createContext(),
-        );
+        const repeat = await resultTool.execute(`result-failure-${delivery ?? 'default'}`, delivery === undefined ? { taskId } : { taskId, delivery }, undefined, undefined, h.session.extensionRunner.createToolContext(`result-failure-${delivery ?? 'default'}`, undefined));
         assert.ok(isRecord(repeat.details));
         assert.equal(repeat.details['state'], 'failed');
         assert.equal(repeat.details['delivery'], 'none');
@@ -1010,13 +956,7 @@ void describe('fusion SDK integration', { concurrency: false }, () => {
       const tool = h.session.getToolDefinition('fusion_reason');
       assert.ok(tool, 'fusion_reason tool should be registered');
       const launchStarted = Date.now();
-      const launch = await tool.execute(
-        'call-shutdown',
-        { prompt: 'shutdown prompt' },
-        undefined,
-        undefined,
-        h.session.extensionRunner.createContext(),
-      );
+      const launch = await tool.execute('call-shutdown', { prompt: 'shutdown prompt' }, undefined, undefined, h.session.extensionRunner.createToolContext('call-shutdown', undefined));
       assert.ok(isFusionLaunchDetails(launch.details));
       assert.ok(
         Date.now() - launchStarted < 2_000,
@@ -1031,13 +971,7 @@ void describe('fusion SDK integration', { concurrency: false }, () => {
       assert.ok(resultTool);
       for (const delivery of ['artifact', undefined, 'inline'] as const) {
         await assert.rejects(
-          resultTool.execute(
-            `result-shutdown-${delivery ?? 'default'}`,
-            delivery === undefined ? { taskId } : { taskId, delivery },
-            undefined,
-            undefined,
-            h.session.extensionRunner.createContext(),
-          ),
+          resultTool.execute(`result-shutdown-${delivery ?? 'default'}`, delivery === undefined ? { taskId } : { taskId, delivery }, undefined, undefined, h.session.extensionRunner.createToolContext(`result-shutdown-${delivery ?? 'default'}`, undefined)),
           /lazy_module_closed.*background-result facade.*closed activation/,
           'a tool retained from the old activation must reject after shutdown',
         );
@@ -1066,7 +1000,7 @@ void describe('fusion SDK integration', { concurrency: false }, () => {
     });
     try {
       const oldRunner = h.session.extensionRunner;
-      const oldContext = oldRunner.createContext();
+      const oldContext = oldRunner.createToolContext('call-real-reload', undefined);
       const fusionTool = h.session.getToolDefinition('fusion_reason');
       assert.ok(fusionTool, 'fusion_reason tool should be registered');
       const launch = await fusionTool.execute(
@@ -1094,19 +1028,13 @@ void describe('fusion SDK integration', { concurrency: false }, () => {
 
       const bgRun = h.session.getToolDefinition('bg_run');
       assert.ok(bgRun, 'fresh reload activation must register bg_run');
-      const ordinary = await bgRun.execute(
-        'call-after-real-reload',
-        {
-          name: 'fresh ordinary after managed reload',
-          command: 'echo fresh-after-managed-reload',
-          isAgent: false,
-          notifyOnCompletion: false,
-          triggerOnCompletion: false,
-        },
-        undefined,
-        undefined,
-        h.session.extensionRunner.createContext(),
-      );
+      const ordinary = await bgRun.execute('call-after-real-reload', {
+        name: 'fresh ordinary after managed reload',
+        command: 'echo fresh-after-managed-reload',
+        isAgent: false,
+        notifyOnCompletion: false,
+        triggerOnCompletion: false,
+      }, undefined, undefined, h.session.extensionRunner.createToolContext('call-after-real-reload', undefined));
       assert.ok(isRecord(ordinary.details));
       const ordinaryTask = ordinary.details['task'];
       assert.ok(isRecord(ordinaryTask));
@@ -1209,13 +1137,7 @@ void describe('fusion SDK integration', { concurrency: false }, () => {
       assert.ok(invalidTool, 'fusion_reason tool should remain registered');
       await assert.rejects(
         () =>
-          invalidTool.execute(
-            'call-invalid',
-            { prompt: 'should not spawn' },
-            undefined,
-            undefined,
-            h.session.extensionRunner.createContext(),
-          ),
+          invalidTool.execute('call-invalid', { prompt: 'should not spawn' }, undefined, undefined, h.session.extensionRunner.createToolContext('call-invalid', undefined)),
         /schema_version|unknown key|missing key/,
       );
       assert.equal((await invocations(h.fakeLogPath)).length, 0);
@@ -1238,20 +1160,14 @@ void describe('fusion SDK integration', { concurrency: false }, () => {
         /unsupported key\(s\): extra/,
       );
 
-      const launch = await tool.execute(
-        'call-validate',
-        {
-          objective: 'validate the change',
-          background: ['SDK integration test'],
-          changeSummary: 'fusion public facade changed',
-          scope: ['src/fusion-extension.ts'],
-          acceptanceCriteria: ['validation runs with read-only reviewers'],
-          verification: { status: 'provided', evidence: [{ check: 'sdk', outcome: 'running' }] },
-        },
-        undefined,
-        undefined,
-        h.session.extensionRunner.createContext(),
-      );
+      const launch = await tool.execute('call-validate', {
+        objective: 'validate the change',
+        background: ['SDK integration test'],
+        changeSummary: 'fusion public facade changed',
+        scope: ['src/fusion-extension.ts'],
+        acceptanceCriteria: ['validation runs with read-only reviewers'],
+        verification: { status: 'provided', evidence: [{ check: 'sdk', outcome: 'running' }] },
+      }, undefined, undefined, h.session.extensionRunner.createToolContext('call-validate', undefined));
       assert.ok(isFusionLaunchDetails(launch.details));
       const retrieved = await retrieveFusionLaunch(h, launch);
       const validateText =

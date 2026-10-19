@@ -140,13 +140,7 @@ async function runSurvivor(session: AgentSession, name: string): Promise<BgTaskS
     triggerOnCompletion: false,
   };
   const prepared = tool.prepareArguments ? tool.prepareArguments(args) : args;
-  const value = await tool.execute(
-    `call-${name}`,
-    prepared,
-    undefined,
-    undefined,
-    session.extensionRunner.createContext(),
-  );
+  const value = await tool.execute(`call-${name}`, prepared, undefined, undefined, session.extensionRunner.createToolContext(`call-${name}`, undefined));
   const result = record(value, 'bg_run result');
   const details = record(result['details'], 'bg_run details');
   const task = details['task'];

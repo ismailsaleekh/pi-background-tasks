@@ -296,13 +296,7 @@ function uiWithDispatchCounters(
 async function executeTool(session: AgentSession, name: string, params: unknown): Promise<unknown> {
   const tool = session.getToolDefinition(name);
   assert.ok(tool, `missing tool ${name}`);
-  return tool.execute(
-    `feature-${name}`,
-    params,
-    undefined,
-    undefined,
-    session.extensionRunner.createContext(),
-  );
+  return tool.execute(`feature-${name}`, params, undefined, undefined, session.extensionRunner.createToolContext(`feature-${name}`, undefined));
 }
 
 afterEach(async () => {

@@ -37,7 +37,7 @@ type ScriptedStopReason = 'stop' | 'length' | 'toolUse';
 type JsonObject = Record<PropertyKey, unknown>;
 
 interface ScriptedToolCall extends Omit<ToolCall, 'arguments'> {
-  arguments: JsonObject;
+  arguments: import('@earendil-works/pi-ai').JsonObject;
 }
 
 interface ScriptedAssistantMessage extends Omit<AssistantMessage, 'content' | 'stopReason'> {
@@ -71,7 +71,7 @@ function text(value: string): TextContent {
   return { type: 'text', text: value };
 }
 
-function toolCall(name: string, args: JsonObject, id: string): ScriptedToolCall {
+function toolCall(name: string, args: ToolCall['arguments'], id: string): ScriptedToolCall {
   return { type: 'toolCall', id, name, arguments: args };
 }
 

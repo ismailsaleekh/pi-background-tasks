@@ -99,7 +99,7 @@ void describe('TypeBox compatibility', () => {
     assert.ok(isRecord(peers));
     for (const key of ['@earendil-works/pi-coding-agent', '@earendil-works/pi-tui']) {
       const declaredRange = stringValue(peers[key]);
-      for (const supported of ['0.81.1', '0.82.1', '0.83.0', '0.84.0']) {
+      for (const supported of ['0.81.1', '0.82.1', '0.83.0', '0.84.0', '1.3.0']) {
         assert.ok(
           declaredRange.includes(supported),
           `${key} must declare ${supported}: ${declaredRange}`,

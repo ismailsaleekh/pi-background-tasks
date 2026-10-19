@@ -4,7 +4,7 @@ import { homedir } from 'node:os';
 import { isAbsolute, join } from 'node:path';
 import type {
   AssistantMessageEventStream as HostAssistantMessageEventStream,
-  Context as HostContext,
+  TranscriptContext as HostContext,
   Model as HostModel,
   SimpleStreamOptions as HostSimpleStreamOptions,
 } from '@earendil-works/pi-ai';

@@ -189,14 +189,15 @@ const ENTRY_TEXT_KEY = 'text';
 
 function assistantContentParts(session: AgentSession): JsonObject[] {
   return session.sessionManager.getEntries().flatMap((entry) => {
+    const message: unknown = Reflect.get(entry, ENTRY_MESSAGE_KEY);
     if (
       !isJsonObject(entry) ||
       entry[ENTRY_TYPE_KEY] !== 'message' ||
-      !isJsonObject(entry[ENTRY_MESSAGE_KEY]) ||
-      entry[ENTRY_MESSAGE_KEY][ENTRY_ROLE_KEY] !== 'assistant'
+      !isJsonObject(message) ||
+      message[ENTRY_ROLE_KEY] !== 'assistant'
     )
       return [];
-    const content: unknown = entry[ENTRY_MESSAGE_KEY][ENTRY_CONTENT_KEY];
+    const content: unknown = message[ENTRY_CONTENT_KEY];
     if (!Array.isArray(content)) return [];
     const parts: readonly unknown[] = content;
     return parts.filter(isJsonObject);
