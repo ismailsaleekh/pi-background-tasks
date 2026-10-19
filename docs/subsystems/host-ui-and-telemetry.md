@@ -51,6 +51,8 @@ A finished badge is cleared when that task's detail view is opened, or when `/bg
 
 ## Task manager UI
 
+The footer and task manager follow Pi's active theme rather than a fixed palette. The footer uses `accent`; manager headers use the paired `customMessageText`/`customMessageBg` roles, selection uses `selectedBg`, and outer/output frames use `borderAccent`/`borderMuted`. Body text and status indicators retain their semantic theme roles. Colors are resolved during rendering (and on each footer refresh), so theme changes do not require an extension reload.
+
 `/tasks`, `/bg-tasks`, and the configured dock shortcut (when not `off`) open the same overlay. The two commands are unconditional process surfaces, including when the shortcut is disabled. Non-interactive contexts receive an error notification directing users to `/jobs`, `/logs`, `bg_status`, or `bg_logs`.
 
 The list view supports selection, paging, stop, confirmed stop-all, history toggle, rerun, output path, and close. Rerun is shell-task-only: typed delegate and Fusion tasks fail with guidance to relaunch through their owning tool rather than executing their display command as a shell command. Rerunning an opted survivor preserves `surviveReload:true`, but it is a new execution with a new id/nonce and the current activation's shell policy, timeout, and output cap. The detail view shows task identity, status, runtime, output path, description, task-owned model/context/tokens/tools when reported, command, error, and an output tail.

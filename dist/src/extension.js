@@ -30,12 +30,6 @@ const packageInfo = readPackageInfo(new URL('../package.json', import.meta.url),
 });
 const PACKAGE_NAME = packageInfo.name ?? 'pi-background-tasks';
 const PACKAGE_VERSION = packageInfo.version;
-const LIGHT_BLUE_BG = '\x1b[48;2;183;223;255m';
-const LIGHT_BLUE_FG = '\x1b[38;2;11;70;110m';
-const ANSI_RESET = '\x1b[0m';
-function lightBlue(value) {
-    return `${LIGHT_BLUE_BG}${LIGHT_BLUE_FG}${value}${ANSI_RESET}`;
-}
 function textContent(text) {
     return [{ type: 'text', text }];
 }
@@ -356,9 +350,10 @@ export default async function backgroundTasksExtension(pi) {
             const unseenDone = allTasks.filter((task) => task.status === 'completed' && !seenTaskIds.has(task.id));
             const unseenFinishedCount = unseenFailed.length + unseenStopped.length + unseenDone.length;
             const updateSegment = formatUpdateSegment(latestKnownVersion, PACKAGE_VERSION ?? '');
+            const statusLabel = (value) => ctx.mode === 'tui' ? ctx.ui.theme.fg('accent', value) : value;
             ctx.ui.setWidget('background-tasks', undefined);
             if (running.length === 0 && unseenFinishedCount === 0) {
-                ctx.ui.setStatus('background-tasks', updateSegment ? lightBlue(` bg ${updateSegment} `) : undefined);
+                ctx.ui.setStatus('background-tasks', updateSegment ? statusLabel(` bg ${updateSegment} `) : undefined);
                 return;
             }
             const parts = [];
@@ -377,7 +372,7 @@ export default async function backgroundTasksExtension(pi) {
             if (updateSegment)
                 segments.push(updateSegment);
             const label = ` bg ${segments.join(' · ')} `;
-            ctx.ui.setStatus('background-tasks', lightBlue(label));
+            ctx.ui.setStatus('background-tasks', statusLabel(label));
         }
         catch (error) {
             console.error(`[background-tasks] UI update failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -463,7 +458,7 @@ export default async function backgroundTasksExtension(pi) {
                 overlay: true,
                 overlayOptions: {
                     anchor: 'bottom-center',
-                    width: '96%',
+                    width: 118,
                     minWidth: 64,
                     maxHeight: '60%',
                     margin: { bottom: 1, left: 1, right: 1 },
