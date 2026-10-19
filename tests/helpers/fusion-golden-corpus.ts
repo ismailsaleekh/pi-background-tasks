@@ -44,7 +44,7 @@ function thinking(text: string) {
   return { type: 'thinking' as const, thinking: text, thinkingSignature: '' };
 }
 
-function toolCall(id: string, name: string, args: Record<string, unknown>) {
+function toolCall(id: string, name: string, args: import('@earendil-works/pi-ai').JsonObject) {
   return { type: 'toolCall' as const, id, name, arguments: args };
 }
 

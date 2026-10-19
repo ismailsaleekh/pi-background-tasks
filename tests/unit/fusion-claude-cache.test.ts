@@ -2,7 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { Type } from 'typebox';
 import { streamSimple as streamSimpleAnthropic } from '@earendil-works/pi-ai/api/anthropic-messages';
-import type { Context, Model } from '@earendil-works/pi-ai';
+import { normalizeContext, type Context, type Model } from '@earendil-works/pi-ai';
 import { isJsonObject, type JsonObject } from '../../src/core/common.js';
 import { rewriteAnthropicRequestPayload } from '../../src/core/anthropic-attribution.js';
 import {
@@ -112,7 +112,7 @@ void describe('Fusion Claude cache policy', () => {
     };
     let incoming: unknown;
     let normalized: FusionClaudeCacheNormalization | undefined;
-    const stream = streamSimpleAnthropic(model, context, {
+    const stream = streamSimpleAnthropic(model, normalizeContext(context), {
       apiKey: 'sk-ant-oat-test-token',
       env: {},
       onPayload(payload) {
@@ -160,7 +160,7 @@ void describe('Fusion Claude cache policy', () => {
       ],
     };
     let payload: unknown;
-    const stream = streamSimpleAnthropic(model, context, {
+    const stream = streamSimpleAnthropic(model, normalizeContext(context), {
       apiKey: 'sk-ant-oat-test-token',
       env: { [FUSION_CLAUDE_CACHE_RETENTION_ENV]: 'long' },
       onPayload(value) {

@@ -34,7 +34,7 @@ const USAGE = {
 type JsonObject = Record<PropertyKey, unknown>;
 
 interface ScriptedToolCall extends Omit<ToolCall, 'arguments'> {
-  arguments: JsonObject;
+  arguments: ToolCall['arguments'];
 }
 
 type ScriptedBlock = TextContent | ScriptedToolCall;

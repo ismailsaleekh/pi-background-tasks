@@ -153,13 +153,7 @@ async function executeTaskTool(
   const tool = session.getToolDefinition(name);
   assert.ok(tool, `missing tool ${name}`);
   const prepared = tool.prepareArguments ? tool.prepareArguments(args) : args;
-  const value = await tool.execute(
-    `windows-${name}`,
-    prepared,
-    undefined,
-    undefined,
-    session.extensionRunner.createContext(),
-  );
+  const value = await tool.execute(`windows-${name}`, prepared, undefined, undefined, session.extensionRunner.createToolContext(`windows-${name}`, undefined));
   const result = jsonRecord(value, `${name} result`);
   const details = jsonRecord(result['details'], `${name} details`);
   const task = details['task'];
@@ -170,13 +164,7 @@ async function executeTaskTool(
 async function windowsStatus(session: AgentSession, id: string): Promise<BgTaskSnapshot> {
   const tool = session.getToolDefinition('bg_status');
   assert.ok(tool);
-  const value = await tool.execute(
-    'windows-status',
-    { taskId: id },
-    undefined,
-    undefined,
-    session.extensionRunner.createContext(),
-  );
+  const value = await tool.execute('windows-status', { taskId: id }, undefined, undefined, session.extensionRunner.createToolContext('windows-status', undefined));
   const result = jsonRecord(value, 'status result');
   const details = jsonRecord(result['details'], 'status details');
   const tasks = details['tasks'];

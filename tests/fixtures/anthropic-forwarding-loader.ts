@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { normalizeContext } from '@earendil-works/pi-ai';
 import { resolve } from 'node:path';
 import {
   DefaultResourceLoader,
@@ -105,11 +106,11 @@ const stream = transport(
     contextWindow: 200_000,
     maxTokens: 8192,
   },
-  {
+  normalizeContext({
     systemPrompt: 'Compiled forwarding fixture.',
     tools: [{ name: 'read', description: 'Read a file', parameters: { properties: {} } }],
     messages: [{ role: 'user', content: 'Respond through the mock.', timestamp: 1 }],
-  },
+  }),
   {
     apiKey: 'compiled-minimax-key',
     sessionId: 'compiled-non-target-session',

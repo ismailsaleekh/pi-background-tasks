@@ -281,7 +281,7 @@ void describe('packed lazy-module closure', { concurrency: false }, () => {
           .some((command) => command.invocationName === 'claude-cache'),
       );
 
-      const context = startupSession.extensionRunner.createContext();
+      const context = startupSession.extensionRunner.createToolContext('packed-lazy-probe', undefined);
       const delegate = startupSession.getToolDefinition('bg_delegate');
       const attested = startupSession.getToolDefinition('bg_run_pi_attested');
       const fusion = startupSession.getToolDefinition('fusion_reason');
@@ -443,13 +443,7 @@ void describe('packed lazy-module closure', { concurrency: false }, () => {
       const delegate = activeSession.getToolDefinition('bg_delegate');
       assert.ok(delegate);
       const invoke = () =>
-        delegate.execute(
-          'packed-missing-module',
-          { name: 'Missing bytes', prompt: 'Do not launch.' },
-          undefined,
-          undefined,
-          activeSession.extensionRunner.createContext(),
-        );
+        delegate.execute('packed-missing-module', { name: 'Missing bytes', prompt: 'Do not launch.' }, undefined, undefined, activeSession.extensionRunner.createToolContext('packed-missing-module', undefined));
       const first = await rejection(invoke());
       const second = await rejection(invoke());
       assert.equal(first, second, 'missing-module failure must be sticky for the activation');

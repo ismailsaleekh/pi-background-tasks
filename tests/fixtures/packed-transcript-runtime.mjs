@@ -30,7 +30,10 @@ assert.equal(typeof aiEntry, 'string');
 assert.ok(aiEntry.startsWith('./'));
 const ai = await import(pathToFileURL(resolve(dirname(aiManifestPath), aiEntry)).href);
 const transcriptHost = typeof ai.getCurrentSystemPrompt === 'function';
-if (/^0\.86\./u.test(manifest.version)) assert.equal(transcriptHost, true);
+if (/^0\.86\./u.test(manifest.version) || Number(manifest.version.split('.')[0]) >= 1) {
+  assert.equal(transcriptHost, true, 'transcript hosts must expose prompt replay');
+  assert.equal(typeof ai.getCurrentTools, 'function', 'transcript hosts must expose tool replay');
+}
 
 const cwd = join(root, 'project');
 const agentDir = join(root, 'agent');

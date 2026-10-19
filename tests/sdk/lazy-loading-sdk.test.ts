@@ -159,13 +159,8 @@ function command(h: Harness, name: string) {
 }
 
 function execute(h: Harness, name: string, params: unknown): Promise<unknown> {
-  return tool(h, name).execute(
-    `lazy-${name}-${Math.random().toString(16).slice(2)}`,
-    params,
-    undefined,
-    undefined,
-    h.session.extensionRunner.createContext(),
-  );
+  const callId = `lazy-${name}-${Math.random().toString(16).slice(2)}`;
+  return tool(h, name).execute(callId, params, undefined, undefined, h.session.extensionRunner.createToolContext(callId, undefined));
 }
 
 function field(value: unknown, key: string): unknown {
@@ -473,13 +468,7 @@ void describe('lazy delegate/Fusion facades through the real SDK runner', { conc
     });
     try {
       const oldTool = tool(h, 'bg_delegate');
-      const callOld = () => oldTool.execute(
-        'old-call',
-        { name: 'missing', prompt: 'missing' },
-        undefined,
-        undefined,
-        h.session.extensionRunner.createContext(),
-      );
+      const callOld = () => oldTool.execute('old-call', { name: 'missing', prompt: 'missing' }, undefined, undefined, h.session.extensionRunner.createToolContext('old-call', undefined));
       const first = await rejected(callOld());
       const second = await rejected(callOld());
       assert.equal(first, second, 'one activation must retain the exact wrapped failure');
@@ -746,7 +735,7 @@ void describe('lazy delegate/Fusion facades through the real SDK runner', { conc
       await new Promise((resolve) => setImmediate(resolve));
       assert.equal(shutdownFinished, false, 'Fusion settlement should still be blocking cleanup');
 
-      const staleContext = h.session.extensionRunner.createContext();
+      const staleContext = h.session.extensionRunner.createToolContext('stale', undefined);
       const staleDelegate = settlement(
         tool(h, 'bg_delegate').execute(
           'stale-delegate',
@@ -847,17 +836,11 @@ void describe('lazy delegate/Fusion facades through the real SDK runner', { conc
     try {
       const oldTool = tool(h, 'bg_delegate');
       const pending = settlement(
-        oldTool.execute(
-          'prepare-real-reload',
-          {
-            name: 'rollback real preparation',
-            prompt: 'write the complete launch transaction before returning',
-            route: { provider: 'fixture', model: 'fixture' },
-          },
-          undefined,
-          undefined,
-          h.session.extensionRunner.createContext(),
-        ),
+        oldTool.execute('prepare-real-reload', {
+          name: 'rollback real preparation',
+          prompt: 'write the complete launch transaction before returning',
+          route: { provider: 'fixture', model: 'fixture' },
+        }, undefined, undefined, h.session.extensionRunner.createToolContext('prepare-real-reload', undefined)),
       );
       const artifactDir = await preparedReady.promise;
       assert.equal(existsSync(join(artifactDir, 'seed.json')), true);
@@ -971,13 +954,7 @@ void describe('lazy delegate/Fusion facades through the real SDK runner', { conc
     try {
       const oldTool = tool(h, 'bg_result');
       const oldPending = settlement(
-        oldTool.execute(
-          'usage-old',
-          { taskId: task.id, delivery: 'inline' },
-          undefined,
-          undefined,
-          h.session.extensionRunner.createContext(),
-        ),
+        oldTool.execute('usage-old', { taskId: task.id, delivery: 'inline' }, undefined, undefined, h.session.extensionRunner.createToolContext('usage-old', undefined)),
       );
       await claimStarted.promise;
       await h.session.reload();
