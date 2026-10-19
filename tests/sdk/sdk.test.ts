@@ -1514,7 +1514,10 @@ console.log(JSON.stringify({ type: "message_end", message: secondMessage }));
       });
       await wait(session, taskFromResult(done).id);
       await new Promise((resolve) => setTimeout(resolve, 20));
-      assert.match(statuses.at(-1) ?? '', /bg 1 done · Shift↓ · \/bg-clear/);
+      assert.equal(
+        statuses.at(-1),
+        ' bg 1 done · Shift↓ · /bg-clear ',
+      );
 
       const shortcuts = session.extensionRunner.getShortcuts({});
       assert.ok(shortcuts.has('ctrl+alt+c'));

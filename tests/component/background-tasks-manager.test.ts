@@ -98,6 +98,7 @@ function task(overrides: Partial<BackgroundTaskForUi> = {}): BackgroundTaskForUi
 function manager(
   options: Partial<ConstructorParameters<typeof BackgroundTasksManager>[3]> = {},
   tasks: BackgroundTaskForUi[] = [task()],
+  activeTheme = theme,
 ) {
   let closed = false;
   let renders = 0;
@@ -110,7 +111,7 @@ function manager(
         renders++;
       },
     },
-    theme,
+    activeTheme,
     () => {
       closed = true;
     },
@@ -176,6 +177,59 @@ function assertWidth(lines: string[], width: number) {
 }
 
 void describe('BackgroundTasksManager component', () => {
+  void it('fills the available overlay width in list and detail views', () => {
+    const h = manager();
+    try {
+      for (const width of [90, 160, 220]) {
+        const lines = h.instance.render(width);
+        assert.equal(visibleWidth(lines[0] ?? ''), width);
+        assertWidth(lines, width);
+      }
+      h.instance.handleInput('\r');
+      for (const width of [90, 160, 220]) {
+        const lines = h.instance.render(width);
+        assert.equal(visibleWidth(lines[0] ?? ''), width);
+        const outputTop = lines.find((line) => stripAnsi(line).startsWith('│ ╭'));
+        assert.ok(outputTop, 'detail includes an output frame');
+        assert.equal(stripAnsi(outputTop).indexOf('╮'), width - 3);
+        assertWidth(lines, width);
+      }
+    } finally {
+      h.instance.dispose();
+    }
+  });
+
+  for (const [name, foreground, background] of [
+    ['dark', '#eeeeee', '#222222'],
+    ['light', '#222222', '#eeeeee'],
+    ['terminal-default', '', ''],
+  ]) {
+    void it(`uses ${name} theme colors for headers, selection, and both frames`, () => {
+      const activeTheme = new Theme(
+        Object.fromEntries(themeColors.map((color) => [color, foreground])) as ThemeForegrounds,
+        Object.fromEntries(themeBackgrounds.map((color) => [color, background])) as ThemeBackgrounds,
+        'truecolor',
+      );
+      const h = manager({}, [task()], activeTheme);
+      try {
+        const lines = h.instance.render(90);
+        assert.equal(lines[0], activeTheme.fg('borderAccent', `╭${'─'.repeat(88)}╮`));
+        assert.ok(lines[1]?.includes(activeTheme.bg('customMessageBg',
+          activeTheme.fg('customMessageText', ' bg tasks focused'.padEnd(88)))));
+        const selected = lines.find((line) => stripAnsi(line).includes('›'));
+        assert.ok(selected?.includes(activeTheme.bg('selectedBg', '').replace(/\x1b\[49m$/u, '')));
+        assert.doesNotMatch(lines.join('\n'), /183;223;255|11;70;110|83;160;215/u);
+        assertWidth(lines, 90);
+        h.instance.handleInput('\r');
+        const detail = h.instance.render(90);
+        assert.ok(detail.some((line) => line.includes(activeTheme.fg('borderMuted', `╭${'─'.repeat(84)}╮`))));
+        assertWidth(detail, 90);
+      } finally {
+        h.instance.dispose();
+      }
+    });
+  }
+
   void it('passes the selected survival flag to dock rerun and accepts a new id/nonce', async () => {
     const original = task({
       id: 'bsurvive1',
