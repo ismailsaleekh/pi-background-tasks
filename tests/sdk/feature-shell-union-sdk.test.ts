@@ -5,6 +5,7 @@ import { join, resolve } from 'node:path';
 import { describe, it } from 'node:test';
 import {
   createAssistantMessageEventStream,
+  getCurrentTools,
   type Api,
   type AssistantMessage,
   type AssistantMessageEventStream,
@@ -212,7 +213,9 @@ function unionPeerAndProviderExtension(
           guidance: guidanceFrom(prompt),
           peerGuidanceCount: prompt.split(PEER_GUIDANCE).length - 1,
           shellGuidanceCount: prompt.split('<pi_background_shell_policy>').length - 1,
-          toolNames: sorted(context.tools?.map((tool) => tool.name) ?? []),
+          toolNames: sorted(
+            [...(context.tools ?? []), ...getCurrentTools(context.messages)].map((tool) => tool.name),
+          ),
         });
         return stoppedStream();
       },

@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, describe, it } from 'node:test';
-import type { Context } from '@earendil-works/pi-ai';
+import { getCurrentSystemPrompt, type Context } from '@earendil-works/pi-ai';
 import {
   createAgentSession,
   createEventBus,
@@ -456,7 +456,10 @@ void describe('C1a feature selection and dock configuration', { concurrency: fal
     > = (model, context, options) => {
       routeCalls.push({
         baseUrl: model.baseUrl,
-        contextIdentity: context === routeContext,
+        // Pi 1.3 hosts normalize the context before the provider, so compare content, not identity.
+        contextIdentity:
+          context === routeContext ||
+          getCurrentSystemPrompt(context.messages) === routeContext.systemPrompt,
         sessionId: options?.sessionId,
         apiKeyMatches: options?.apiKey === 'host-secret-marker',
         hostHeader: options?.headers?.['x-host-route'],
