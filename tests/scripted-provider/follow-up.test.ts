@@ -21,6 +21,7 @@ const scriptedProviderPath = resolve('tests/scripted-provider/scripted-provider-
 const roots: string[] = [];
 
 type Scenario =
+  | 'failure-priority'
   | 'bg-run-follow-up'
   | 'notify-false'
   | 'wake-false'
@@ -246,6 +247,28 @@ async function disposeHarness(h: Awaited<ReturnType<typeof harness>>) {
 }
 
 void describe('scripted-provider completion follow-up behavior', { concurrency: false }, () => {
+  void it('delivers a failure after the current tool batch without waiting for the work chain to stop', {
+    timeout: 15_000,
+  }, async () => {
+    const h = await harness('failure-priority');
+    try {
+      await h.session.prompt('Do independent work while a background task fails.');
+      await h.session.agent.waitForIdle();
+      const events = await providerEvents(h.eventsPath);
+      const calls = events.filter((event) => event['type'] === 'provider_call');
+      assert.equal(calls.length, 2, 'failure must reach the next model call, not a later follow-up');
+      assert.match((calls[1]?.summaries ?? []).join('\n'), /<background-task-notification>/);
+      const queued = events.findIndex((event) => event['type'] === 'failure_queued');
+      const tail = events.findIndex((event) => event['type'] === 'echo' && event['value'] === 'batch tail');
+      const nextCall = events.findIndex((event) => event.callCount === 2);
+      assert.ok(queued >= 0 && tail > queued && nextCall > tail,
+        'the rest of the current tool batch must finish before the notice reaches the model');
+      assert.equal(customNotifications(h.session).length, 1);
+    } finally {
+      await disposeHarness(h);
+    }
+  });
+
   void it(
     'BUG-181 bg_run yields without polling and its completion event triggers one real follow-up turn',
     { timeout: 15_000 },

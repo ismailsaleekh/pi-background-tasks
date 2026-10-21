@@ -1337,7 +1337,7 @@ export class BackgroundTaskRegistry {
                     status = 'failed';
                     error = task.error ?? `Output exceeded cap of ${formatSize(this.maxOutputBytes)}`;
                 }
-                else if ((code ?? 0) === 0) {
+                else if (code === 0 && signalName === null) {
                     status = 'completed';
                 }
                 else {
@@ -1671,7 +1671,7 @@ export class BackgroundTaskRegistry {
                     status = 'failed';
                     error = task.error ?? `Timed out after ${String(request.timeoutSeconds ?? 0)}s`;
                 }
-                else if ((code ?? 0) === 0) {
+                else if (code === 0 && signalName === null) {
                     status = 'completed';
                 }
                 else {
@@ -3216,7 +3216,12 @@ export class BackgroundTaskRegistry {
                 content,
                 display: true,
                 details: snapshot(task),
-            }, { deliverAs: 'followUp', triggerTurn: task.triggerOnCompletion });
+            }, {
+                deliverAs: task.triggerOnCompletion && (task.status === 'failed' || task.status === 'killed')
+                    ? 'steer'
+                    : 'followUp',
+                triggerTurn: task.triggerOnCompletion,
+            });
         }
         catch (error) {
             task.notified = false;

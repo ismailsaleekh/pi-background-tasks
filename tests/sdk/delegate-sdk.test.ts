@@ -95,6 +95,7 @@ fs.writeFileSync(path.join(dir, 'child-seed-observed.json'), JSON.stringify({
 
 if (scenario === 'no-commit') { process.exit(0); }
 if (scenario === 'crash') { process.exit(9); }
+if (scenario === 'SIGTERM' || scenario === 'SIGKILL') { process.kill(process.pid, scenario); }
 
 const answerText =
   scenario === 'huge-answer'
@@ -392,6 +393,32 @@ afterEach(async () => {
 });
 
 void describe('bg_delegate and bg_result public surface', { concurrency: false }, () => {
+  for (const signal of ['SIGTERM', 'SIGKILL'] as const) {
+    void it(`reports an unexpectedly ${signal}-terminated delegate as failed`, {
+      timeout: 30_000,
+      skip: process.platform === 'win32',
+    }, async () => {
+      const h = await harness(signal);
+      try {
+        const launch = await runTool(h, 'bg_delegate', {
+          name: 'Signal termination', prompt: 'check', notifyOnCompletion: false,
+        });
+        const taskId = String(detail(detail(launch.details, 'task'), 'id'));
+        await waitForTerminal(h, taskId);
+        const status = await runTool(h, 'bg_status', { taskId });
+        const tasks = detail(status.details, 'tasks');
+        assert.ok(Array.isArray(tasks));
+        const task: unknown = tasks[0];
+        assert.equal(detail(task, 'status'), 'failed');
+        assert.equal(detail(task, 'exitCode'), null);
+        assert.equal(detail(task, 'signal'), signal);
+        assert.match(String(detail(task, 'error')), new RegExp(signal));
+      } finally {
+        await dispose(h);
+      }
+    });
+  }
+
   void it('restores every mutated env key and argv after normal and failed setup', async () => {
     const original = {
       PATH: process.env['PATH'],

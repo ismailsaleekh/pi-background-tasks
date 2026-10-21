@@ -1,5 +1,6 @@
 import { appendFileSync } from 'node:fs';
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
+import { BackgroundTaskRegistry } from '../../src/core/registry.js';
 import {
   createAssistantMessageEventStream,
   type AssistantMessage,
@@ -25,6 +26,7 @@ const DEFAULT_USAGE = {
 };
 
 type Scenario =
+  | 'failure-priority'
   | 'bg-run-follow-up'
   | 'notify-false'
   | 'wake-false'
@@ -49,6 +51,7 @@ type ScriptedBlock = TextContent | ScriptedToolCall;
 
 function parseScenario(value: string | undefined): Scenario {
   if (
+    value === 'failure-priority' ||
     value === 'bg-run-follow-up' ||
     value === 'notify-false' ||
     value === 'wake-false' ||
@@ -156,6 +159,21 @@ function responseFor(
   contract: EventDrivenContractCheck,
   context: Context,
 ): ScriptedAssistantMessage {
+  if (scenario === 'failure-priority') {
+    if (callCount === 1) {
+      return assistant([
+        toolCall('scripted_terminal', {}, 'call-terminal'),
+        toolCall('scripted_echo', { value: 'batch tail' }, 'call-batch-tail'),
+      ], 'toolUse');
+    }
+    if (context.messages.some((message) => summarizeMessage(message).includes('<background-task-notification>'))) {
+      return assistant([text('Failure observed after tool batch.')], 'stop');
+    }
+    if (callCount <= 4) {
+      return assistant([toolCall('scripted_echo', { value: 'independent work' }, `call-work-${String(callCount)}`)], 'toolUse');
+    }
+    return assistant([text('Independent work finished.')], 'stop');
+  }
   if (scenario === 'fusion-reason') {
     if (callCount === 1) {
       return assistant(
@@ -343,6 +361,41 @@ export default function scriptedProviderExtension(pi: ExtensionAPI): void {
   let callCount = 0;
   const scenario = parseScenario(process.env['PI_BG_SCRIPTED_SCENARIO']);
 
+  if (scenario === 'failure-priority') {
+    pi.registerTool({
+      name: 'scripted_terminal',
+      label: 'Scripted Terminal',
+      executionMode: 'sequential',
+      description: 'Queue a real background failure during the current tool batch',
+      parameters: { type: 'object', properties: {}, additionalProperties: false } as const,
+      async execute(_id, _input, _signal, _onUpdate, ctx) {
+        let sent: (() => void) | undefined;
+        const notification = new Promise<void>((resolve) => { sent = resolve; });
+        const registry = new BackgroundTaskRegistry({
+          sendCompletionNotification(message, options) {
+            pi.sendMessage(message, options);
+            record({ type: 'failure_queued', delivery: options.deliverAs });
+            sent?.();
+          },
+        });
+        const task = await registry.startTask({
+          cwd: ctx.cwd,
+          sessionId: ctx.sessionManager.getSessionId(),
+          modelRegistry: ctx.modelRegistry,
+        }, shellNode('process.exit(9)'), {
+          name: 'Priority failure', isAgent: false,
+          notifyOnCompletion: true, triggerOnCompletion: true,
+        });
+        try {
+          await notification;
+          return { content: [text('Failure queued.')], details: { taskId: task.id } };
+        } finally {
+          await registry.stopAllRunning('shutdown');
+        }
+      },
+    });
+  }
+
   const ScriptedEchoParams = {
     type: 'object',
     properties: {
@@ -357,6 +410,7 @@ export default function scriptedProviderExtension(pi: ExtensionAPI): void {
     description: 'Test-only deterministic scripted provider tool',
     parameters: ScriptedEchoParams,
     execute(_toolCallId, input) {
+      if (scenario === 'failure-priority') record({ type: 'echo', value: input.value });
       if (input.fail) return Promise.reject(new Error('scripted echo failed intentionally'));
       return Promise.resolve({
         content: [{ type: 'text' as const, text: input.value ?? 'ok' }],

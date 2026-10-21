@@ -209,7 +209,7 @@ export interface CompletionNotificationMessage {
 }
 
 export interface CompletionNotificationOptions {
-  deliverAs: 'followUp';
+  deliverAs: 'steer' | 'followUp';
   triggerTurn: boolean;
 }
 
@@ -1769,7 +1769,7 @@ export class BackgroundTaskRegistry {
         } else if (task.killKind === 'output_cap') {
           status = 'failed';
           error = task.error ?? `Output exceeded cap of ${formatSize(this.maxOutputBytes)}`;
-        } else if ((code ?? 0) === 0) {
+        } else if (code === 0 && signalName === null) {
           status = 'completed';
         } else {
           status = 'failed';
@@ -2152,7 +2152,7 @@ export class BackgroundTaskRegistry {
         } else if (task.killKind === 'timeout') {
           status = 'failed';
           error = task.error ?? `Timed out after ${String(request.timeoutSeconds ?? 0)}s`;
-        } else if ((code ?? 0) === 0) {
+        } else if (code === 0 && signalName === null) {
           status = 'completed';
         } else {
           status = 'failed';
@@ -3952,7 +3952,13 @@ export class BackgroundTaskRegistry {
           display: true,
           details: snapshot(task),
         },
-        { deliverAs: 'followUp', triggerTurn: task.triggerOnCompletion },
+        {
+          deliverAs:
+            task.triggerOnCompletion && (task.status === 'failed' || task.status === 'killed')
+              ? 'steer'
+              : 'followUp',
+          triggerTurn: task.triggerOnCompletion,
+        },
       );
     } catch (error) {
       task.notified = false;

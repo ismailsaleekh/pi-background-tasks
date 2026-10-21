@@ -2654,6 +2654,65 @@ setInterval(() => {}, 1000);
     }
   });
 
+  for (const scenario of [
+    { name: 'success', code: 0, signal: null, status: 'completed', delivery: 'followUp' },
+    { name: 'nonzero exit', code: 9, signal: null, status: 'failed', delivery: 'steer' },
+    { name: 'unexpected SIGTERM', code: null, signal: 'SIGTERM', status: 'failed', delivery: 'steer' },
+    { name: 'unexpected SIGKILL', code: null, signal: 'SIGKILL', status: 'failed', delivery: 'steer' },
+    { name: 'timeout', code: null, signal: 'SIGTERM', status: 'failed', delivery: 'steer' },
+    { name: 'user kill', code: null, signal: 'SIGTERM', status: 'killed', delivery: 'steer' },
+    { name: 'notification only', code: 9, signal: null, status: 'failed', delivery: 'followUp' },
+    { name: 'notification disabled', code: 9, signal: null, status: 'failed', delivery: undefined },
+    { name: 'shutdown', code: 9, signal: null, status: 'failed', delivery: undefined },
+  ] as const) {
+    void it(`routes terminal notification for ${scenario.name}`, async () => {
+      let child: FakeChild | undefined;
+      const h = await createHarness({
+        killProcess: (_pid, signal) => {
+          if (signal === 0) throw errnoError('ESRCH', 'owned group is gone');
+          queueMicrotask(() => child?.close(null, 'SIGTERM'));
+          return true;
+        },
+      });
+      try {
+        const task = await h.registry.startTask(h.ctx, 'node fake.js', {
+          name: scenario.name,
+          isAgent: false,
+          notifyOnCompletion: scenario.name !== 'notification disabled',
+          triggerOnCompletion: scenario.name !== 'notification only',
+          ...(scenario.name === 'timeout' ? { timeoutSeconds: 1 } : {}),
+        });
+        child = lastSpawn(h).child;
+        if (scenario.name === 'shutdown') h.registry.setShuttingDown(true);
+        if (scenario.name === 'user kill') await h.registry.stopTask(task, 'user');
+        else if (scenario.name !== 'timeout') child.close(scenario.code, scenario.signal);
+        await waitFor(() => task.status !== 'running' && task.terminalPublicationState !== 'pending',
+          'terminal finalization', 3000);
+        assert.equal(task.status, scenario.status);
+        assert.equal(task.exitCode, scenario.code);
+        assert.equal(task.signal, scenario.signal);
+        if (scenario.name.startsWith('unexpected')) assert.match(task.error ?? '', /SIGTERM|SIGKILL/);
+        if (scenario.name === 'timeout') assert.match(task.error ?? '', /Timed out/);
+        if (scenario.delivery === undefined) {
+          assert.equal(h.notifications.length, 0);
+          assert.equal(task.notified, false);
+        } else {
+          await waitFor(() => h.notifications.length === 1, 'terminal notification');
+          assert.deepEqual(h.notifications[0]?.options, {
+            deliverAs: scenario.delivery,
+            triggerTurn: scenario.name !== 'notification only',
+          });
+          assert.equal(h.notifications[0]?.message.details.id, task.id);
+          assert.equal(h.notifications[0]?.message.details.status, scenario.status);
+          child.close(scenario.code, scenario.signal);
+          assert.equal(h.notifications.length, 1, 'duplicate close must not notify again');
+        }
+      } finally {
+        await cleanup(h.root);
+      }
+    });
+  }
+
   void it('finalizes and notifies once under error/close and output-cap races', async () => {
     const liveGroups = new Set<number>();
     const h = await createHarness({
@@ -2688,7 +2747,7 @@ setInterval(() => {}, 1000);
         notification.message.content,
         /<guidance>Terminal state and output metadata are durable\. Do not call bg_status to reconfirm; use bg_logs only if output is needed\.<\/guidance>/,
       );
-      assert.deepEqual(notification.options, { deliverAs: 'followUp', triggerTurn: true });
+      assert.deepEqual(notification.options, { deliverAs: 'steer', triggerTurn: true });
 
       const capped = await h.registry.startTask(h.ctx, 'node noisy.js', {
         name: 'Output Race',
