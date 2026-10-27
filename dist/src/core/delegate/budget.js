@@ -1,6 +1,8 @@
 import { TOKEN_BUDGET_CALIBRATION_VERSION, TOKEN_BUDGET_FAMILY_CALIBRATIONS, TOKEN_BUDGET_RATE_SCALE, estimateInputTokens, knownTextSegment, resolveTokenBudgetFamily, utf8ByteClassBreakdown, allowedInputTokens, isUsableContextWindow, } from '../context/token-budget.js';
-import { DELEGATE_DEFAULT_MAX_TOOL_CALLS, DELEGATE_DEFAULT_MAX_TURNS, DELEGATE_DEFAULT_TIMEOUT_SECONDS, DELEGATE_INLINE_ANSWER_BYTES, } from './facade-contract.js';
+import { DELEGATE_DEFAULT_MAX_TOOL_CALLS, DELEGATE_DEFAULT_MAX_TURNS, DELEGATE_DEFAULT_TIMEOUT_SECONDS, DELEGATE_INLINE_ANSWER_BYTES, describeDelegateEstimator, } from './facade-contract.js';
 import { DELEGATE_BUDGET_PLAN_SCHEMA_VERSION, DelegateError, } from './types.js';
+import { calibratedKiroForecast, calibratedKiroForecastFromCounts } from '../context/kiro-tokenizer.js';
+import { KIRO_OPUS_45_CALIBRATION } from '../context/kiro-calibration.js';
 export { DELEGATE_DEFAULT_MAX_TOOL_CALLS, DELEGATE_DEFAULT_MAX_TURNS, DELEGATE_DEFAULT_TIMEOUT_SECONDS, DELEGATE_INLINE_ANSWER_BYTES, } from './facade-contract.js';
 /**
  * Delegate budgeting.
@@ -59,7 +61,10 @@ function utilizationBasisPoints(tokens, allowed) {
     if (!Number.isSafeInteger(allowed) || allowed <= 0) {
         throw new TypeError('allowed must be a positive safe integer');
     }
-    return Math.floor(((tokens * 10_000) + allowed - 1) / allowed);
+    const result = (BigInt(tokens) * 10000n + BigInt(allowed) - 1n) / BigInt(allowed);
+    if (result > BigInt(Number.MAX_SAFE_INTEGER))
+        throw new RangeError('utilization basis points exceed safe integer range');
+    return Number(result);
 }
 function routeFamily(route) {
     return resolveTokenBudgetFamily({ provider: route.provider, model: route.model });
@@ -119,6 +124,8 @@ export function planDelegateAdmission(input) {
         scope: 'conservative',
         segments,
     });
+    const tokenizerForecast = calibratedKiroForecast(input.route, [input.childPrompt, input.childSystemPrompt], KIRO_OPUS_45_CALIBRATION);
+    const launchTokens = tokenizerForecast?.forecast_tokens ?? estimate.tokens;
     // `conservativeEstimate.tokens` intentionally uses the shared estimator's
     // calibrated multibyte diagnostic rate. The counter-forecast published as
     // "provable" must instead use that estimator's explicit 1 B/token ceiling
@@ -126,7 +133,7 @@ export function planDelegateAdmission(input) {
     const provableConservativeLaunchTokens = conservativeEstimate.advisory.input_tokens_if_multibyte_used_provable_ceiling;
     const byteCapacity = Math.floor((allowed * estimate.rateSource.effective_rate_bytes_per_token_x100) / TOKEN_BUDGET_RATE_SCALE);
     const launchBytes = childPrompt.bytes + system.bytes;
-    const retainedGrowthBudget = Math.max(0, allowed - estimate.tokens - DELEGATE_FINALIZATION_INPUT_RESERVE_TOKENS);
+    const retainedGrowthBudget = Math.max(0, allowed - launchTokens - DELEGATE_FINALIZATION_INPUT_RESERVE_TOKENS);
     return {
         schema_version: DELEGATE_BUDGET_PLAN_SCHEMA_VERSION,
         policy: DELEGATE_BUDGET_POLICY,
@@ -137,7 +144,7 @@ export function planDelegateAdmission(input) {
             context_window_tokens: input.route.context_window_tokens,
             allowed_input_tokens: allowed,
             family: family.family,
-            backed: estimate.rateSource.backed,
+            backed: tokenizerForecast !== undefined || estimate.rateSource.backed,
             rate_source: estimate.rateSource,
             byte_capacity_utf8_bytes: byteCapacity,
         },
@@ -146,18 +153,19 @@ export function planDelegateAdmission(input) {
         system_prompt_utf8_bytes: system.bytes,
         system_prompt_multibyte_utf8_bytes: system.multibyteBytes,
         launch_utf8_bytes: launchBytes,
-        launch_input_tokens_upper_bound: estimate.tokens,
+        launch_input_tokens_upper_bound: launchTokens,
         conservative_launch_input_tokens: provableConservativeLaunchTokens,
         conservative_launch_fits: provableConservativeLaunchTokens <= allowed,
-        signed_headroom_tokens: allowed - estimate.tokens,
-        utilization_basis_points: utilizationBasisPoints(estimate.tokens, allowed),
+        signed_headroom_tokens: allowed - launchTokens,
+        utilization_basis_points: utilizationBasisPoints(launchTokens, allowed),
         retained_growth_budget_tokens: retainedGrowthBudget,
         finalization_input_reserve_tokens: DELEGATE_FINALIZATION_INPUT_RESERVE_TOKENS,
         byte_class_breakdown: estimate.byte_class_breakdown,
         dominant_byte_class: estimate.rateSource.dominant_byte_class,
         estimate,
         conservative_estimate: conservativeEstimate,
-        fits: estimate.tokens <= allowed,
+        ...(tokenizerForecast === undefined ? {} : { tokenizer_forecast: tokenizerForecast }),
+        fits: launchTokens <= allowed,
         limits: input.limits,
     };
 }
@@ -184,6 +192,19 @@ export function assertDelegateAdmission(plan) {
     if (plan.fits)
         return;
     const overage = plan.launch_input_tokens_upper_bound - plan.route.allowed_input_tokens;
+    if (plan.tokenizer_forecast !== undefined) {
+        throw new DelegateError(`bg_delegate calibrated input forecast exceeds the pinned route before launch. Route ${plan.route.qualified_id} allows ${String(plan.route.allowed_input_tokens)} input tokens; ${String(plan.launch_utf8_bytes)} UTF-8 bytes forecast ${String(plan.launch_input_tokens_upper_bound)} tokens (${String(overage)} over the allowance). ${describeDelegateEstimator({ family: plan.route.family, rate_source: plan.route.rate_source, tokenizer_forecast: plan.tokenizer_forecast })} No child process, child session, or artifact was created. Nothing was clipped, dropped, or substituted.`, {
+            code: 'seed_budget_exceeded', childCreated: false,
+            budget: {
+                measurement_kind: 'launch_admission', measured_utf8_bytes: plan.launch_utf8_bytes,
+                measured_input_tokens_upper_bound: plan.launch_input_tokens_upper_bound,
+                allowed_input_tokens: plan.route.allowed_input_tokens, rate_source: plan.route.rate_source,
+                backed: true, dominant_byte_class: plan.dominant_byte_class,
+                byte_class_breakdown: plan.byte_class_breakdown, tokenizer_forecast: plan.tokenizer_forecast,
+            },
+            remediation: ['Delegate earlier or use a fresh conversation; no linear byte-reduction claim is made for a tokenizer forecast.'],
+        });
+    }
     throw new DelegateError(`bg_delegate child prompt does not fit the pinned route before launch. Route ${plan.route.qualified_id} allows ${String(plan.route.allowed_input_tokens)} input tokens; the exact child prompt plus child system prompt measure ${String(plan.launch_utf8_bytes)} UTF-8 bytes (<= ${String(plan.launch_input_tokens_upper_bound)} input tokens), over by ${String(overage)} tokens. Estimator family ${plan.route.family}, source ${plan.route.rate_source.source}, backed=${String(plan.route.rate_source.backed)}, dominant_byte_class=${plan.dominant_byte_class}, rate ${String(plan.route.rate_source.effective_rate_bytes_per_token_x100)}/100 B/tok + ${String(plan.route.rate_source.affine_f_tokens)} tokens.${rateWarningText(plan.route.rate_source, plan.route.qualified_id)} Required reduction is at least ${String(requiredByteReduction(plan))} UTF-8 bytes. No child process, child session, or artifact was created. Nothing was clipped, dropped, or substituted.`, {
         code: 'seed_budget_exceeded',
         childCreated: false,
@@ -230,15 +251,32 @@ export function evaluateDelegateRuntimeBudget(measurement, allowedTokens, route)
             },
         ],
     });
+    if (measurement.retainedInputTexts !== undefined) {
+        const textBytes = measurement.retainedInputTexts.reduce((sum, text) => sum + Buffer.byteLength(text, 'utf8'), 0);
+        if (textBytes !== measurement.retainedInputBytes) {
+            throw new Error('retained input text does not match measured UTF-8 bytes');
+        }
+    }
+    let tokenizerForecast;
+    if (measurement.retainedInputTexts !== undefined || measurement.retainedInputLocalTokens !== undefined) {
+        if (measurement.retainedInputTexts !== undefined) {
+            tokenizerForecast = calibratedKiroForecast(route, measurement.retainedInputTexts, KIRO_OPUS_45_CALIBRATION);
+        }
+        else if (measurement.retainedInputLocalTokens !== undefined) {
+            tokenizerForecast = calibratedKiroForecastFromCounts(route, measurement.retainedInputBytes, measurement.retainedInputLocalTokens, KIRO_OPUS_45_CALIBRATION, measurement.retainedInputLongPretokenBytes ?? 0);
+        }
+    }
+    const measuredTokens = tokenizerForecast?.forecast_tokens ?? estimate.tokens;
     return {
-        withinBudget: estimate.tokens <= allowedTokens,
-        measuredTokens: estimate.tokens,
+        withinBudget: measuredTokens <= allowedTokens,
+        measuredTokens,
         allowedTokens,
-        overageTokens: Math.max(0, estimate.tokens - allowedTokens),
+        overageTokens: Math.max(0, measuredTokens - allowedTokens),
         byteClassBreakdown: estimate.byte_class_breakdown,
         dominantByteClass: estimate.rateSource.dominant_byte_class,
-        backed: estimate.rateSource.backed,
+        backed: tokenizerForecast !== undefined || estimate.rateSource.backed,
         rateSource: estimate.rateSource,
+        ...(tokenizerForecast === undefined ? {} : { tokenizer_forecast: tokenizerForecast }),
     };
 }
 function positiveInteger(value, fallback, label) {

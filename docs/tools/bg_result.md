@@ -11,7 +11,7 @@ covers_sources: []
 
 <!-- pi-docs:begin name="tool-contract-bg_result" generator="scripts/docs/generate.mjs" -->
 - Label: **Background Result**
-- Source: `src/delegate-extension.ts:757`
+- Source: `src/delegate-extension.ts:758`
 - Availability: `any(feature:delegate,feature:fusion)`
 - Available by default: **yes**
 - Description: Retrieve a hash-verified result from a bg_delegate or background Fusion task. Never blocks: a running task returns a typed not-ready result. Oversized answers are never truncated.

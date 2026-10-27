@@ -5,7 +5,7 @@ mode: authored
 review_policy: behavioral
 stability: evolving
 covers_surfaces: []
-covers_sources: [src/core/context/parent-snapshot.ts, src/core/context/token-budget.ts, src/core/context/visible-conversation-v2.ts]
+covers_sources: [src/core/context/kiro-calibration.ts, src/core/context/kiro-tokenizer.ts, src/core/context/parent-snapshot.ts, src/core/context/token-budget.ts, src/core/context/visible-conversation-v2.ts]
 ---
 # Context projection and budgeting
 
@@ -68,6 +68,16 @@ Calibration facts in code:
 - delegate runtime context estimates are advisory, while a separate provable `1.00 B/token` retained-growth budget drives explicit spilling and no-tool finalization.
 
 The dense-ASCII gate is explicitly a low-whitespace heuristic proxy, not a tokenizer guarantee. Calibration applies only when the input is in the measured domain and the route capacity can hold that domain.
+
+### Kiro delegate surrogate forecast
+
+Delegates on exactly `kiro/claude-opus-4-5` with a declared 200,000-token window can use the separate measured profile in `kiro-calibration.ts`. It counts the complete child prompt and child system prompt independently with pinned `js-tiktoken` `cl100k_base`, then applies the measured integer multiplier and fixed reserve. This is a surrogate forecast, **not** the Claude tokenizer, an exact Kiro count, or a universal upper bound. The route and UTF-8 size domain must match the recorded corpus; other models, providers, windows and sizes keep the existing byte estimator.
+
+The profile was selected from predetermined training samples with a 20% uplift on the worst observed Kiro/local-token ratio, rounded upward, plus 512 fixed tokens. Held-out samples were evaluated without fitting them. The committed synthetic corpus records exact prompt/system hashes, local counts, provider/catalog versions, thinking mode, transport integrity checks, raw context percentage, count origin and coverage. When the provider supplies no input token counters, occupancy is derived by rounding the reported context percentage upward against the catalog window; it is never relabeled as exact usage.
+
+`tokenizer_forecast` in budget plans, task receipts and runtime measurements identifies the active estimator and its corpus hash. The legacy `estimate`, `route.rate_source` and `conservative_estimate` remain byte-estimator diagnostics; they do not identify the active estimator when `tokenizer_forecast` is present. Admission and the child's initial investigation runway use the same surrogate counter over the complete retained text. Subsequent tool-result growth is still charged at one byte per token and spills losslessly before consuming protected final-answer runway. Nothing is removed, summarized or routed to another model to make a forecast fit.
+
+The package still subtracts its output, framing and safety reserves before admission. A successful forecast does not guarantee provider acceptance: a real rejection remains a loud failure. Forecast refusal reports no fictitious linear minimum byte reduction, because token density depends on the actual text.
 
 ## Budget invariants
 

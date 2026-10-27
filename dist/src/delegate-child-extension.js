@@ -7,6 +7,7 @@ import { DELEGATE_RECEIPT_SCHEMA_VERSION, DELEGATE_CAPABILITIES, } from './core/
 import { verifyDelegateSeedBytes } from './core/delegate/seed.js';
 import { DELEGATE_FINALIZATION_INPUT_RESERVE_TOKENS, DELEGATE_FINALIZATION_TRIGGER_TOKENS, evaluateDelegateRuntimeBudget, } from './core/delegate/budget.js';
 import { utf8ByteClassBreakdown } from './core/context/token-budget.js';
+import { countSurrogateTokenDetails } from './core/context/kiro-tokenizer.js';
 import { assertWellFormedUtf8, buildDelegateResultPackage, serializeDelegateResultPackage, } from './core/delegate/result-package.js';
 /**
  * Package-owned delegate child extension.
@@ -218,14 +219,17 @@ function commitFileSync(absPath, data) {
     }
 }
 function emptyContentMeasurement() {
-    return { bytes: 0, multibyteBytes: 0, denseBytes: 0 };
+    return { bytes: 0, multibyteBytes: 0, denseBytes: 0, localTokens: 0, longPretokenBytes: 0 };
 }
 function addContentMeasurement(target, delta) {
     target.bytes += delta.bytes;
     target.multibyteBytes += delta.multibyteBytes;
+    target.localTokens += delta.localTokens;
+    target.longPretokenBytes += delta.longPretokenBytes;
 }
 function stringMeasurement(value) {
-    return utf8ByteClassBreakdown(value);
+    const details = countSurrogateTokenDetails([value]);
+    return { ...utf8ByteClassBreakdown(value), localTokens: details.tokens, longPretokenBytes: details.longBytes };
 }
 function messageContentMeasurement(content) {
     if (typeof content === 'string')
@@ -526,6 +530,8 @@ export default function delegateChildExtension(pi) {
                 retainedInputBytes: measurement.bytes,
                 retainedInputMultibyteBytes: measurement.multibyteBytes,
                 retainedInputDenseBytes: measurement.denseBytes,
+                retainedInputLocalTokens: measurement.localTokens,
+                retainedInputLongPretokenBytes: measurement.longPretokenBytes,
             }, seed.limits.allowed_input_tokens, seed.route);
             if (state.retainedGrowthBudgetTokens === undefined) {
                 state.retainedGrowthBudgetTokens = Math.max(0, verdict.allowedTokens -
@@ -540,6 +546,7 @@ export default function delegateChildExtension(pi) {
                 signed_headroom_tokens: verdict.allowedTokens - verdict.measuredTokens,
                 dominant_byte_class: verdict.dominantByteClass,
                 finalization_requested: state.finalizationRequested,
+                ...(verdict.tokenizer_forecast === undefined ? {} : { tokenizer_forecast: verdict.tokenizer_forecast }),
             });
             if (verdict.measuredTokens >=
                 verdict.allowedTokens - DELEGATE_FINALIZATION_INPUT_RESERVE_TOKENS) {

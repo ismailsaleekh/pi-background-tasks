@@ -1,4 +1,5 @@
 import type { Usage } from '@earendil-works/pi-ai';
+import type { KiroTokenizerForecast } from '../context/kiro-tokenizer.js';
 import type {
   TokenBudgetByteClassBreakdown,
   TokenBudgetDominantByteClass,
@@ -65,6 +66,7 @@ export interface DelegateBudgetRouteSource {
   family: TokenBudgetFamily;
   rate_source: TokenBudgetRateSource;
   conservative_rate_source?: TokenBudgetRateSource | undefined;
+  tokenizer_forecast?: KiroTokenizerForecast | undefined;
 }
 
 export interface DelegateContextPolicyDescriptor {
@@ -265,6 +267,7 @@ export interface DelegateBudgetErrorDetail {
   backed: boolean;
   dominant_byte_class: TokenBudgetDominantByteClass;
   byte_class_breakdown: TokenBudgetByteClassBreakdown;
+  tokenizer_forecast?: KiroTokenizerForecast | undefined;
 }
 
 export interface DelegateErrorDetails {

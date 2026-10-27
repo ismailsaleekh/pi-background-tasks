@@ -217,6 +217,7 @@ export async function prepareDelegateLaunch(
         family: preflight.plan.route.family,
         rate_source: preflight.plan.route.rate_source,
         conservative_rate_source: preflight.plan.conservative_estimate.rateSource,
+        ...(preflight.plan.tokenizer_forecast === undefined ? {} : { tokenizer_forecast: preflight.plan.tokenizer_forecast }),
       },
       extensionMode: input.extensionMode,
       autoDeliver: input.autoDeliver,

@@ -142,10 +142,10 @@ Generated navigation for every package-local documentation page. This index inte
 | command | `kill` | `command:kill` | `always` | yes | `src/extension.ts:925` |
 | command | `logs` | `command:logs` | `always` | yes | `src/extension.ts:894` |
 | command | `tasks` | `command:tasks` | `always` | yes | `src/extension.ts:808` |
-| tool | `bg_delegate` | `tool:bg_delegate` | `feature:delegate` | yes | `src/delegate-extension.ts:500` |
+| tool | `bg_delegate` | `tool:bg_delegate` | `feature:delegate` | yes | `src/delegate-extension.ts:501` |
 | tool | `bg_kill` | `tool:bg_kill` | `always` | yes | `src/extension.ts:1212` |
 | tool | `bg_logs` | `tool:bg_logs` | `always` | yes | `src/extension.ts:1167` |
-| tool | `bg_result` | `tool:bg_result` | `any(feature:delegate,feature:fusion)` | yes | `src/delegate-extension.ts:757` |
+| tool | `bg_result` | `tool:bg_result` | `any(feature:delegate,feature:fusion)` | yes | `src/delegate-extension.ts:758` |
 | tool | `bg_run` | `tool:bg_run` | `always` | yes | `src/extension.ts:958` |
 | tool | `bg_run_pi_attested` | `tool:bg_run_pi_attested` | `feature:attested` | yes | `src/extension.ts:1067` |
 | tool | `bg_status` | `tool:bg_status` | `always` | yes | `src/extension.ts:1136` |

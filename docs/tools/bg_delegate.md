@@ -11,7 +11,7 @@ covers_sources: []
 
 <!-- pi-docs:begin name="tool-contract-bg_delegate" generator="scripts/docs/generate.mjs" -->
 - Label: **Background Delegate**
-- Source: `src/delegate-extension.ts:500`
+- Source: `src/delegate-extension.ts:501`
 - Availability: `feature:delegate`
 - Available by default: **yes**
 - Description: Launch one background Pi agent seeded with a frozen projection of the current conversation, then return a launch receipt immediately. The child has its own session, a route pinned at launch that is never substituted, and read-only tools. Extension discovery is isolated by default; ambient mode supports extension-registered providers but executes arbitrary discovered extension code. Retrieve its verified answer with bg_result.
@@ -189,6 +189,7 @@ Budgets and limits:
 - minimum usable input is `8,192` tokens;
 - launch admission measures the child system prompt plus the exact child prompt bytes that carry the seed;
 - backed large prompts use route-family calibration; the plan also records a provable `1.00 B/token` counter-forecast for every byte class, including multibyte input;
+- measured Kiro Opus 4.5 input can instead use a route-specific surrogate-tokenizer forecast in its recorded size/window domain; `tokenizer_forecast` names the active profile, its limitations and corpus hash (see [context budgeting](../concepts/context-projection-and-budgeting.md#kiro-delegate-surrogate-forecast)); byte-estimator diagnostics remain recorded;
 - `32,768` input tokens are protected for finalization, with an `8,192`-token low-runway trigger;
 - runtime context estimates are advisory and never masquerade as provider context truth;
 - tool results spill above `64 KiB` or earlier when retaining them would consume protected runway;

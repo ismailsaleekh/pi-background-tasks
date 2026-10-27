@@ -895,14 +895,20 @@ function tableToMarkdown(tableHtml: string): string {
   const rows: string[][] = [];
   for (const rowMatch of tableHtml.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/giu)) {
     const rowHtml = rowMatch[1] ?? '';
-    const cells = [...rowHtml.matchAll(/<(?:th|td)\b[^>]*>([\s\S]*?)<\/(?:th|td)>/giu)].map((cellMatch) =>
-      inlineHtmlToText(cellMatch[1] ?? ''),
-    );
+    const cells: string[] = [];
+    for (const cellMatch of rowHtml.matchAll(/<(?:th|td)\b[^>]*>([\s\S]*?)<\/(?:th|td)>/giu)) {
+      cells.push(inlineHtmlToText(cellMatch[1] ?? ''));
+    }
     if (cells.length > 0) rows.push(cells);
   }
   if (rows.length === 0) return '';
-  const columnCount = Math.max(...rows.map((row) => row.length));
-  const normalizedRows = rows.map((row) => [...row, ...Array.from({ length: columnCount - row.length }, () => '')]);
+  let columnCount = 0;
+  for (const row of rows) if (row.length > columnCount) columnCount = row.length;
+  const normalizedRows = rows.map((row) => {
+    const normalized = row.slice();
+    for (let i = row.length; i < columnCount; i += 1) normalized.push('');
+    return normalized;
+  });
   const header = normalizedRows[0] ?? [];
   const separator = Array.from({ length: columnCount }, () => '---');
   const bodyRows = normalizedRows.slice(1);

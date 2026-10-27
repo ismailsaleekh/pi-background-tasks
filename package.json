@@ -108,5 +108,8 @@
   },
   "dependencies": {
     "turndown": "7.2.4"
+  },
+  "optionalDependencies": {
+    "js-tiktoken": "1.0.21"
   }
 }

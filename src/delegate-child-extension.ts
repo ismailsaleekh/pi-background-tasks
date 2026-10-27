@@ -20,6 +20,8 @@ import {
   evaluateDelegateRuntimeBudget,
 } from './core/delegate/budget.js';
 import { utf8ByteClassBreakdown } from './core/context/token-budget.js';
+import { countSurrogateTokenDetails } from './core/context/kiro-tokenizer.js';
+import type { KiroTokenizerForecast } from './core/context/kiro-tokenizer.js';
 import {
   assertWellFormedUtf8,
   buildDelegateResultPackage,
@@ -106,6 +108,7 @@ interface RuntimeContextMeasurement {
   signed_headroom_tokens: number;
   dominant_byte_class: string;
   finalization_requested: boolean;
+  tokenizer_forecast?: KiroTokenizerForecast | undefined;
 }
 
 /**
@@ -319,19 +322,24 @@ interface ContentMeasurement {
   bytes: number;
   multibyteBytes: number;
   denseBytes: 0;
+  localTokens: number;
+  longPretokenBytes: number;
 }
 
 function emptyContentMeasurement(): ContentMeasurement {
-  return { bytes: 0, multibyteBytes: 0, denseBytes: 0 };
+  return { bytes: 0, multibyteBytes: 0, denseBytes: 0, localTokens: 0, longPretokenBytes: 0 };
 }
 
 function addContentMeasurement(target: ContentMeasurement, delta: ContentMeasurement): void {
   target.bytes += delta.bytes;
   target.multibyteBytes += delta.multibyteBytes;
+  target.localTokens += delta.localTokens;
+  target.longPretokenBytes += delta.longPretokenBytes;
 }
 
 function stringMeasurement(value: string): ContentMeasurement {
-  return utf8ByteClassBreakdown(value);
+  const details = countSurrogateTokenDetails([value]);
+  return { ...utf8ByteClassBreakdown(value), localTokens: details.tokens, longPretokenBytes: details.longBytes };
 }
 
 function messageContentMeasurement(content: unknown): ContentMeasurement {
@@ -695,6 +703,8 @@ export default function delegateChildExtension(pi: ExtensionAPI): void {
           retainedInputBytes: measurement.bytes,
           retainedInputMultibyteBytes: measurement.multibyteBytes,
           retainedInputDenseBytes: measurement.denseBytes,
+          retainedInputLocalTokens: measurement.localTokens,
+          retainedInputLongPretokenBytes: measurement.longPretokenBytes,
         },
         seed.limits.allowed_input_tokens,
         seed.route,
@@ -715,6 +725,7 @@ export default function delegateChildExtension(pi: ExtensionAPI): void {
         signed_headroom_tokens: verdict.allowedTokens - verdict.measuredTokens,
         dominant_byte_class: verdict.dominantByteClass,
         finalization_requested: state.finalizationRequested,
+        ...(verdict.tokenizer_forecast === undefined ? {} : { tokenizer_forecast: verdict.tokenizer_forecast }),
       });
       if (
         verdict.measuredTokens >=

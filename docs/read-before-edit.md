@@ -27,6 +27,8 @@ Every production file under `src/**` and `extensions/**` has exactly one primary
 | `src/core/canonical-json.ts` | [subsystems/child-launch-durability-and-safety](./subsystems/child-launch-durability-and-safety.md) |
 | `src/core/common.ts` | [subsystems/background-task-runtime](./subsystems/background-task-runtime.md) |
 | `src/core/config.ts` | [subsystems/host-ui-and-telemetry](./subsystems/host-ui-and-telemetry.md) |
+| `src/core/context/kiro-calibration.ts` | [concepts/context-projection-and-budgeting](./concepts/context-projection-and-budgeting.md) |
+| `src/core/context/kiro-tokenizer.ts` | [concepts/context-projection-and-budgeting](./concepts/context-projection-and-budgeting.md) |
 | `src/core/context/parent-snapshot.ts` | [concepts/context-projection-and-budgeting](./concepts/context-projection-and-budgeting.md) |
 | `src/core/context/token-budget.ts` | [concepts/context-projection-and-budgeting](./concepts/context-projection-and-budgeting.md) |
 | `src/core/context/visible-conversation-v2.ts` | [concepts/context-projection-and-budgeting](./concepts/context-projection-and-budgeting.md) |

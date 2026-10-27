@@ -5,7 +5,7 @@ import { Text } from '@earendil-works/pi-tui';
 import { Type } from 'typebox';
 import { truncateChars } from './core/common.js';
 import { DELEGATE_AUTO_DELIVER_MODES, DELEGATE_CAPABILITIES, DELEGATE_EXTENSION_MODES, DELEGATE_RESULT_TOOL_NAME, DELEGATE_TOOL_NAME, DelegateError, } from './core/delegate/types.js';
-import { DELEGATE_DEFAULT_MAX_TOOL_CALLS, DELEGATE_DEFAULT_MAX_TURNS, DELEGATE_DEFAULT_TIMEOUT_SECONDS, DELEGATE_INLINE_ANSWER_BYTES, } from './core/delegate/facade-contract.js';
+import { describeDelegateEstimator, DELEGATE_DEFAULT_MAX_TOOL_CALLS, DELEGATE_DEFAULT_MAX_TURNS, DELEGATE_DEFAULT_TIMEOUT_SECONDS, DELEGATE_INLINE_ANSWER_BYTES, } from './core/delegate/facade-contract.js';
 import { LazyModule, SynchronousActivationCloseFence, } from './core/lazy-module.js';
 /**
  * `bg_delegate` and `bg_result` registration.
@@ -443,7 +443,7 @@ export function registerDelegateExtension(pi, deps) {
                         `Artifacts: ${prepared.facts.artifactDir}`,
                         `Seed: ${String(Buffer.byteLength(prepared.preflight.seed.serialized, 'utf8'))} bytes, sha256 ${prepared.facts.seedSha256}`,
                         `Child prompt: ${String(prepared.preflight.plan.child_prompt_utf8_bytes)} bytes; launch estimate ${String(prepared.preflight.plan.launch_input_tokens_upper_bound)} / ${String(prepared.preflight.plan.route.allowed_input_tokens)} allowed input tokens; protected retained-growth runway ${String(prepared.preflight.plan.retained_growth_budget_tokens)} tokens.`,
-                        `Estimator: family ${prepared.facts.budget.family}, source ${prepared.facts.budget.rate_source.source}, rate ${String(prepared.facts.budget.rate_source.effective_rate_bytes_per_token_x100)}/100 B/tok + ${String(prepared.facts.budget.rate_source.affine_f_tokens)} tokens${prepared.facts.budget.rate_source.warning === null ? '' : `; warning: ${prepared.facts.budget.rate_source.warning}`}`,
+                        describeDelegateEstimator(prepared.facts.budget),
                         `Capability: ${capability} (read/search/list only)`,
                         `Extension mode: ${extensionMode}${extensionMode === 'ambient' ? ' — WARNING: arbitrary discovered extension code executes in the child; the tool allowlist does not sandbox it, so inspect-only process isolation is weakened.' : ' (ambient extension discovery disabled)'}`,
                         `Limits: ${String(prepared.preflight.limits.max_turns)} turns, ${String(prepared.preflight.limits.max_tool_calls)} tool calls, ${String(prepared.preflight.limits.timeout_seconds)}s`,
@@ -710,7 +710,7 @@ export function registerBackgroundResultExtension(pi, deps) {
                 `Answer: ${String(verified.package.answer.byte_length)} bytes, sha256 ${verified.package.answer.sha256} (verified).`,
                 `Turns: ${String(verified.package.turns)} · tool calls: ${String(verified.package.tool_calls)} · usage: ${verified.package.usage.status}`,
                 `Artifacts: ${facts.artifactDir}`,
-                `Estimator: family ${facts.budget.family}, source ${facts.budget.rate_source.source}, rate ${String(facts.budget.rate_source.effective_rate_bytes_per_token_x100)}/100 B/tok + ${String(facts.budget.rate_source.affine_f_tokens)} tokens${facts.budget.rate_source.warning === null ? '' : `; warning: ${facts.budget.rate_source.warning}`}`,
+                describeDelegateEstimator(facts.budget),
             ].join('\n');
             if (decision.mode === 'artifact') {
                 return {

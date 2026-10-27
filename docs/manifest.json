@@ -24,8 +24,10 @@
       "state": "stale-authored-prose"
     },
     {
-      "authored_body_sha256": "sha256:59a7ea8f35f82516f59ed154856a62cac8a7ad3bda1f7cd0079b2faeee48cc29",
+      "authored_body_sha256": "sha256:6bcd693cb77d86ad8285fd51f6c36d17621a26d093f7f902a44996f4918deba2",
       "covers_sources": [
+        "src/core/context/kiro-calibration.ts",
+        "src/core/context/kiro-tokenizer.ts",
         "src/core/context/parent-snapshot.ts",
         "src/core/context/token-budget.ts",
         "src/core/context/visible-conversation-v2.ts"
@@ -391,6 +393,8 @@
     "concepts/context-projection-and-budgeting": {
       "audience": "agent",
       "covers_sources": [
+        "src/core/context/kiro-calibration.ts",
+        "src/core/context/kiro-tokenizer.ts",
         "src/core/context/parent-snapshot.ts",
         "src/core/context/token-budget.ts",
         "src/core/context/visible-conversation-v2.ts"
@@ -1265,7 +1269,7 @@
           ],
           "type": "object"
         },
-        "source": "src/delegate-extension.ts:500"
+        "source": "src/delegate-extension.ts:501"
       },
       {
         "availability": "always",
@@ -1359,7 +1363,7 @@
           ],
           "type": "object"
         },
-        "source": "src/delegate-extension.ts:757"
+        "source": "src/delegate-extension.ts:758"
       },
       {
         "availability": "always",
@@ -1912,6 +1916,12 @@
     ],
     "src/core/config.ts": [
       "subsystems/host-ui-and-telemetry"
+    ],
+    "src/core/context/kiro-calibration.ts": [
+      "concepts/context-projection-and-budgeting"
+    ],
+    "src/core/context/kiro-tokenizer.ts": [
+      "concepts/context-projection-and-budgeting"
     ],
     "src/core/context/parent-snapshot.ts": [
       "concepts/context-projection-and-budgeting"
