@@ -59,6 +59,7 @@ import {
 } from './core/host-api.js';
 import type { BackgroundTaskForUi, TaskManagerResult } from './ui/background-tasks-manager.js';
 import { dockShortcutFooterHint, parseBackgroundTasksConfig } from './core/config.js';
+import { CHIP_BG as LIGHT_BLUE_BG, CHIP_FG as LIGHT_BLUE_FG } from './core/appearance.js';
 import { LazyModule, SynchronousActivationCloseFence } from './core/lazy-module.js';
 
 /**
@@ -81,8 +82,6 @@ const packageInfo = readPackageInfo(new URL('../package.json', import.meta.url),
 });
 const PACKAGE_NAME = packageInfo.name ?? 'pi-background-tasks';
 const PACKAGE_VERSION = packageInfo.version;
-const LIGHT_BLUE_BG = '\x1b[48;2;183;223;255m';
-const LIGHT_BLUE_FG = '\x1b[38;2;11;70;110m';
 const ANSI_RESET = '\x1b[0m';
 function lightBlue(value: string): string {
   return `${LIGHT_BLUE_BG}${LIGHT_BLUE_FG}${value}${ANSI_RESET}`;

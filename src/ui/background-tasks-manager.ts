@@ -17,6 +17,7 @@ import {
   truncateChars,
   type BgTaskSnapshot,
 } from '../core/common.js';
+import { CHIP_BG as LIGHT_BLUE_BG, CHIP_FG as LIGHT_BLUE_FG, CHIP_BORDER as LIGHT_BLUE_BORDER } from '../core/appearance.js';
 
 export interface TaskManagerTheme {
   fg: Theme['fg'];
@@ -32,9 +33,6 @@ const STATUS_INTERVAL_MS = 1000;
 const DETAIL_TAIL_BYTES = 128 * 1024;
 const LIST_VISIBLE_ROWS = 14;
 const DETAIL_VISIBLE_OUTPUT_LINES = 12;
-const LIGHT_BLUE_BG = '\x1b[48;2;183;223;255m';
-const LIGHT_BLUE_FG = '\x1b[38;2;11;70;110m';
-const LIGHT_BLUE_BORDER = '\x1b[38;2;83;160;215m';
 const ANSI_RESET = '\x1b[0m';
 
 function formatTime(timestamp: number): string {
