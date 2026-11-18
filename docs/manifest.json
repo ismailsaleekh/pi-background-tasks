@@ -943,7 +943,7 @@
     "image": "https://raw.githubusercontent.com/ismailsaleekh/pi-background-tasks/main/logo.png",
     "name": "pi-background-tasks",
     "type": "module",
-    "version": "2.6.11"
+    "version": "2.6.12"
   },
   "public_surface_ids": [
     "command:bg",
