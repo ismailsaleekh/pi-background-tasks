@@ -260,6 +260,12 @@ const CLAUDE_CODE_MODEL_POLICIES: Record<string, ClaudeCodeModelPolicy> = Object
     'adaptive-effort',
     { enforcesThinkingPrefixBinding: true, supportsCacheDiagnostics: true },
   ),
+  'claude-fable-5-2': claudeCode200KSubscriptionPolicy(
+    'claude-fable-5-2',
+    CLAUDE_CODE_FABLE_5_1_200K_BETA,
+    'adaptive-effort',
+    { enforcesThinkingPrefixBinding: true, supportsCacheDiagnostics: true },
+  ),
   'claude-haiku-4-5': claudeCode200KSubscriptionPolicy(
     'claude-haiku-4-5',
     CLAUDE_CODE_BETA,
@@ -1760,7 +1766,8 @@ function lineageBindsContainingAssistant(
 function canTargetReadAnthropicThinking(sourceModel: string, targetModel: string): boolean {
   if (sourceModel === targetModel) return true;
   return (
-    targetModel === 'claude-fable-5-1' && CLAUDE_CODE_MODEL_POLICIES[sourceModel] !== undefined
+    (targetModel === 'claude-fable-5-1' || targetModel === 'claude-fable-5-2') &&
+    CLAUDE_CODE_MODEL_POLICIES[sourceModel] !== undefined
   );
 }
 
@@ -2198,7 +2205,9 @@ function buildAnthropicRequest(
   if (model.reasoning && reasoning !== undefined) {
     if (reasoning === 'off') {
       if (policy.enforcesThinkingPrefixBinding) {
-        throw new Error('Anthropic attribution cannot disable thinking for Claude Fable 5.1');
+        throw new Error(
+          `Anthropic attribution cannot disable thinking for ${policy.modelId} (thinking-prefix binding)`,
+        );
       }
       params['thinking'] = { type: 'disabled' };
       params['temperature'] = options?.temperature ?? 1;

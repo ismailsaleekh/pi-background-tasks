@@ -215,6 +215,15 @@ void describe('global Anthropic attribution extension', () => {
     );
   });
 
+  void it('resolves Fable 5.2 to the same thinking-binding policy as Fable 5.1', () => {
+    const policy = resolveClaudeCodeModelPolicy({ provider: 'anthropic', id: 'claude-fable-5-2' });
+    assert.equal(policy.modelId, 'claude-fable-5-2');
+    assert.deepEqual(
+      { ...policy, modelId: 'x' },
+      { ...resolveClaudeCodeModelPolicy({ id: 'claude-fable-5-1' }), modelId: 'x' },
+    );
+  });
+
   void it('rejects max effort for fixed-budget models instead of serializing a null budget', () => {
     assert.throws(
       () =>

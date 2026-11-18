@@ -114,6 +114,7 @@ const CLAUDE_CODE_MODEL_POLICIES = Object.freeze({
     'claude-3-sonnet-20240229': claudeCode200KSubscriptionPolicy('claude-3-sonnet-20240229', CLAUDE_CODE_BETA, 'fixed-budget'),
     'claude-fable-5': claudeCode200KSubscriptionPolicy('claude-fable-5', CLAUDE_CODE_ADAPTIVE_200K_BETA, 'adaptive-effort'),
     'claude-fable-5-1': claudeCode200KSubscriptionPolicy('claude-fable-5-1', CLAUDE_CODE_FABLE_5_1_200K_BETA, 'adaptive-effort', { enforcesThinkingPrefixBinding: true, supportsCacheDiagnostics: true }),
+    'claude-fable-5-2': claudeCode200KSubscriptionPolicy('claude-fable-5-2', CLAUDE_CODE_FABLE_5_1_200K_BETA, 'adaptive-effort', { enforcesThinkingPrefixBinding: true, supportsCacheDiagnostics: true }),
     'claude-haiku-4-5': claudeCode200KSubscriptionPolicy('claude-haiku-4-5', CLAUDE_CODE_BETA, 'fixed-budget'),
     'claude-haiku-4-5-20251001': claudeCode200KSubscriptionPolicy('claude-haiku-4-5-20251001', CLAUDE_CODE_BETA, 'fixed-budget'),
     'claude-opus-4-0': claudeCode200KSubscriptionPolicy('claude-opus-4-0', CLAUDE_CODE_BETA, 'fixed-budget'),
@@ -1028,7 +1029,8 @@ function lineageBindsContainingAssistant(message, lineage) {
 function canTargetReadAnthropicThinking(sourceModel, targetModel) {
     if (sourceModel === targetModel)
         return true;
-    return (targetModel === 'claude-fable-5-1' && CLAUDE_CODE_MODEL_POLICIES[sourceModel] !== undefined);
+    return ((targetModel === 'claude-fable-5-1' || targetModel === 'claude-fable-5-2') &&
+        CLAUDE_CODE_MODEL_POLICIES[sourceModel] !== undefined);
 }
 function initialSignatureEpochPolicy(targetModelId, cacheRetention, compactionBoundarySha256) {
     return {
@@ -1361,7 +1363,7 @@ function buildAnthropicRequest(model, context, options) {
     if (model.reasoning && reasoning !== undefined) {
         if (reasoning === 'off') {
             if (policy.enforcesThinkingPrefixBinding) {
-                throw new Error('Anthropic attribution cannot disable thinking for Claude Fable 5.1');
+                throw new Error(`Anthropic attribution cannot disable thinking for ${policy.modelId} (thinking-prefix binding)`);
             }
             params['thinking'] = { type: 'disabled' };
             params['temperature'] = options?.temperature ?? 1;
