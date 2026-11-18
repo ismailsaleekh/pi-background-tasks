@@ -11,9 +11,9 @@ import type {
 
 export const CLAUDE_CODE_SESSION_HEADER = 'X-Claude-Code-Session-Id';
 
-const CLAUDE_CODE_VERSION = '2.1.280';
+const CLAUDE_CODE_VERSION = '2.1.303';
 const CLAUDE_CODE_ENTRYPOINT = 'sdk-cli';
-const CLAUDE_CODE_USER_AGENT = 'claude-cli/2.1.280 (external, sdk-cli)';
+const CLAUDE_CODE_USER_AGENT = 'claude-cli/2.1.303 (external, sdk-cli)';
 export const ANTHROPIC_1M_CONTEXT_BETA = 'context-1m-2025-08-07' as const;
 export const CLAUDE_CODE_200K_SUBSCRIPTION_CONTEXT_WINDOW = 200_000 as const;
 
