@@ -64,6 +64,7 @@ Every production file under `src/**` and `extensions/**` has exactly one primary
 | `src/core/host-protocol.ts` | [api/eventbus-host-v1](./api/eventbus-host-v1.md) |
 | `src/core/host-results.ts` | [api/eventbus-host-v1](./api/eventbus-host-v1.md) |
 | `src/core/lazy-module.ts` | [subsystems/delegation](./subsystems/delegation.md) |
+| `src/core/orphaned-task.ts` | [subsystems/background-task-runtime](./subsystems/background-task-runtime.md) |
 | `src/core/pi-launch.ts` | [subsystems/child-launch-durability-and-safety](./subsystems/child-launch-durability-and-safety.md) |
 | `src/core/registry.ts` | [subsystems/background-task-runtime](./subsystems/background-task-runtime.md) |
 | `src/core/reload-shell-owner.ts` | [subsystems/background-task-runtime](./subsystems/background-task-runtime.md) |
