@@ -5,7 +5,7 @@ mode: authored
 review_policy: behavioral
 stability: stable
 covers_surfaces: []
-covers_sources: [src/core/common.ts, src/core/registry.ts, src/core/reload-shell-owner.ts, src/core/shell-policy.ts, src/core/windows-taskkill.ts]
+covers_sources: [src/core/common.ts, src/core/orphaned-task.ts, src/core/registry.ts, src/core/reload-shell-owner.ts, src/core/shell-policy.ts, src/core/windows-taskkill.ts]
 ---
 # Background task runtime
 
@@ -96,6 +96,10 @@ Only `running` tasks can be stopped. Managed tasks invoke their task-owned cance
 
 Session shutdown atomically closes task admission before managed-workflow cleanup starts. For a real `reason:"reload"`, it first detaches and removes only admission-committed opted ordinary executions, then closes old publication/EventBus and applies normal stop paths to everything else. Pending survivor publication is transferred without false abandonment. For `quit`, `new`, `resume`, or `fork` (including clone), nothing transfers: all work follows normal cleanup. Registry admission/publication closure is one-way; stale lifecycle, admission, gate, lease, claim, adapter, and retry continuations cannot mutate a newer activation.
 
+### A task left by an earlier process
+
+The registry is in memory, so a process that dies without its shutdown handler (a crash, `SIGKILL`, a host restart) leaves its tasks running with metadata that still says `running` and no registry that knows their ids. `/kill <id>` therefore falls back to `src/core/orphaned-task.ts` when the id is an exact one the registry cannot resolve: it finds `<cwd>/.pi/tasks/*/<id>.json`, and on POSIX signals the recorded pid's process group with `SIGTERM`, then `SIGKILL` after a grace period, only when a process with that pid exists and started within a minute of the recorded `startTime`. A pid born at another time is never signalled. The record is then rewritten as `killed`, or as `failed` when the process was already gone. Windows refuses with the `taskkill` command to run instead, and the `bg_kill` tool keeps answering that the task is unknown, because its result carries a registry snapshot that such a record cannot supply.
+
 ## Same-process reload owner
 
 `src/core/reload-shell-owner.ts` installs a structurally checked process-global v1 hub under `Symbol.for('pi-background-tasks.reload-shell-owner.v1')`. Identity is the length-delimited tuple `(process.pid, exact session id, canonical cwd)`. It uses random activation/claim nonces, monotonic generations, and a two-phase claim: the fresh registry imports the same task objects and durably advances audit facts before the adapter becomes visible. There is no `instanceof` protocol test, metadata scan, PID adoption, external daemon, or liveness-derived exit result.
@@ -134,4 +138,4 @@ Windows never falls back to root-only `child.kill` for tree termination. The tas
 
 ## Source ownership/reference
 
-Primary source ownership for this document is `src/core/common.ts`, `src/core/registry.ts`, `src/core/reload-shell-owner.ts`, `src/core/shell-policy.ts`, and `src/core/windows-taskkill.ts`.
+Primary source ownership for this document is `src/core/common.ts`, `src/core/orphaned-task.ts`, `src/core/registry.ts`, `src/core/reload-shell-owner.ts`, `src/core/shell-policy.ts`, and `src/core/windows-taskkill.ts`.

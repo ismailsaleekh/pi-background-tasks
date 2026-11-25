@@ -6,6 +6,7 @@ import { Type } from 'typebox';
 import { DEFAULT_LOG_BYTES, MAX_LOG_BYTES, deriveCompletionDeliveryGuidance, deriveTaskNameFromCommand, formatSnapshotList, formatUpdateSegment, isNewerVersion, normalizeMaxBytes, normalizeTaskName, parseBgCommandArgs, taskDisplayName, truncateChars, ReloadSurvivalError, rejectSurvivalForTaskKind, } from './core/common.js';
 import { fetchLatestVersion, readPackageInfo, } from './core/update-check.js';
 import { BackgroundTaskRegistry } from './core/registry.js';
+import { stopOrphanedTask } from './core/orphaned-task.js';
 import { getProcessReloadShellOwnerV1, makeReloadShellIdentity, } from './core/reload-shell-owner.js';
 import { createShellPolicyGuidanceHandler, initializeShellPolicy } from './core/shell-policy.js';
 import { installBackgroundTaskExtensionApi, } from './core/extension-api.js';
@@ -717,6 +718,15 @@ export default async function backgroundTasksExtension(pi) {
             }
         },
     });
+    /**
+     * A task this registry does not know may still be running: an earlier process started it and died
+     * without stopping it. Only an exact id the registry cannot resolve is looked up on disk.
+     */
+    const stopIfLeftByEarlierProcess = async (cwd, id) => {
+        if (id === '' || registry.allTasks().some((task) => task.id.startsWith(id)))
+            return undefined;
+        return stopOrphanedTask(cwd, id);
+    };
     pi.registerCommand('kill', {
         description: 'Stop a running background task: /kill <id>',
         getArgumentCompletions: (prefix) => {
@@ -734,6 +744,14 @@ export default async function backgroundTasksExtension(pi) {
         handler: async (args, ctx) => {
             try {
                 currentCtx = ctx;
+                const orphan = await stopIfLeftByEarlierProcess(ctx.cwd, args.trim());
+                if (orphan !== undefined) {
+                    ctx.ui.notify(orphan.wasRunning
+                        ? `Killed ${orphan.name} (${orphan.id}), left running by an earlier process. Output: ${orphan.outputPath}`
+                        : `${orphan.name} (${orphan.id}) was started by an earlier process and is no longer running; its record is closed. Output: ${orphan.outputPath}`, 'info');
+                    updateUi(ctx);
+                    return;
+                }
                 const task = registry.resolveTask(args.trim());
                 await registry.stopTask(task, 'user');
                 ctx.ui.notify(`Killed ${taskDisplayName(task)} (${task.id}). Output: ${task.outputPath}`, 'info');
